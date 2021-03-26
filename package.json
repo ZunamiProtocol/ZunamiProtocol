@@ -29,10 +29,11 @@
   },
   "homepage": "https://github.com/ZunamiLab/ZunamiProtocol#readme",
   "devDependencies": {
-    "eslint-config-google": "^0.14.0",
     "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
-    "chai-bignumber": "^3.0.0"
+    "chai-bignumber": "^3.0.0",
+    "cz-customizable": "^6.3.0",
+    "eslint-config-google": "^0.14.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.0.0",
