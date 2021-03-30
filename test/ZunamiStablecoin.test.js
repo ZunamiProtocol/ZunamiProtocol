@@ -10,6 +10,12 @@ contract('ZunamiStablecoin', (accounts) => {
         zunami = await ZunamiStablecoin.new(accounts[0]);
     })
 
+    
+    it('t',async () => {
+      const t = await zunami.get();
+      console.log(t.toString());
+    })
+
     describe('description', () => {
         it('name', async () => {
             const name = await zunami.name();
@@ -43,8 +49,8 @@ contract('ZunamiStablecoin', (accounts) => {
             })
 
             it('minus burn totalSupply',async () => {
-                await zunami.mint(accounts[0], 2, {from: accounts[0]});
-                await zunami.burn(accounts[0], 10, {from: accounts[0]}).should.be.rejectedWith(EVM_REVERT);
+                await zunami.mint(accounts[0], 5, {from: accounts[0]});
+                await zunami.burn(accounts[0], 6, {from: accounts[0]}).should.be.rejectedWith(EVM_REVERT);
             })
         })
 
