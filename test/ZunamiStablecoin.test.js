@@ -144,5 +144,38 @@ contract('ZunamiStablecoin', (accounts) => {
   })
 
 
+describe('approving tokens', () => {
+    let result;
+    let amount;
+
+    beforeEach(async () => {
+      amount = 100;
+      result = await zunami.approve(accounts[1], amount, { from: accounts[0] });
+    })
+
+    describe('success', () => {
+      it('allocates an allowance for delegated token spending on exchange', async () => {
+        const allowance = await zunami.allowance(accounts[0], accounts[1]);
+        allowance.toString().should.equal(amount.toString());
+      })
+
+      it('emits an Approval event', () => {
+        const log = result.logs[0];
+        log.event.should.eq('Approval');
+        const event = log.args;
+        event.owner.toString().should.equal(accounts[0], 'owner is correct');
+        event.spender.should.equal(accounts[1], 'spender is correct');
+        event.value.toString().should.equal(amount.toString(), 'value is correct');
+      })
+    })
+
+    describe('failure', () => {
+      it('rejects invalid spenders', () => {
+        zunami.approve(0x0, amount, { from: accounts[0] }).should.be.rejected;
+      })
+    })
+  })
+
+
 
 })
