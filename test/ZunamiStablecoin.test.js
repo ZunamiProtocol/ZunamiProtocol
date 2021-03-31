@@ -10,12 +10,6 @@ contract('ZunamiStablecoin', (accounts) => {
         zunami = await ZunamiStablecoin.new(accounts[0]);
     })
 
-    
-    it('t',async () => {
-      const t = await zunami.get();
-      console.log(t.toString());
-    })
-
     describe('description', () => {
         it('name', async () => {
             const name = await zunami.name();
@@ -35,14 +29,14 @@ contract('ZunamiStablecoin', (accounts) => {
             it('mint and burn',async () => {
                 const amountTokenAfterMint = await zunami.totalSupply();
                 assert(amountTokenAfterMint.toString() === '0');
-    
+
                 await zunami.mint(accounts[0], 2, {from: accounts[0]});
                 const accOneBalance = await zunami.balanceOf(accounts[0]);
                 assert(accOneBalance.toString() === '2');
-    
+
                 const amountTokenBeforeMint = await zunami.totalSupply();
                 assert(amountTokenBeforeMint.toString() === '2');
-    
+
                 await zunami.burn(accounts[0], 1, {from: accounts[0]});
                 const amountTokenBeforeBurn = await zunami.totalSupply();
                 assert(amountTokenBeforeBurn.toString() === '1');
@@ -87,11 +81,11 @@ contract('ZunamiStablecoin', (accounts) => {
             event.from.should.eq(ETHER_ADDRESS, 'ether address');
             event.to.should.eq(accounts[0], 'teacher\'s address');
             event.value.toString().should.eq(amountMint.toString(), 'amount tokens')
-        })  
+        })
 
         it('event burn',async () => {
             await zunami.mint(accounts[0], amountMint, {from: accounts[0]});
-           
+
             const burn = await zunami.burn(accounts[0], amountBurn, {from: accounts[0]});
 
             const log = burn.logs[0]
@@ -102,6 +96,53 @@ contract('ZunamiStablecoin', (accounts) => {
             event.from.should.eq(accounts[0], 'teacher\'s address');
             event.to.should.eq(ETHER_ADDRESS, 'ether address');
             event.value.toString().should.eq(amountBurn.toString(), 'amount tokens')
-        })  
+        })
     })
+
+
+    describe('sending tokens', () => {
+        let result
+        let amount
+    
+        describe('success', () => {
+          beforeEach(async () => {
+            amount = 100
+            await zunami.mint(accounts[0], amount, {from: accounts[0]});
+            result = await zunami.transfer(accounts[1], amount, { from: accounts[0] })
+          })
+    
+          it('transfers token balances', async () => {
+            let balanceOf
+            balanceOf = await zunami.balanceOf(accounts[0]);
+            balanceOf.toString().should.equal('0');
+            
+            balanceOf = await zunami.balanceOf(accounts[1]);
+            balanceOf.toString().should.equal('100');
+          })
+    
+          it('emits a Transfer event', () => {
+            const log = result.logs[0];
+            log.event.should.eq('Transfer');
+            const event = log.args;
+            event.from.toString().should.equal(accounts[0], 'from is correct');
+            event.to.toString().should.equal(accounts[1], 'to is correct');
+            event.value.toString().should.equal(amount.toString(), 'value is correct');
+          })
+        
+    
+        describe('failure', () => {
+          it('rejects insufficient balances', async () => {
+            let invalidAmount = 10;
+            await zunami.transfer(accounts[1], invalidAmount, { from: accounts[0] }).should.be.rejectedWith(EVM_REVERT);
+          })
+    
+          it('rejects invalid recipients', () => {
+            zunami.transfer(0x0, amount, { from: accounts[0] }).should.be.rejected;
+          })
+        })
+    })
+  })
+
+
+
 })
