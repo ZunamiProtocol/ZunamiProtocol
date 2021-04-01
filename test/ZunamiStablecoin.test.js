@@ -73,14 +73,14 @@ contract('ZunamiStablecoin', (accounts) => {
 
         it('event mint',async () => {
             const mint = await zunami.mint(accounts[0], amountMint, {from: accounts[0]});
-            const log = mint.logs[0]
+            const log = mint.logs[0];
             log.event.should.eq('Transfer');
             log.id.should.a('string');
 
             const event = log.args;
             event.from.should.eq(ETHER_ADDRESS, 'ether address');
             event.to.should.eq(accounts[0], 'teacher\'s address');
-            event.value.toString().should.eq(amountMint.toString(), 'amount tokens')
+            event.value.toString().should.eq(amountMint.toString(), 'amount tokens');
         })
 
         it('event burn',async () => {
@@ -88,38 +88,38 @@ contract('ZunamiStablecoin', (accounts) => {
 
             const burn = await zunami.burn(accounts[0], amountBurn, {from: accounts[0]});
 
-            const log = burn.logs[0]
+            const log = burn.logs[0];
             log.event.should.eq('Transfer');
             log.id.should.a('string');
 
             const event = log.args;
             event.from.should.eq(accounts[0], 'teacher\'s address');
             event.to.should.eq(ETHER_ADDRESS, 'ether address');
-            event.value.toString().should.eq(amountBurn.toString(), 'amount tokens')
+            event.value.toString().should.eq(amountBurn.toString(), 'amount tokens');
         })
     })
 
 
     describe('sending tokens', () => {
-        let result
-        let amount
-    
+        let result;
+        let amount;
+
         describe('success', () => {
           beforeEach(async () => {
             amount = 100
             await zunami.mint(accounts[0], amount, {from: accounts[0]});
-            result = await zunami.transfer(accounts[1], amount, { from: accounts[0] })
+            result = await zunami.transfer(accounts[1], amount, { from: accounts[0] });
           })
-    
+
           it('transfers token balances', async () => {
-            let balanceOf
+            let balanceOf;
             balanceOf = await zunami.balanceOf(accounts[0]);
             balanceOf.toString().should.equal('0');
-            
+
             balanceOf = await zunami.balanceOf(accounts[1]);
             balanceOf.toString().should.equal('100');
           })
-    
+
           it('emits a Transfer event', () => {
             const log = result.logs[0];
             log.event.should.eq('Transfer');
@@ -128,14 +128,14 @@ contract('ZunamiStablecoin', (accounts) => {
             event.to.toString().should.equal(accounts[1], 'to is correct');
             event.value.toString().should.equal(amount.toString(), 'value is correct');
           })
-        
-    
+
+
         describe('failure', () => {
           it('rejects insufficient balances', async () => {
             let invalidAmount = 10;
             await zunami.transfer(accounts[1], invalidAmount, { from: accounts[0] }).should.be.rejectedWith(EVM_REVERT);
           })
-    
+
           it('rejects invalid recipients', () => {
             zunami.transfer(0x0, amount, { from: accounts[0] }).should.be.rejected;
           })
@@ -177,33 +177,48 @@ describe('approving tokens', () => {
   })
 
 describe('transfer from', () => {
+
       const amountTokens = '100';
       const amountTransfer = '5';
+
       describe('success', () => {
-          let result;
+          let resultApprove;
+          let resultTransfer;
+
+          beforeEach(async () => {
+            resultApprove = await zunami.approve(accounts[0], amountTransfer, {from: accounts[1]});
+          })
+
           beforeEach(async () => {
             await zunami.mint(accounts[1], amountTokens, {from: accounts[0]});
 
-            await zunami.approve(accounts[0], amountTransfer, {from: accounts[1]});
-            
-            result = await zunami.transferFrom(accounts[1], accounts[2], amountTransfer, { from: accounts[0] })
+            resultTransfer = await zunami.transferFrom(accounts[1], accounts[2], amountTransfer, { from: accounts[0] });
           })
-    
+
           it('transfers token balances', async () => {
-            let balanceOf
+            let balanceOf;
             balanceOf = await zunami.balanceOf(accounts[1]);
             balanceOf.toString().should.equal((amountTokens - amountTransfer).toString());
             balanceOf = await zunami.balanceOf(accounts[2]);
             balanceOf.toString().should.equal(amountTransfer.toString());
           })
-    
+
           it('resets the allowance', async () => {
             const allowance = await zunami.allowance(accounts[0], accounts[1]);
             allowance.toString().should.equal('0');
           })
-    
+
+          it('emits a Approval event', () => {
+            const log = resultApprove.logs[0];
+            log.event.should.eq('Approval');
+            const event = log.args;
+            event.owner.toString().should.equal(accounts[1], 'owner is correct');
+            event.spender.should.equal(accounts[0], 'spender is correct');
+            event.value.toString().should.equal(amountTransfer.toString(), 'value is correct');
+          })
+
           it('emits a Transfer event', () => {
-            const log = result.logs[0];
+            const log = resultTransfer.logs[0];
             log.event.should.eq('Transfer');
             const event = log.args;
             event.from.toString().should.equal(accounts[1], 'from is correct');
@@ -211,9 +226,24 @@ describe('transfer from', () => {
             event.value.toString().should.equal(amountTransfer.toString(), 'value is correct');
           })
 
+
+
       })
 
       describe('failure', () => {
+          it('not enough tokens',async () => {
+            await zunami.approve(accounts[0], amountTransfer, {from: accounts[1]});
+            await zunami.transferFrom(accounts[1], accounts[2], amountTransfer, { from: accounts[0] }).should.be.rejectedWith('ERC20: transfer amount exceeds balance.');
+          })
+
+
+          it('pick up more approved', async () => {
+            await zunami.mint(accounts[1], amountTokens, {from: accounts[0]});
+            await zunami.approve(accounts[0], amountTransfer, {from: accounts[1]});
+            result = await zunami.transferFrom(accounts[1], accounts[2], amountTransfer + 1, { from: accounts[0] }).should.be.rejectedWith('ERC20: transfer amount exceeds allowance');
+          })
+
+
           it('rejects insufficient amounts', () => {
             const invalidAmount = '100000000';
             zunami.transferFrom(accounts[1], accounts[2], invalidAmount, { from: accounts[0] }).should.be.rejectedWith(EVM_REVERT);
