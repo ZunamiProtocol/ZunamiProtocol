@@ -3,14 +3,12 @@ pragma solidity ^0.8.1;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-contract ZunamiStablecoin is ERC20{
-
+contract ZunamiStablecoin is ERC20 {
     address public owner;
 
-    constructor(address _owner) ERC20('Zunami Stablecoin', 'ZUSD'){
+    constructor(address _owner) ERC20('Zunami Stablecoin', 'ZUSD') {
         owner = _owner;
     }
-
 
     function mint(address _address, uint256 _amount) onlyOwner() external {
         _mint(_address, _amount);

@@ -1,11 +1,11 @@
 require('chai').use(require('chai-as-promised')).should();
 
 const { EVM_REVERT, ETHER_ADDRESS } = require('./helpers.js');
-
 const ZunamiStablecoin = artifacts.require('./ZunamiStablecoin');
 
 contract('ZunamiStablecoin', (accounts) => {
     let zunami;
+
     beforeEach(async () => {
         zunami = await ZunamiStablecoin.new(accounts[0]);
     })
@@ -24,7 +24,6 @@ contract('ZunamiStablecoin', (accounts) => {
 
 
     describe('totalSupply', () => {
-
         describe('mint and burn', () => {
             it('mint and burn',async () => {
                 const amountTokenAfterMint = await zunami.totalSupply();
@@ -48,26 +47,25 @@ contract('ZunamiStablecoin', (accounts) => {
             })
         })
 
-        it('failde number argument mint 1',async () => {
+        it('failed number argument mint 1',async () => {
             await zunami.mint(accounts[0], -2, {from: accounts[0]}).should.be.rejectedWith();
         })
 
-        it('failde number argument mint 2',async () => {
+        it('failed number argument mint 2',async () => {
             await zunami.mint(accounts[0], 'fdsafa', {from: accounts[0]}).should.be.rejectedWith();
         })
 
-        it('failde address from',async () => {
+        it('failed address from',async () => {
             await zunami.mint(accounts[0], 2, {from: accounts[2]}).should.be.rejectedWith(EVM_REVERT);
         })
 
-        it('failde address',async () => {
+        it('failed address',async () => {
             await zunami.mint('dsaDASDA', 2, {from: accounts[0]}).should.be.rejectedWith();
         })
 
     })
 
     describe('events Mint and Burn', () => {
-
         const amountMint = 2;
         const amountBurn = 1;
 
@@ -130,7 +128,7 @@ contract('ZunamiStablecoin', (accounts) => {
           })
 
 
-        describe('failure', () => {
+        describe('failed', () => {
           it('rejects insufficient balances', async () => {
             let invalidAmount = 10;
             await zunami.transfer(accounts[1], invalidAmount, { from: accounts[0] }).should.be.rejectedWith(EVM_REVERT);
@@ -169,7 +167,7 @@ describe('approving tokens', () => {
       })
     })
 
-    describe('failure', () => {
+    describe('failed', () => {
       it('rejects invalid spenders', () => {
         zunami.approve(0x0, amount, { from: accounts[0] }).should.be.rejected;
       })
@@ -177,7 +175,6 @@ describe('approving tokens', () => {
   })
 
 describe('transfer from', () => {
-
       const amountTokens = '100';
       const amountTransfer = '5';
 
@@ -225,24 +222,19 @@ describe('transfer from', () => {
             event.to.should.equal(accounts[2], 'to is correct');
             event.value.toString().should.equal(amountTransfer.toString(), 'value is correct');
           })
-
-
-
       })
 
-      describe('failure', () => {
+      describe('failed', () => {
           it('not enough tokens',async () => {
             await zunami.approve(accounts[0], amountTransfer, {from: accounts[1]});
             await zunami.transferFrom(accounts[1], accounts[2], amountTransfer, { from: accounts[0] }).should.be.rejectedWith('ERC20: transfer amount exceeds balance.');
           })
-
 
           it('pick up more approved', async () => {
             await zunami.mint(accounts[1], amountTokens, {from: accounts[0]});
             await zunami.approve(accounts[0], amountTransfer, {from: accounts[1]});
             result = await zunami.transferFrom(accounts[1], accounts[2], amountTransfer + 1, { from: accounts[0] }).should.be.rejectedWith('ERC20: transfer amount exceeds allowance');
           })
-
 
           it('rejects insufficient amounts', () => {
             const invalidAmount = '100000000';
