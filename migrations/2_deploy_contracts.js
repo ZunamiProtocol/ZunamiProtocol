@@ -1,6 +1,6 @@
 const Zunami = artifacts.require("ZunamiStablecoin");
 
 module.exports = async (deployer, _network, accounts) => {
-    await deployer.deploy(Zunami, accounts);
-    const zallet = await Zunami.deployed();
+    await deployer.deploy(Zunami, accounts[0]);
+    const wallet = await Zunami.deployed();
 };
