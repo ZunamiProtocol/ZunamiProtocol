@@ -1,8 +1,12 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ZunamiStablecoin.sol";
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+
+import './ZunamiStablecoin.sol';
+import './IZUSD.sol';
+
+import './mocks/usdc.sol';
 
 contract Main {
     address constant internal usdcAddr = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -10,7 +14,6 @@ contract Main {
 
     bytes32 constant internal usdcTicker = 'usdc';
     bytes32 constant internal usdtTicker = 'usdt';
-    bytes32 constant internal zusdTicker = 'zusd';
 
     struct Token {
         bytes32 ticker;
@@ -18,19 +21,39 @@ contract Main {
     }
 
     mapping(bytes32 => Token) public stableCoins;
-    mapping(address => mapping(bytes32 => uint)) public traderBalances;
-
-    address public admin;
+    mapping(address => mapping(bytes32 => uint)) public depositorBalances;
+    IZUSD zusd;
 
     constructor() {
-        admin = msg.sender;
-        stableCoins[usdcTicker] = Token(usdcTicker, IERC20(usdcAddr));
-        stableCoins[usdtTicker] = Token(usdtTicker, IERC20(usdtAddr));
-        stableCoins[zusdTicker] = Token(zusdTicker, new ZunamiStablecoin(address(this)));
+        //TODO: For release version
+        //stableCoins[usdcTicker] = Token(usdcTicker, IERC20(usdcAddr));
+        //stableCoins[usdtTicker] = Token(usdtTicker, IERC20(usdtAddr));
+
+        stableCoins[usdcTicker] = Token(usdcTicker, new USDC());
+        zusd = IZUSD(new ZUSD(address(this)));
     }
 
-    function deposit(bytes32 ticker, uint amount) external {}
+    function deposit(address _depositor, uint _amount, bytes32 _ticker)
+        external validTokens(_ticker) {
+            depositorBalances[_depositor][_ticker] += _amount;
+            zusd.mint(_depositor, _amount);
 
-    function withdraw(bytes32 ticker, uint amount) external {}
+            //TODO: Add functionality for Yern Finance
+    }
+
+    function withdraw(address _depositor, uint _amount, bytes32 _ticker)
+        external validTokens(_ticker) {
+            require(depositorBalances[_depositor][_ticker] >= _amount, 'insufficient funds');
+
+            depositorBalances[_depositor][_ticker] -= _amount;
+            zusd.burn(_depositor, _amount);
+
+            //TODO: Add functionality for Yern Finance
+    }
+
+    modifier validTokens(bytes32 _ticker) {
+        require(_ticker == usdcTicker, 'Invalid ticker');
+        _;
+    }
 }
 

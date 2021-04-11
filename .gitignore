@@ -6,3 +6,5 @@ build
 artifacts
 cache
 .env
+public/contracts
+
