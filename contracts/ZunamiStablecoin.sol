@@ -13,7 +13,6 @@ contract ZUSD is ERC20, IZUSD {
 
     function mint(address _address, uint256 _amount) onlyOwner() external override {
         _mint(_address, _amount);
-        transfer(_address, _amount);
     }
 
     function burn(address _address, uint256 _amount) onlyOwner() external override {

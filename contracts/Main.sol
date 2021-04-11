@@ -21,7 +21,7 @@ contract Main {
     }
 
     mapping(bytes32 => Token) public stableCoins;
-    mapping(address => mapping(bytes32 => uint)) public depositorBalances;
+    mapping(address => mapping(bytes32 => uint)) public depositerBalances;
     IZUSD zusd;
 
     constructor() {
@@ -33,20 +33,20 @@ contract Main {
         zusd = IZUSD(new ZUSD(address(this)));
     }
 
-    function deposit(address _depositor, uint _amount, bytes32 _ticker)
+    function deposit(address _depositer, uint _amount, bytes32 _ticker)
         external validTokens(_ticker) {
-            depositorBalances[_depositor][_ticker] += _amount;
-            zusd.mint(_depositor, _amount);
+            depositerBalances[_depositer][_ticker] += _amount;
+            zusd.mint(_depositer, _amount);
 
             //TODO: Add functionality for Yern Finance
     }
 
-    function withdraw(address _depositor, uint _amount, bytes32 _ticker)
+    function withdraw(address _depositer, uint _amount, bytes32 _ticker)
         external validTokens(_ticker) {
-            require(depositorBalances[_depositor][_ticker] >= _amount, 'insufficient funds');
+            require(depositerBalances[_depositer][_ticker] >= _amount, 'insufficient funds');
 
-            depositorBalances[_depositor][_ticker] -= _amount;
-            zusd.burn(_depositor, _amount);
+            depositerBalances[_depositer][_ticker] -= _amount;
+            zusd.burn(_depositer, _amount);
 
             //TODO: Add functionality for Yern Finance
     }
