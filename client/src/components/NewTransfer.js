@@ -9,11 +9,13 @@ const NewTransfer = ({sendTransfer}) => {
     }
 
     return(
-        <form onSubmit={e => sendTransfer(e, amount)} >
-            <label htmlFor="amount" className="form-label">Amount</label>
-            <input onChange={e => getAmount(e)} type="text" className="form-control" id="amount"/>
-            <button type="submit" className="btn btn-primary">Submit</button>
-        </form>
+        <div>
+            <h6>Send Transfer to  1 Accaunt</h6>
+            <form onSubmit={e => sendTransfer(e, amount)} >
+                <input placeholder='Amount' onChange={e => getAmount(e)} type="number"/>
+                <button type="submit" >Submit</button>
+            </form>
+        </div>
     )
 }
 

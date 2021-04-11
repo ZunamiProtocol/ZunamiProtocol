@@ -12,6 +12,25 @@ code {
     monospace;
 }
 
-form {
-    margin: 20px 500px 0 500px;
+button {
+   background: black;
+   color: white;
+   border-radius: 5px;
+   margin: 10px;
+   transition: 1s;
+}
+
+button:hover {
+    background: brown;
+    transition: 1s;
+}
+
+li {
+    list-style-type: none;
+    border-bottom: 1px black solid;
+    margin-top: 10px;
+}
+
+.TableTransfer{
+    margin-top: 30px;
 }
