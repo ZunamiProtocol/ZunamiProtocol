@@ -66,7 +66,8 @@ contract('Main smart-contract', ([depositer] = accounts) => {
             await Manager.deposit(depositer, amountIn, usdcTicker);
 
             await expectRevert(
-                Manager.withdraw(depositer, amountOut, usdcTicker), 'Insufficient funds');
+                Manager.withdraw(depositer, amountOut, usdcTicker),
+                'insufficient funds');
         });
     });
 });
