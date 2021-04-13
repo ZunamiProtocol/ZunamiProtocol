@@ -6,5 +6,5 @@ build
 artifacts
 cache
 .env
-public/contracts
+client/src/contracts
 
