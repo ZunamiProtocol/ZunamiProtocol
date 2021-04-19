@@ -1,7 +1,7 @@
 require('chai').use(require('chai-as-promised')).should();
 
 const { EVM_REVERT, ETHER_ADDRESS } = require('./helpers.js');
-const ZunamiStablecoin = artifacts.require('./ZunamiStablecoin');
+const ZunamiStablecoin = artifacts.require('./ZUN');
 
 contract('ZunamiStablecoin', (accounts) => {
     let zunami;
@@ -13,12 +13,12 @@ contract('ZunamiStablecoin', (accounts) => {
     describe('description', () => {
         it('name', async () => {
             const name = await zunami.name();
-            assert(name === 'Zunami Stablecoin');
+            assert(name === 'Zunami Coin');
         })
 
         it('symbol',async () => {
             const symbol = await zunami.symbol();
-            assert(symbol === 'ZUSD');
+            assert(symbol === 'ZUN');
         })
     })
 

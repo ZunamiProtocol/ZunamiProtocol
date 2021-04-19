@@ -3,8 +3,8 @@ pragma solidity >=0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import './ZunamiStablecoin.sol';
-import './IZUSD.sol';
+import './ZUN.sol';
+import './IZUN.sol';
 
 import './mocks/usdc.sol';
 
@@ -22,7 +22,7 @@ contract Main {
 
     mapping(bytes32 => Token) public stableCoins;
     mapping(address => mapping(bytes32 => uint)) public depositerBalances;
-    IZUSD zusd;
+    IZUN zun;
 
     constructor() {
         //TODO: For release version
@@ -30,23 +30,23 @@ contract Main {
         //stableCoins[usdtTicker] = Token(usdtTicker, IERC20(usdtAddr));
 
         stableCoins[usdcTicker] = Token(usdcTicker, new USDC());
-        zusd = IZUSD(new ZUSD(address(this)));
+        zun = IZUN(new ZUN(address(this)));
     }
 
-    function deposit(address _depositer, uint _amount, bytes32 _ticker)
-        external validTokens(_ticker) {
+    function deposit(address payable _depositer, uint _amount, bytes32 _ticker)
+      payable external validTokens(_ticker) {
             depositerBalances[_depositer][_ticker] += _amount;
-            zusd.mint(_depositer, _amount);
+            zun.mint(_depositer, _amount);
 
             //TODO: Add functionality for Yern Finance
     }
 
-    function withdraw(address _depositer, uint _amount, bytes32 _ticker)
-        external validTokens(_ticker) {
+    function withdraw(address payable _depositer, uint _amount, bytes32 _ticker)
+       payable external validTokens(_ticker) {
             require(depositerBalances[_depositer][_ticker] >= _amount, 'insufficient funds');
 
             depositerBalances[_depositer][_ticker] -= _amount;
-            zusd.burn(_depositer, _amount);
+            zun.burn(_depositer, _amount);
 
             //TODO: Add functionality for Yern Finance
     }
