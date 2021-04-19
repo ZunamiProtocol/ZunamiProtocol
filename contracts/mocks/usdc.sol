@@ -6,8 +6,8 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 contract USDC is ERC20 {
     constructor() ERC20('Test USDC Stablecoin', 'USDC') {}
 
-    function faucet(address to, uint amount) external {
-        _mint(to, amount);
+    function faucet(address payable _to, uint _amount) external {
+        _mint(_to, _amount);
     }
 }
 
