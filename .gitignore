@@ -7,4 +7,4 @@ artifacts
 cache
 .env
 client/src/contracts
-
+*.swp
