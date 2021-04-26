@@ -1,6 +1,6 @@
 const {expectRevert} = require('@openzeppelin/test-helpers');
-const USDC = artifacts.require('./USDC');
 const MainContract = artifacts.require('./Main');
+const USDC = artifacts.require('../contracts/mocks/usdc.sol');
 
 contract('Main smart-contract', ([depositer] = accounts) => {
     let usdc;
