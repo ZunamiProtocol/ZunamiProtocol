@@ -14,7 +14,7 @@ const Stableabi = require('../OtherAbi/StableToken.json');
 
   await main.deployed();
 
-  console.log('Greeter deployed to:", main.address');
+  console.log('Greeter deployed to:', main.address);
 }
 
 
