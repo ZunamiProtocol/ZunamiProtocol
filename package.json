@@ -1,11 +1,7 @@
 {
   "name": "ZunamiProtocol",
-  "version": "1.0.2",
+  "version": "0.1.0",
   "description": "",
-  "main": "truffle-config.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -30,16 +26,18 @@
   "homepage": "https://github.com/ZunamiLab/ZunamiProtocol#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^12.1.1",
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.0.0",
-    "@openzeppelin/test-helpers": "^0.5.10",
     "babel-eslint": "^10.1.0",
-    "chai": "^4.3.0",
-    "chai-as-promised": "^7.1.1",
-    "chai-bignumber": "^3.0.0",
+    "chai": "^4.3.4",
     "commitlint": "^12.1.1",
     "cz-customizable": "^6.3.0",
     "eslint": "^7.25.0",
     "eslint-config-google": "^0.14.0",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.1.4",
+    "hardhat": "^2.2.1",
     "husky": "^6.0.0"
   },
   "dependencies": {}
