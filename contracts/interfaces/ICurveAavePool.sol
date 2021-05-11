@@ -4,9 +4,9 @@ pragma solidity 0.8.0;
 interface ICurveAavePool {
     function add_liquidity(uint256[3] calldata amounts,
                            uint256 min_mint_amount,
-                           bool use_underlying) external;
+                           bool use_underlying) external returns(uint);
 
     function remove_liquidity_imbalance(uint256[3] calldata amounts,
                            uint256 max_burn_amount,
-                           bool use_underlying) external;
+                           bool use_underlying) external returns(uint);
 }
