@@ -3,7 +3,7 @@ const web3 = require('web3');
 const unlockAddress = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
 
 // Заменить на новый адресс Main контракта!!!!!
-const MainAddress = '0x09635F643e140090A9A8Dcd712eD6285858ceBef';
+const MainAddress = '0x851356ae760d987E095750cCeb3bC6014560891C';
 
 const UsdcAddress = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 const CurveLPToken = '0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900';
@@ -64,7 +64,7 @@ const mainTest = async () => {
 
     await deposit('Step 2: call a deposit function');
 
-    await withdraw('step 3: call a withdraw function');
+    await withdraw('Step 3: call a withdraw function');
 };
 
 mainTest();
