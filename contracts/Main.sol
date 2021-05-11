@@ -36,10 +36,9 @@ contract Main {
     function deposit(address _depositer, uint _amount, bytes32 _ticker)
       payable external validTokens(_ticker) {
             depositerBalances[_depositer][_ticker] += _amount;
-              
-            IERC20(usdcAddr).safeApprove(aavePool, 0);
+
             IERC20(usdcAddr).safeApprove(aavePool, _amount);
-            
+
             uint[3] memory coinAmounts;
             coinAmounts[0] = 0;
             coinAmounts[1] = _amount;

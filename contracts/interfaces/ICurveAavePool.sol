@@ -9,7 +9,4 @@ interface ICurveAavePool {
     function remove_liquidity_imbalance(uint256[3] calldata amounts,
                            uint256 max_burn_amount,
                            bool use_underlying) external;
-
-    function calc_token_amount(uint256[3] calldata amounts,
-                           bool is_deposit) external returns(uint);
 }
