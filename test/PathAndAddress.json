@@ -1,0 +1,20 @@
+{
+    "address": {
+        "mainAddress" : "0x5eb3Bc0a489C5A8288765d2336659EbCA68FCd00",
+        "unlockAddress": "0xF977814e90dA44bFA03b6295A0616a897441aceC",
+        "unlockAddressTwo": "0x5A16552f59ea34E44ec81E58b3817833E9fD5436",
+        "UsdcAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "DaiAddress": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "CerveAddressAave": "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
+        "CerveAddressSusd": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
+        "CerveAddressDusd": "0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c",
+        "SUSDtokens": "0xC25a3A3b969415c80451098fa907EC722572917F",
+        "AAVEtokens": "0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900",
+        "DUSDtokens": "0x3a664Ab939FD8482048609f652f9a0B0677337B9"
+    },
+    "path": {
+        "stabeTokrnAbi": "../OtherAbi/StableToken.json",
+        "mainAbi": "../artifacts/contracts/Main.sol/Main.json",
+        "AvveTokAbi": "../OtherAbi/AvveTokAbi.json"
+    } 
+}
