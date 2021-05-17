@@ -19,7 +19,7 @@ const Ticker = {
     'Invalid_Ticker': Web3.utils.fromAscii('Invalid_Ticker'),
 };
 
-const sendEther = async () => {
+const faucetEther = async () => {
     if (await Web3.eth.getBalance(Contract.main._address) === '0') {
         await Web3.eth.sendTransaction({
             from: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
@@ -33,5 +33,5 @@ const sendEther = async () => {
 module.exports = {
     Contract,
     Ticker,
-    sendEther,
+    faucetEther,
 };
