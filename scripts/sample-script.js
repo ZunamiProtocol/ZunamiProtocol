@@ -1,5 +1,25 @@
 const {ethers} = require('hardhat');
+const fs = require('fs');
 
+const rewriteMainAddress = (address) => {
+    const file = JSON.parse(
+        fs.readFileSync(`${__dirname}/../test/PathAndAddress.json`, 'utf8'));
+    file.address.mainAddress = address;
+
+    const stringFile = JSON.stringify(file);
+    let newFile = String();
+    for (let i = 0; i < stringFile.length; i++) {
+        newFile += stringFile[i];
+        if (stringFile[i] === ',' || stringFile[i] === '{' || stringFile[i] === '}') {
+            newFile += '\n';
+        }
+    }
+
+    fs.writeFileSync(`${__dirname}/../test/PathAndAddress.json`,
+        newFile,
+        {encoding: 'utf8', flag: 'w'});
+    console.log('file with path update!');
+};
 
 const main = async () => {
     const Main = await ethers.getContractFactory('Main');
@@ -17,6 +37,8 @@ const main = async () => {
     await ethers.getSigner(lockedAddr[1]);
     await ethers.getSigner(lockedAddr[0]);
 
+    rewriteMainAddress(main.address);
+
     console.log(`Unblock addresses ${lockedAddr}`);
 };
 
@@ -27,4 +49,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-    
