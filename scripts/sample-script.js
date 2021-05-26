@@ -3,15 +3,15 @@ const {ethers} = require('hardhat');
 const fs = require('fs');
 
 const rewriteMainAddress = (address) => {
-    const file = JSON.parse(
+    const fileParse = JSON.parse(
         fs.readFileSync(`${__dirname}/../test/PathAndAddress.json`, 'utf8'));
-    file.address.mainAddress = address;
+    fileParse.address.mainAddress = address;
 
-    const stringFile = JSON.stringify(file);
+    const file = JSON.stringify(fileParse);
     let newFile = String();
-    for (let i = 0; i < stringFile.length; i++) {
-        newFile += stringFile[i];
-        if (stringFile[i] === ',' || stringFile[i] === '{' || stringFile[i] === '}') {
+    for (let i = 0; i < file.length; i++) {
+        newFile += file[i];
+        if (file[i] === ',' || file[i] === '{' || file[i] === '}') {
             newFile += '\n';
         }
     }
