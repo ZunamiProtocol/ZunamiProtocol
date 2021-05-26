@@ -3,7 +3,7 @@ const web3 = require('web3');
 const unlockAddress = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
 
 // Заменить на новый адресс Main контракта!!!!!
-const MainAddress = '0x851356ae760d987E095750cCeb3bC6014560891C';
+const MainAddress = '0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB';
 
 const UsdcAddress = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 const CurveLPToken = '0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900';
@@ -23,7 +23,6 @@ const usdcTicker = web3.utils.fromAscii('usdc');
 
 const approveUsdc = async (message) => {
     console.log(message);
-
     console.log(`USDC which has already been approved for the Contract => `,
         await usdc.methods.allowance(unlockAddress, MainAddress).call());
 
@@ -37,6 +36,7 @@ const deposit = async (message) => {
     console.log(message);
     await getCurveLPBalance();
 
+    console.log(`Deposited ${4e6} USDC`);
     await main.methods.deposit(unlockAddress, 4e6, usdcTicker)
         .send({from: unlockAddress, gas: '1314359'});
 
@@ -51,10 +51,10 @@ const getCurveLPBalance = async () => {
 
 const withdraw = async (message) => {
     console.log(message);
+    console.log(`Withdrawed ${3e6} USDC`);
     await getCurveLPBalance();
     await main.methods.withdraw(unlockAddress, 3e6, usdcTicker)
         .send({from: unlockAddress, gas: '1314359'});
-    console.log('Contract USDC balance', await usdc.methods.balanceOf(MainAddress).call());
     await getCurveLPBalance();
     console.log('------------');
 };
