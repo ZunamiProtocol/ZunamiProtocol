@@ -2,7 +2,8 @@
 pragma solidity 0.8.0;
 
 interface IYearnVault {
-    function deposit(uint _amount) public;
-    function withdraw(uint _shares) public
+    function deposit(uint _amount) external;
+    function withdraw(uint _amount) external;
+    function balanceOf(address _addr) external returns(uint);
 }
 
