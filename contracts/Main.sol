@@ -50,11 +50,11 @@ contract Main {
         Coins[usdcTicker].token.transferFrom(_depositer, address(this), _amount);
         Coins[usdcTicker].token.safeApprove(aavePoolAddr, _amount);
 
-        uint curveTokenAmount = depositToCurve(_depositer, _amount, _ticker);
-        depositToYearn(_depositer, curveTokenAmount);
+        uint curveTokenAmount = _depositToCurve(_depositer, _amount, _ticker);
+        _depositToYearn(_depositer, curveTokenAmount);
     }
 
-    function depositToCurve(address _depositer, uint _amount, bytes32 _ticker)
+    function _depositToCurve(address _depositer, uint _amount, bytes32 _ticker)
         internal returns(uint curveTokensAmount) {
 
         uint[3] memory coinAmounts;
@@ -70,7 +70,7 @@ contract Main {
         return curveTokenAmount;
     }
 
-    function depositToYearn(address _depositer, uint _amount) internal {
+    function _depositToYearn(address _depositer, uint _amount) internal {
         Coins[curveTicker].token.safeApprove(yearnVaultAddr, _amount);
 
         uint yearnTokenAmountBefore = yearnVault.balanceOf(address(this));
@@ -90,22 +90,22 @@ contract Main {
         coinAmounts[2] = 0;
 
         uint curveRequiredAmount = aavePool.calc_token_amount(coinAmounts, false);
-        uint curveTokenAmount = withdrawFromYearn(_depositer, curveRequiredAmount);
+        uint curveTokenAmount = _withdrawFromYearn(_depositer, curveRequiredAmount);
 
-        withdrawFromCurve(_depositer, coinAmounts, curveTokenAmount);
+        _withdrawFromCurve(_depositer, coinAmounts, curveTokenAmount);
 
         Coins[usdcTicker].token.transfer(_depositer, _amount);
         depositerBalances[_depositer][_ticker] -= _amount;
     }
 
-    function withdrawFromCurve(address _depositer, uint[3] memory _amount, uint curveTokenAmount)
+    function _withdrawFromCurve(address _depositer, uint[3] memory _amount, uint curveTokenAmount)
         internal {
 
         aavePool.remove_liquidity_imbalance(_amount, curveTokenAmount, true);
         depositerBalances[_depositer][curveTicker] -= curveTokenAmount;
     }
 
-    function withdrawFromYearn(address _depositer, uint _amount)
+    function _withdrawFromYearn(address _depositer, uint _amount)
         internal returns(uint curveTokenAmount) {
 
         require(depositerBalances[_depositer][yearnTicker] >= _amount,
