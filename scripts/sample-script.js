@@ -29,12 +29,14 @@ const main = async () => {
 
     const lockedAddr = ['0xF977814e90dA44bFA03b6295A0616a897441aceC', main.address];
 
-    for(let address of lockedAddr){
+    for (let address of lockedAddr) {
         await ethers.provider.send('hardhat_impersonateAccount',
             [address]);
-    
+
         await ethers.getSigner(address);
     }
+
+    rewriteMainAddress(main.address);
 
     console.log(`Unblock addresses ${lockedAddr}`);
 };
@@ -46,4 +48,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-    

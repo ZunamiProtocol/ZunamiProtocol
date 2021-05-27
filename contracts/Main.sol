@@ -28,6 +28,7 @@ contract Main {
         IERC20 token;
     }
 
+    uint x = 10;
     mapping(bytes32 => Token) public Coins;
     mapping(address => mapping(bytes32 => uint)) public depositerBalances;
 
@@ -78,6 +79,26 @@ contract Main {
         uint yearnTokenAmount = yearnVault.balanceOf(address(this)) - yearnTokenAmountBefore;
 
         depositerBalances[_depositer][yearnTicker] += yearnTokenAmount;
+    }
+
+    function withdrawAll(bytes32 _ticker) external {
+        require(depositerBalances[msg.sender][_ticker] > 0,
+                "Insufficient funds for withdraw");
+
+        uint curveTokenAmount = _withdrawFromYearn(msg.sender, depositerBalances[msg.sender][yearnTicker]);
+
+        uint n = aavePool.calc_withdraw_one_coin(curveTokenAmount, 1);
+
+        uint[3] memory coinAmounts;
+        coinAmounts[0] = 0;
+        coinAmounts[1] = n;
+        coinAmounts[2] = 0;
+
+         _withdrawFromCurve(msg.sender, coinAmounts, depositerBalances[msg.sender][curveTicker]);
+
+        Coins[usdcTicker].token.transfer(msg.sender, n);
+        depositerBalances[msg.sender][_ticker] -= n;
+
     }
 
     function withdraw(address _depositer, uint _amount, bytes32 _ticker) external {
