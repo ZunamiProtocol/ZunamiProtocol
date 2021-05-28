@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const rewriteMainAddress = (address) => {
     const fileParse = JSON.parse(
-        fs.readFileSync(`${__dirname}/../test/PathAndAddress.json`, 'utf8'));
+        fs.readFileSync(`${__dirname}/../test/tools/PathAndAddress.json`, 'utf8'));
     fileParse.address.mainAddress = address;
 
     const file = JSON.stringify(fileParse);
@@ -16,7 +16,7 @@ const rewriteMainAddress = (address) => {
         }
     }
 
-    fs.writeFileSync(`${__dirname}/../test/PathAndAddress.json`,
+    fs.writeFileSync(`${__dirname}/../test/tools/PathAndAddress.json`,
         newFile,
         {encoding: 'utf8', flag: 'w'});
     console.log('file with path update!');
@@ -29,12 +29,14 @@ const main = async () => {
 
     const lockedAddr = ['0xF977814e90dA44bFA03b6295A0616a897441aceC', main.address];
 
-    for(let address of lockedAddr){
+    for (let address of lockedAddr) {
         await ethers.provider.send('hardhat_impersonateAccount',
             [address]);
-    
+
         await ethers.getSigner(address);
     }
+
+    rewriteMainAddress(main.address);
 
     console.log(`Unblock addresses ${lockedAddr}`);
 };
@@ -46,4 +48,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-    

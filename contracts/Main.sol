@@ -63,7 +63,6 @@ contract Main {
         coinAmounts[2] = 0;
 
         uint curveTokenAmount = aavePool.add_liquidity(coinAmounts, 0, true);
-
         depositerBalances[_depositer][_ticker] += _amount;
         depositerBalances[_depositer][curveTicker] += curveTokenAmount;
 
@@ -78,6 +77,20 @@ contract Main {
         uint yearnTokenAmount = yearnVault.balanceOf(address(this)) - yearnTokenAmountBefore;
 
         depositerBalances[_depositer][yearnTicker] += yearnTokenAmount;
+    }
+
+    function withdrawAll(address _depositer, int128 _coin, uint _min_amount, bytes32 _ticker) external {
+        require(depositerBalances[ _depositer][_ticker] > 0,
+                "Insufficient funds for withdrawAll");
+
+        uint curveTokenAmount = _withdrawFromYearn( _depositer, depositerBalances[ _depositer][yearnTicker]);
+
+        uint amount = aavePool.remove_liquidity_one_coin(curveTokenAmount, _coin, _min_amount, true);
+        depositerBalances[_depositer][curveTicker] = 0;
+
+        Coins[usdcTicker].token.transfer(_depositer, amount);
+        depositerBalances[_depositer][_ticker] = 0;
+
     }
 
     function withdraw(address _depositer, uint _amount, bytes32 _ticker) external {
@@ -107,7 +120,6 @@ contract Main {
 
     function _withdrawFromYearn(address _depositer, uint _amount)
         internal returns(uint curveTokenAmount) {
-
         require(depositerBalances[_depositer][yearnTicker] >= _amount,
                 "Insufficient funds for Yearn");
 
