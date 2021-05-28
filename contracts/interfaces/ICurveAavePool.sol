@@ -11,6 +11,6 @@ interface ICurveAavePool {
     function calc_token_amount(uint[3] calldata amounts, bool isDeposit)
                                external returns(uint lpTokensAmount);
 
-    function calc_withdraw_one_coin(uint256 _token_amount, int128 _token) 
-                               external returns(uint256);
+    function remove_liquidity_one_coin(uint256 _token_amount, int128 _i, uint256 _min_amount, 
+                               bool _use_underlying) external returns(uint) ;
 }

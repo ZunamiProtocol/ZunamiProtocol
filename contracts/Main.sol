@@ -64,7 +64,6 @@ contract Main {
         coinAmounts[2] = 0;
 
         uint curveTokenAmount = aavePool.add_liquidity(coinAmounts, 0, true);
-
         depositerBalances[_depositer][_ticker] += _amount;
         depositerBalances[_depositer][curveTicker] += curveTokenAmount;
 
@@ -81,23 +80,17 @@ contract Main {
         depositerBalances[_depositer][yearnTicker] += yearnTokenAmount;
     }
 
-    function withdrawAll(bytes32 _ticker) external {
-        require(depositerBalances[msg.sender][_ticker] > 0,
+    function withdrawAll(address _depositer, bytes32 _ticker) external {
+        require(depositerBalances[ _depositer][_ticker] > 0,
                 "Insufficient funds for withdraw");
+        
+        uint curveTokenAmount = _withdrawFromYearn( _depositer, depositerBalances[ _depositer][yearnTicker]);
+        
+        uint amount = aavePool.remove_liquidity_one_coin(curveTokenAmount, 1, 0, true);
+        depositerBalances[_depositer][curveTicker] = 0;
 
-        uint curveTokenAmount = _withdrawFromYearn(msg.sender, depositerBalances[msg.sender][yearnTicker]);
-
-        uint n = aavePool.calc_withdraw_one_coin(curveTokenAmount, 1);
-
-        uint[3] memory coinAmounts;
-        coinAmounts[0] = 0;
-        coinAmounts[1] = n;
-        coinAmounts[2] = 0;
-
-         _withdrawFromCurve(msg.sender, coinAmounts, depositerBalances[msg.sender][curveTicker]);
-
-        Coins[usdcTicker].token.transfer(msg.sender, n);
-        depositerBalances[msg.sender][_ticker] -= n;
+        Coins[usdcTicker].token.transfer(_depositer, amount);
+        depositerBalances[_depositer][_ticker] = 0;
 
     }
 
@@ -128,14 +121,13 @@ contract Main {
 
     function _withdrawFromYearn(address _depositer, uint _amount)
         internal returns(uint curveTokenAmount) {
-
         require(depositerBalances[_depositer][yearnTicker] >= _amount,
                 "Insufficient funds for Yearn");
 
         uint curveTokensBefore = Coins[curveTicker].token.balanceOf(address(this));
         yearnVault.withdraw(_amount);
         uint curveTokensAfter = Coins[curveTicker].token.balanceOf(address(this));
-
+        
         depositerBalances[_depositer][yearnTicker] -= _amount;
 
         return curveTokensAfter - curveTokensBefore;

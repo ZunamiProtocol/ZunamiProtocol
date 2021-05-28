@@ -5,20 +5,22 @@ const pathAndAddress = require('./PathAndAddress.json');
 const Web3 = new web3('http://localhost:8545');
 
 const Contract = {
-    'yearn': new Web3.eth.Contract(require(pathAndAddress.path.YearnAbi),
-        pathAndAddress.address.YearnAddressAave),
-    'usdc': new Web3.eth.Contract(require(pathAndAddress.path.stabeTokrnAbi),
+    'dai': new Web3.eth.Contract(require(pathAndAddress.path.StableTokenAbi),
+        pathAndAddress.address.DaiAddress),
+    'usdc': new Web3.eth.Contract(require(pathAndAddress.path.StableTokenAbi),
         pathAndAddress.address.UsdcAddress),
+    'usdt': new Web3.eth.Contract(require(pathAndAddress.path.StableTokenAbi),
+        pathAndAddress.address.UsdtAddress),
     'main': new Web3.eth.Contract(require(pathAndAddress.path.mainAbi).abi,
         pathAndAddress.address.mainAddress),
 };
 
 const Ticker = {
     'usdc': Web3.utils.fromAscii('usdc'),
-    'aave': Web3.utils.fromAscii('a3CRV'),
+    'curve': Web3.utils.fromAscii('a3CRV'),
+    'yearn': Web3.utils.fromAscii('saCRV'),
     'SucdPool': Web3.utils.fromAscii('crvPlain3andSUSD'),
     'DusdPool': Web3.utils.fromAscii('dusd3CRV'),
-    'yearn': Web3.utils.fromAscii('saCRV'),
     'Invalid_Ticker': Web3.utils.fromAscii('Invalid_Ticker'),
 };
 
