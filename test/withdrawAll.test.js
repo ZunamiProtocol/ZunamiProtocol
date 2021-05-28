@@ -10,8 +10,7 @@ describe('successfully withdraw all deposit usdc', () => {
     const amount = 2e6;
 
     it('successfully withdraw a deposit', async () => {
-        const balanceUsdcBefore = Number(await Contract.usdc.methods
-            .balanceOf(address.holderUsdc).call());
+        const balanceUsdcBefore = Number(await usdc.balanceOf(address.holderUsdc).call());
 
         await usdc.approve(Contract.main._address, amount).send({from: address.holderUsdc});
 

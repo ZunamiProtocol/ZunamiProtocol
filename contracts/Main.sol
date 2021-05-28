@@ -28,7 +28,6 @@ contract Main {
         IERC20 token;
     }
 
-    uint x = 10;
     mapping(bytes32 => Token) public Coins;
     mapping(address => mapping(bytes32 => uint)) public depositerBalances;
 
