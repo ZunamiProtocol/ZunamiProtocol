@@ -2,6 +2,8 @@ const {ethers} = require('hardhat');
 
 const fs = require('fs');
 
+const unblockAddress = require('../test/tools/PathAndAddress.json').address;
+
 const rewriteMainAddress = (address) => {
     const fileParse = JSON.parse(
         fs.readFileSync(`${__dirname}/../test/tools/PathAndAddress.json`, 'utf8'));
@@ -27,7 +29,7 @@ const main = async () => {
     const main = await Main.deploy();
     await main.deployed();
 
-    const lockedAddr = ['0xF977814e90dA44bFA03b6295A0616a897441aceC', main.address];
+    const lockedAddr = [unblockAddress.holderUsdc, main.address];
 
     for (let address of lockedAddr) {
         await ethers.provider.send('hardhat_impersonateAccount',
