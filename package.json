@@ -4,7 +4,9 @@
   "description": "",
   "scripts": {
     "commitMajor": "git cz && standard-version --release-as major && node gitPush.js",
-    "commit": "git cz && standard-version && node gitPush.js"
+    "commit": "git cz && standard-version && node gitPush.js",
+    "fork": "npx hardhat node",
+    "test": "npx hardhat run --network localhost scripts/unblockAddress.js && node test/tools/startTestScript.js"
   },
   "config": {
     "commitizen": {
@@ -34,6 +36,7 @@
     "babel-eslint": "^10.1.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
+    "colors": "^1.4.0",
     "commitlint": "^12.1.1",
     "cz-customizable": "^6.3.0",
     "eslint": "^7.25.0",
