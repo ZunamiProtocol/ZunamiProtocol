@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.7](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.6...v0.2.7) (2021-06-02)
+
+
+### Performance Improvements
+
+* **product:** optimization of testing processes ([ae3b68e](https://github.com/ZunamiLab/ZunamiProtocol/commit/ae3b68e3b76684b5d743eecd59f48c79740dcb47))
+
 ### [0.2.6](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.5...v0.2.6) (2021-06-02)
 
 
