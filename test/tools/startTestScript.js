@@ -13,26 +13,25 @@ const readlineInterface = readline.createInterface({
 const getAllFilesForTest = fs.readdirSync(path.join(__dirname, '..'))
     .filter((item) => item.indexOf('test.js') !== -1);
 
-const askQuestion = () => {
-    return new Promise((resolve) =>
-        readlineInterface.question('Enter file number: '.green.italic,
-            (answer) => resolve(answer)));
+const askQuestion = (rl) => {
+    return new Promise((resolve) => rl.question('Enter file number: '.green.italic,
+        (answer) => resolve(answer)));
 };
 
-const runConsoleAndTest = async (fielsInDir) => {
+const runConsoleAndTest = async (filesInDir, rl) => {
     console.log('\n<=== Select file for test ===>'.cyan.italic);
 
-    for (let i = 0; i < fielsInDir.length; i++) {
-        console.log(`${i}: ${fielsInDir[i]}`.brightYellow);
+    for (let i = 0; i < filesInDir.length; i++) {
+        console.log(`${i}: ${filesInDir[i]}`.brightYellow);
     }
 
-    const numberFile = await askQuestion();
-    readlineInterface.close();
+    const numberOfFile = await askQuestion(readlineInterface);
+    rl.close();
 
-    if (numberFile === '') {
+    if (numberOfFile === '') {
         runTest('npx hardhat test');
     } else {
-        runTest('npx hardhat test ' + path.join(__dirname, `../${fielsInDir[numberFile]}`));
+        runTest('npx hardhat test ' + path.join(__dirname, `../${filesInDir[numberOfFile]}`));
     }
 };
 
@@ -40,8 +39,7 @@ const runTest = (command) => {
     console.log('\n<=== Waiting for test results... ===>'.yellow.italic.bold);
     exec(command, (error, stdout, stderr) => {
         if (error) {
-            console.log('\nSomething went wrong'.red.bold);
-            console.log(error);
+            throw error;
         }
         console.log(stdout);
         if (stderr) {
@@ -51,4 +49,4 @@ const runTest = (command) => {
     });
 };
 
-runConsoleAndTest(getAllFilesForTest);
+runConsoleAndTest(getAllFilesForTest, readlineInterface);
