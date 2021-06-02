@@ -10,7 +10,7 @@ const readlineInterface = readline.createInterface({
     output: process.stdout,
 });
 
-const getAllFileForTest = fs.readdirSync(path.join(__dirname, '..'))
+const getAllFilesForTest = fs.readdirSync(path.join(__dirname, '..'))
     .filter((item) => item.indexOf('test.js') !== -1);
 
 const askQuestion = () => {
@@ -51,4 +51,4 @@ const runTest = (command) => {
     });
 };
 
-runConsoleAndTest(getAllFileForTest);
+runConsoleAndTest(getAllFilesForTest);
