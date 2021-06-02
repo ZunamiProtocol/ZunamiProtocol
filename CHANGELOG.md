@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.8](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.7...v0.2.8) (2021-06-02)
+
+
+### Code Refactoring
+
+* **product:** change the variable name from getAllFileForTest to getAllFilesForTest ([14f223e](https://github.com/ZunamiLab/ZunamiProtocol/commit/14f223eed4d32a3fc44625ab8c1a9ad37b89d741))
+
 ### [0.2.7](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.6...v0.2.7) (2021-06-02)
 
 
