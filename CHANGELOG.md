@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.6](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.5...v0.2.6) (2021-06-02)
+
+
+### Code Refactoring
+
+* **product:** change the names of rejects to reject ([3affa48](https://github.com/ZunamiLab/ZunamiProtocol/commit/3affa488c1b916c19cd5e87bea8685438c4e6eb3))
+
 ### [0.2.5](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.4...v0.2.5) (2021-06-02)
 
 
