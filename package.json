@@ -3,7 +3,8 @@
   "version": "0.2.2",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "fork": "npx hardhat node",
+    "test": "npx hardhat run --network localhost scripts/unblockAddress.js && node test/tools/startTestScript.js"
   },
   "config": {
     "commitizen": {
@@ -33,6 +34,7 @@
     "babel-eslint": "^10.1.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
+    "colors": "^1.4.0",
     "commitlint": "^12.1.1",
     "cz-customizable": "^6.3.0",
     "eslint": "^7.25.0",
