@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.3...v0.2.4) (2021-06-02)
+
+
+### Performance Improvements
+
+* **product:** reinstalling packages ([62d9886](https://github.com/ZunamiLab/ZunamiProtocol/commit/62d988641171c6ef3a253c4e6d7854994c40d319))
+
+
+### Styling
+
+* **product:** add indentation to .versionrc.json ([17c6ba0](https://github.com/ZunamiLab/ZunamiProtocol/commit/17c6ba0e9b0820ebc81feab6704b484f3cf0963d))
+
+
+### Code Refactoring
+
+* **product:** changes in the logic of the gitPush.js script ([ef9abfa](https://github.com/ZunamiLab/ZunamiProtocol/commit/ef9abfa6f3fa8018c99bf90f777ed7a6b969195a))
+
 ### 0.2.3 (2021-06-01)
 
 
