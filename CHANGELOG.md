@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.9](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.8...v0.2.9) (2021-06-02)
+
+
+### Code Refactoring
+
+* **product:** improved readability of starTestScrtipt.js ([a1dc0d8](https://github.com/ZunamiLab/ZunamiProtocol/commit/a1dc0d8a765550af8e0105a3f932b5c9126333ec))
+
 ### [0.2.8](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.7...v0.2.8) (2021-06-02)
 
 
