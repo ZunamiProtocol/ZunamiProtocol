@@ -5,11 +5,6 @@ const path = require('path');
 
 require('colors');
 
-const readlineInterface = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
-
 const getAllFilesForTest = fs.readdirSync(path.join(__dirname, '..'))
     .filter((item) => item.indexOf('test.js') !== -1);
 
@@ -18,15 +13,20 @@ const askQuestion = (rl) => {
         (answer) => resolve(answer)));
 };
 
-const runConsoleAndTest = async (filesInDir, rl) => {
+const runConsoleAndTest = async (filesInDir) => {
     console.log('\n<=== Select file for test ===>'.cyan.italic);
 
     for (let i = 0; i < filesInDir.length; i++) {
         console.log(`${i}: ${filesInDir[i]}`.brightYellow);
     }
 
+    const readlineInterface = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
     const numberOfFile = await askQuestion(readlineInterface);
-    rl.close();
+    readlineInterface.close();
 
     if (numberOfFile === '') {
         runTest('npx hardhat test');
@@ -49,4 +49,4 @@ const runTest = (command) => {
     });
 };
 
-runConsoleAndTest(getAllFilesForTest, readlineInterface);
+runConsoleAndTest(getAllFilesForTest);
