@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.10](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.9...v0.2.10) (2021-06-03)
+
+
+### Code Refactoring
+
+* **product:** startTestScript, move the readline interface out of the global scope ([4b90806](https://github.com/ZunamiLab/ZunamiProtocol/commit/4b90806814fcec5553068e6ca11d85976f2f7287))
+
+### [0.2.9](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.8...v0.2.9) (2021-06-02)
+
+
+### Code Refactoring
+
+* **product:** improved readability of starTestScrtipt.js ([a1dc0d8](https://github.com/ZunamiLab/ZunamiProtocol/commit/a1dc0d8a765550af8e0105a3f932b5c9126333ec))
+
+### [0.2.8](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.7...v0.2.8) (2021-06-02)
+
+
+### Code Refactoring
+
+* **product:** change the variable name from getAllFileForTest to getAllFilesForTest ([14f223e](https://github.com/ZunamiLab/ZunamiProtocol/commit/14f223eed4d32a3fc44625ab8c1a9ad37b89d741))
+
+### [0.2.7](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.6...v0.2.7) (2021-06-02)
+
+
+### Performance Improvements
+
+* **product:** optimization of testing processes ([ae3b68e](https://github.com/ZunamiLab/ZunamiProtocol/commit/ae3b68e3b76684b5d743eecd59f48c79740dcb47))
+
 ### [0.2.6](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.5...v0.2.6) (2021-06-02)
 
 
