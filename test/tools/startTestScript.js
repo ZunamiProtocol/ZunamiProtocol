@@ -5,19 +5,16 @@ const path = require('path');
 
 require('colors');
 
-const getAllFilesForTest = fs.readdirSync(path.join(__dirname, '..'))
-    .filter((item) => item.indexOf('test.js') !== -1);
 
-const askQuestion = (rl) => {
-    return new Promise((resolve) => rl.question('Enter file number: '.green.italic,
-        (answer) => resolve(answer)));
-};
 
-const runConsoleAndTest = async (filesInDir) => {
+const runConsoleAndTest = async () => {
     console.log('\n<=== Select file for test ===>'.cyan.italic);
 
-    for (let i = 0; i < filesInDir.length; i++) {
-        console.log(`${i}: ${filesInDir[i]}`.brightYellow);
+    const getAllFilesForTest = fs.readdirSync(path.join(__dirname, '..'))
+        .filter((item) => item.indexOf('test.js') !== -1);
+
+    for (let i = 0; i < getAllFilesForTest.length; i++) {
+        console.log(`${i}: ${getAllFilesForTest[i]}`.brightYellow);
     }
 
     const readlineInterface = readline.createInterface({
@@ -31,8 +28,14 @@ const runConsoleAndTest = async (filesInDir) => {
     if (numberOfFile === '') {
         runTest('npx hardhat test');
     } else {
-        runTest('npx hardhat test ' + path.join(__dirname, `../${filesInDir[numberOfFile]}`));
+        runTest('npx hardhat test ' +
+            path.join(__dirname, `../${getAllFilesForTest[numberOfFile]}`));
     }
+};
+
+const askQuestion = (rl) => {
+    return new Promise((resolve) => rl.question('Enter file number: '.green.italic,
+        (answer) => resolve(answer)));
 };
 
 const runTest = (command) => {
@@ -49,4 +52,4 @@ const runTest = (command) => {
     });
 };
 
-runConsoleAndTest(getAllFilesForTest);
+runConsoleAndTest();
