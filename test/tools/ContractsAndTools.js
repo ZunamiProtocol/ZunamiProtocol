@@ -19,15 +19,16 @@ const Ticker = {
     'usdc': Web3.utils.fromAscii('usdc'),
     'curve': Web3.utils.fromAscii('a3CRV'),
     'yearn': Web3.utils.fromAscii('saCRV'),
-    'SucdPool': Web3.utils.fromAscii('crvPlain3andSUSD'),
+    'SusdPool': Web3.utils.fromAscii('crvPlain3andSUSD'),
     'DusdPool': Web3.utils.fromAscii('dusd3CRV'),
     'Invalid_Ticker': Web3.utils.fromAscii('Invalid_Ticker'),
 };
 
 const faucetEther = async () => {
     if (await Web3.eth.getBalance(Contract.main._address) === '0') {
+        const address = await Web3.eth.getAccounts();
         await Web3.eth.sendTransaction({
-            from: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
+            from: address[0],
             to: Contract.main._address,
             value: 10e18,
         });
