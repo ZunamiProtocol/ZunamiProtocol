@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.10](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.9...v0.2.10) (2021-06-03)
+
+
+### Code Refactoring
+
+* **product:** startTestScript, move the readline interface out of the global scope ([4b90806](https://github.com/ZunamiLab/ZunamiProtocol/commit/4b90806814fcec5553068e6ca11d85976f2f7287))
+
 ### [0.2.9](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.8...v0.2.9) (2021-06-02)
 
 
