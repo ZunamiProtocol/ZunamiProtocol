@@ -32,8 +32,8 @@ describe('Main withdraw tokens', () => {
         const balanceCurve = await main.depositerBalances(holderUSDC, Ticker.curve);
         const balanceYearn = await main.depositerBalances(holderUSDC, Ticker.yearn);
 
-        const getTenFractionOfPercent = (sum) => {
-            return sum * 0.001;
+        const getTenFractionOfPercent = (number) => {
+            return number * 0.001;
         };
 
         balanceUsdcAfter.should.to.be.within(balanceUsdcBefore - getTenFractionOfPercent(amount)
