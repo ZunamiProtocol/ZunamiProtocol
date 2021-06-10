@@ -8,7 +8,6 @@ describe('Main withdraw tokens', () => {
     let main;
     let usdc;
     let holderUSDC;
-    const amount = 10e6;
 
     beforeEach(async () => {
         const config = await setupTestMain();
@@ -18,6 +17,8 @@ describe('Main withdraw tokens', () => {
     });
 
     it('successfully withdraw a deposit', async () => {
+        const amount = 10e6;
+
         await usdc.approve(main.address, amount);
 
         const balanceUsdcBefore = await usdc.balanceOf(holderUSDC);
@@ -27,15 +28,19 @@ describe('Main withdraw tokens', () => {
         await main.withdrawAll(holderUSDC, 1, 0, Ticker.usdc);
 
         const balanceUsdcAfter = await usdc.balanceOf(holderUSDC);
-        const balansUsdc = await main.depositerBalances(holderUSDC, Ticker.usdc);
-        const balansCurve = await main.depositerBalances(holderUSDC, Ticker.curve);
-        const balansYearn = await main.depositerBalances(holderUSDC, Ticker.yearn);
+        const balanceUsdc = await main.depositerBalances(holderUSDC, Ticker.usdc);
+        const balanceCurve = await main.depositerBalances(holderUSDC, Ticker.curve);
+        const balanceYearn = await main.depositerBalances(holderUSDC, Ticker.yearn);
 
-        balanceUsdcAfter.should.to.be.within(balanceUsdcBefore - ((amount * 0.1) / 100)
+        const getTenFractionOfPercent = (sum) => {
+            return sum * 0.001;
+        };
+
+        balanceUsdcAfter.should.to.be.within(balanceUsdcBefore - getTenFractionOfPercent(amount)
             , balanceUsdcBefore);
-        balansUsdc.should.equal('0');
-        balansCurve.should.equal('0');
-        balansYearn.should.equal('0');
+        balanceUsdc.should.equal('0');
+        balanceCurve.should.equal('0');
+        balanceYearn.should.equal('0');
     });
 
     it('withdraw a deposit with a zero balance', async () => {
