@@ -1,42 +1,50 @@
-require('chai').use(require('chai-as-promised')).should();
+const chai = require('chai');
+const {solidity} = require('ethereum-waffle');
+chai.use(solidity).use(require('chai-as-promised')).should();
 
-const address = require('./tools/PathAndAddress.json').address;
-const {Contract, Ticker, faucetEther}= require('./tools/ContractsAndTools.js');
+const {setupTestMain, Ticker} = require('./tools/tools');
 
-const main = Contract.main.methods;
-const usdc = Contract.usdc.methods;
+describe('Main withdraw tokens', () => {
+    let main;
+    let usdc;
+    let holderUSDC;
 
-describe('successfully withdraw all deposit usdc', () => {
-    const amount = 2e6;
+    beforeEach(async () => {
+        const config = await setupTestMain();
+        main = config.main;
+        usdc = config.usdc;
+        holderUSDC = config.holderUSDC;
+    });
 
     it('successfully withdraw a deposit', async () => {
-        const balanceUsdcBefore = Number(await usdc.balanceOf(address.holderUsdc).call());
+        const amount = 10e6;
 
-        await usdc.approve(Contract.main._address, amount).send({from: address.holderUsdc});
+        await usdc.approve(main.address, amount);
 
-        await main.deposit(address.holderUsdc,
-            amount, Ticker.usdc).send({from: address.holderUsdc, gas: '1500000'});
+        const balanceUsdcBefore = await usdc.balanceOf(holderUSDC);
 
-        await main.withdrawAll(address.holderUsdc, 1, 0, Ticker.usdc)
-            .send({from: address.holderUsdc, gas: '1500000'});
+        await main.deposit(holderUSDC, amount, Ticker.usdc);
 
-        const balanceUsdcAfter = Number(await usdc.balanceOf(address.holderUsdc).call());
-        const balansUsdc = await main.depositerBalances(address.holderUsdc, Ticker.usdc).call();
-        const balansCurve = await main.depositerBalances(address.holderUsdc, Ticker.curve).call();
-        const balansYearn = await main.depositerBalances(address.holderUsdc, Ticker.yearn).call();
+        await main.withdrawAll(holderUSDC, 1, 0, Ticker.usdc);
 
-        balanceUsdcAfter.should.to.be.within(balanceUsdcBefore - ((amount * 0.1) / 100)
+        const balanceUsdcAfter = await usdc.balanceOf(holderUSDC);
+        const balanceUsdc = await main.depositerBalances(holderUSDC, Ticker.usdc);
+        const balanceCurve = await main.depositerBalances(holderUSDC, Ticker.curve);
+        const balanceYearn = await main.depositerBalances(holderUSDC, Ticker.yearn);
+
+        const getTenFractionOfPercent = (number) => {
+            return number * 0.001;
+        };
+
+        balanceUsdcAfter.should.to.be.within(balanceUsdcBefore - getTenFractionOfPercent(amount)
             , balanceUsdcBefore);
-        balansUsdc.should.equal('0');
-        balansCurve.should.equal('0');
-        balansYearn.should.equal('0');
+        balanceUsdc.should.equal('0');
+        balanceCurve.should.equal('0');
+        balanceYearn.should.equal('0');
     });
-});
 
-describe('Error: withdraw all deposit usdc', () => {
     it('withdraw a deposit with a zero balance', async () => {
-        await main.withdrawAll(address.holderUsdc, 1, 0, Ticker.usdc)
-            .send({from: address.holderUsdc, gas: '1500000'})
+        await main.withdrawAll(holderUSDC, 1, 0, Ticker.usdc)
             .should.be.rejectedWith('Insufficient funds for withdrawAll');
     });
 });
