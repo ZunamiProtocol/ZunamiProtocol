@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import '../interfaces/ICurveAavePool.sol';
-import '../interfaces/IYearnVault.sol';
+import '../interfaces/IYearnAlusd.sol';
 
 import "hardhat/console.sol";
 
@@ -33,7 +33,7 @@ contract YearnStrategy {
     mapping(address => mapping(bytes32 => uint)) public depositerBalances;
 
     ICurveAavePool aavePool;
-    IYearnVault yearnVault;
+    IYearnAlusd yearnVault;
 
     constructor() {
         Coins[usdcTicker] = Token(usdcTicker, IERC20(usdcAddr));
@@ -41,7 +41,7 @@ contract YearnStrategy {
         Coins[yearnTicker] = Token(yearnTicker, IERC20(yearnTokenAddr));
 
         aavePool = ICurveAavePool(aavePoolAddr);
-        yearnVault = IYearnVault(yearnVaultAddr);
+        yearnVault = IYearnAlusd(yearnVaultAddr);
     }
 
     function deposit(address _depositer, uint _amount, bytes32 _ticker) external {
@@ -82,14 +82,14 @@ contract YearnStrategy {
         depositerBalances[_depositer][yearnTicker] += yearnTokenAmount;
     }
 
-    function withdrawAll(address _depositer, int128 _coin, uint _min_amount, bytes32 _ticker) external {
+    function withdrawAll(address _depositer, int128 _coin, uint _minAmount, bytes32 _ticker) external {
         require(depositerBalances[ _depositer][_ticker] > 0,
                 "Insufficient funds for withdrawAll");
 
         uint curveTokenAmount = _withdrawFromYearn({
              _depositer: _depositer, _amount: depositerBalances[ _depositer][yearnTicker]});
 
-        uint amount = aavePool.remove_liquidity_one_coin(curveTokenAmount, _coin, _min_amount, true);
+        uint amount = aavePool.remove_liquidity_one_coin(curveTokenAmount, _coin, _minAmount, true);
         depositerBalances[_depositer][curveTicker] = 0;
 
         Coins[usdcTicker].token.transfer(_depositer, amount);
@@ -97,7 +97,7 @@ contract YearnStrategy {
 
     }
 
-    function pickUpQuantityTokens(address _depositer, uint _amount, bytes32 _ticker) external {
+    function withdraw(address _depositer, uint _amount, bytes32 _ticker) external {
         require(depositerBalances[_depositer][_ticker] >= _amount,
                 "Insufficient funds for withdraw");
 

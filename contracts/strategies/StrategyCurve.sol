@@ -53,7 +53,7 @@ contract CurveStrategy {
         depositerBalances[_depositer][curveTicker] += curveTokenAmount;
     }
 
-     function pickUpQuantityTokens(address _depositer, uint _amount,
+     function withdraw(address _depositer, uint _amount,
          bytes32 _ticker) external {
          require(depositerBalances[_depositer][_ticker] >= _amount,
                 "Insufficient funds for withdraw");
@@ -75,14 +75,14 @@ contract CurveStrategy {
      }
 
 
-    function withdrawAll(address _depositer, int128 _coin, uint _min_amount,
+    function withdrawAll(address _depositer, int128 _coin, uint _minAmount,
         bytes32 _ticker) external {
         require(depositerBalances[ _depositer][_ticker] > 0,
             "Insufficient funds for withdrawAll");
 
         uint amount = aavePool.remove_liquidity_one_coin(
             depositerBalances[_depositer][curveTicker]
-            , _coin, _min_amount, true);
+            , _coin, _minAmount, true);
 
         depositerBalances[_depositer][curveTicker] = 0;
         Coins[usdcTicker].token.transfer(_depositer, amount);
