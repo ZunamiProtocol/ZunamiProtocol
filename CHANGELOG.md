@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.14](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.13...v0.2.14) (2021-06-15)
+
+
+### Code Refactoring
+
+* **product:** leave one strategy ([2273e39](https://github.com/ZunamiLab/ZunamiProtocol/commit/2273e39b38a395f194c548d2f188c11a2173e10e))
+
 ### [0.2.13](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.12...v0.2.13) (2021-06-15)
 
 
