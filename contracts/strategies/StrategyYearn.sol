@@ -1,15 +1,16 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import './interfaces/ICurveAavePool.sol';
-import './interfaces/IYearnVault.sol';
+import '../interfaces/ICurveAavePool.sol';
+import '../interfaces/IYearnVault.sol';
 
 import "hardhat/console.sol";
 
-contract Main {
+
+contract YearnStrategy {
     address constant internal usdcAddr = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     bytes32 constant internal usdcTicker = 'usdc';
     address constant internal curveTokenAddr = 0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900;
@@ -50,8 +51,10 @@ contract Main {
         Coins[usdcTicker].token.transferFrom(_depositer, address(this), _amount);
         Coins[usdcTicker].token.safeApprove(aavePoolAddr, _amount);
 
-        uint curveTokenAmount = _depositToCurve(_depositer, _amount, _ticker);
-        _depositToYearn(_depositer, curveTokenAmount);
+        uint curveTokenAmount = _depositToCurve({
+            _depositer: _depositer, _amount: _amount, _ticker: _ticker
+            });
+        _depositToYearn({_depositer: _depositer, _amount: curveTokenAmount});
     }
 
     function _depositToCurve(address _depositer, uint _amount, bytes32 _ticker)
@@ -83,7 +86,8 @@ contract Main {
         require(depositerBalances[ _depositer][_ticker] > 0,
                 "Insufficient funds for withdrawAll");
 
-        uint curveTokenAmount = _withdrawFromYearn( _depositer, depositerBalances[ _depositer][yearnTicker]);
+        uint curveTokenAmount = _withdrawFromYearn({
+             _depositer: _depositer, _amount: depositerBalances[ _depositer][yearnTicker]});
 
         uint amount = aavePool.remove_liquidity_one_coin(curveTokenAmount, _coin, _min_amount, true);
         depositerBalances[_depositer][curveTicker] = 0;
@@ -93,7 +97,7 @@ contract Main {
 
     }
 
-    function withdraw(address _depositer, uint _amount, bytes32 _ticker) external {
+    function pickUpQuantityTokens(address _depositer, uint _amount, bytes32 _ticker) external {
         require(depositerBalances[_depositer][_ticker] >= _amount,
                 "Insufficient funds for withdraw");
 
@@ -103,9 +107,13 @@ contract Main {
         coinAmounts[2] = 0;
 
         uint curveRequiredAmount = aavePool.calc_token_amount(coinAmounts, false);
-        uint curveTokenAmount = _withdrawFromYearn(_depositer, curveRequiredAmount);
+        uint curveTokenAmount = _withdrawFromYearn({
+            _depositer: _depositer, _amount: curveRequiredAmount
+            });
 
-        _withdrawFromCurve(_depositer, coinAmounts, curveTokenAmount);
+        _withdrawFromCurve({
+            _depositer: _depositer, _amount: coinAmounts, curveTokenAmount: curveTokenAmount
+            });
 
         Coins[usdcTicker].token.transfer(_depositer, _amount);
         depositerBalances[_depositer][_ticker] -= _amount;
@@ -131,4 +139,5 @@ contract Main {
 
         return curveTokensAfter - curveTokensBefore;
     }
+
 }
