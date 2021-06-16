@@ -1,6 +1,6 @@
 {
   "name": "ZunamiProtocol",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "scripts": {
     "commitMajor": "git cz && standard-version --release-as major && node gitPush.js",
