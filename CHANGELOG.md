@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.14...v1.0.0) (2021-06-16)
+
+
+### Code Refactoring
+
+* **product:** make inheritance, correct typos ([f0992ab](https://github.com/ZunamiLab/ZunamiProtocol/commit/f0992aba1d73eebc8fb8467ef038a2094b42d491))
+
+### [0.2.14](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.13...v0.2.14) (2021-06-15)
+
+
+### Code Refactoring
+
+* **product:** leave one strategy ([2273e39](https://github.com/ZunamiLab/ZunamiProtocol/commit/2273e39b38a395f194c548d2f188c11a2173e10e))
+
+### [0.2.13](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.12...v0.2.13) (2021-06-15)
+
+
+### Code Refactoring
+
+* **product:** code optimization ([792fc9a](https://github.com/ZunamiLab/ZunamiProtocol/commit/792fc9afb7fed1bd0d24ec8ff4c13aaef7944240))
+
 ### [0.2.12](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.11...v0.2.12) (2021-06-10)
 
 ### [0.2.11](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.10...v0.2.11) (2021-06-03)
