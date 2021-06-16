@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.0...v1.2.1) (2021-06-16)
+
+
+### Tests
+
+* **product:** add test for all strategy ([a4066d2](https://github.com/ZunamiLab/ZunamiProtocol/commit/a4066d2a3313d100ab8d26282b8ceecb7f859dc9))
+
 ## [1.2.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.1.0...v1.2.0) (2021-06-16)
 
 ## [1.1.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.0.0...v1.1.0) (2021-06-16)
