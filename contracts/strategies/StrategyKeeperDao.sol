@@ -3,7 +3,7 @@ pragma solidity 0.8.0;
 
 import '../interfaces/IStrategy.sol';
 
-contract KeeperDaoStrategy is IStrategy {
+contract StrategyKeeperDao is IStrategy {
 
     function deposit(address _depositer, uint _amount, bytes32 _ticker) external override {
 
