@@ -6,11 +6,11 @@ interface ICurveAavePool {
                            bool _useUnderlying) external returns(uint lpTokenAmount);
 
     function remove_liquidity_imbalance(uint256[3] calldata _amounts, uint256 _maxBurnAmount,
-                                        bool _useUnderlying) external returns(uint tokenAmount);
+                                        bool _useUnderlying) external returns(uint lpTokenBurnedAmount);
 
     function calc_token_amount(uint[3] calldata _amounts, bool _isDeposit)
-                               external returns(uint tokenAmount);
+                               external returns(uint expectedAmountOfLpTokens);
 
     function remove_liquidity_one_coin(uint256 _amounts, int128 _numberOfCoin, uint256 _minAmount,
-                               bool _useUnderlying) external returns(uint tokenAmount) ;
+                               bool _useUnderlying) external returns(uint stableTokenAmount) ;
 }
