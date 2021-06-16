@@ -11,15 +11,34 @@ exports.Ticker = {
     'Invalid_Ticker': ethers.utils.formatBytes32String('Invalid_Ticker'),
 };
 
-exports.setupTestMain = deployments.createFixture(
+exports.setupTestAllStrategy = deployments.createFixture(
     async ({deployments, getNamedAccounts, ethers}) => {
-        await deployments.fixture('main');
+        await deployments.fixture('strategy');
         const {USDC, holderUSDC} = await getNamedAccounts();
 
-        const Main = await deployments.get('Main');
-        const main = await ethers.getContractAt('Main', Main.address, holderUSDC);
+        const StrategyCurveAave = await deployments.get('StrategyCurveAave');
+        const StrategyKeeperDao = await deployments.get('StrategyKeeperDao');
+        const StrategyMStable = await deployments.get('StrategyMStable');
+        const StrategyYearnAlusd = await deployments.get('StrategyYearnAlusd');
+
+        const sCurveAave = await ethers.getContractAt(
+            'StrategyCurveAave', StrategyCurveAave.address, holderUSDC);
+        const sKeeperDao = await ethers.getContractAt(
+            'StrategyKeeperDao', StrategyKeeperDao.address, holderUSDC);
+        const sMStable = await ethers.getContractAt(
+            'StrategyMStable', StrategyMStable.address, holderUSDC);
+        const sYearnAlusd = await ethers.getContractAt(
+            'StrategyYearnAlusd', StrategyYearnAlusd.address, holderUSDC);
+
         const usdc = await ethers.getContractAt('MockERC20', USDC, holderUSDC);
 
-        return {holderUSDC, main, usdc};
+        return {
+            holderUSDC,
+            sCurveAave,
+            sKeeperDao,
+            sMStable,
+            sYearnAlusd,
+            usdc,
+        };
     }
 );
