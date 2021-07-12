@@ -4,7 +4,6 @@ chai.use(solidity).use(require('chai-as-promised')).should();
 
 const {setupTestAllStrategy, Ticker} = require('./tools/tools');
 
-
 describe('StrategyCurveAave test', () => {
     let sCurveAave;
     let usdc;
