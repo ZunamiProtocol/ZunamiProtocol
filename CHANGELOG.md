@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.3](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.2...v1.2.3) (2021-07-12)
+
+
+### Code Refactoring
+
+* **product:** изменить имя обьекта Constant на Constants ([9f5bcd8](https://github.com/ZunamiLab/ZunamiProtocol/commit/9f5bcd8e120841d3cbf05d74aa6f55b883187bd9))
+
 ### [1.2.2](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.1...v1.2.2) (2021-07-12)
 
 
