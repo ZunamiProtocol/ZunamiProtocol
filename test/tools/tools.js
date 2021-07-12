@@ -17,16 +17,10 @@ exports.setupTestAllStrategy = deployments.createFixture(
         const {USDC, holderUSDC} = await getNamedAccounts();
 
         const StrategyCurveAave = await deployments.get('StrategyCurveAave');
-        const StrategyKeeperDao = await deployments.get('StrategyKeeperDao');
-        const StrategyMStable = await deployments.get('StrategyMStable');
         const StrategyYearnAlusd = await deployments.get('StrategyYearnAlusd');
 
         const sCurveAave = await ethers.getContractAt(
             'StrategyCurveAave', StrategyCurveAave.address, holderUSDC);
-        const sKeeperDao = await ethers.getContractAt(
-            'StrategyKeeperDao', StrategyKeeperDao.address, holderUSDC);
-        const sMStable = await ethers.getContractAt(
-            'StrategyMStable', StrategyMStable.address, holderUSDC);
         const sYearnAlusd = await ethers.getContractAt(
             'StrategyYearnAlusd', StrategyYearnAlusd.address, holderUSDC);
 
@@ -35,8 +29,6 @@ exports.setupTestAllStrategy = deployments.createFixture(
         return {
             holderUSDC,
             sCurveAave,
-            sKeeperDao,
-            sMStable,
             sYearnAlusd,
             usdc,
         };

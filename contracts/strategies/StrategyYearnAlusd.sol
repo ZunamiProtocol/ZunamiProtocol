@@ -4,24 +4,15 @@ pragma solidity 0.8.0;
 import {IERC20 as OzIERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20 as OzSafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import {AddressAndTickers as Constants} from '../helpers/AddressAndTickers.sol';
+
 import '../interfaces/IStrategy.sol';
 import '../interfaces/ICurveAavePool.sol';
 import '../interfaces/IYearnAlusd.sol';
 
 import "hardhat/console.sol";
 
-
 contract StrategyYearnAlusd is IStrategy {
-    address constant internal usdcAddr = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    bytes32 constant internal usdcTicker = 'usdc';
-    address constant internal curveTokenAddr = 0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900;
-    bytes32 constant internal curveTicker = 'a3CRV';
-    address constant internal yearnTokenAddr = 0x02d341CcB60fAaf662bC0554d13778015d1b285C;
-    bytes32 constant internal yearnTicker = 'saCRV';
-
-    address constant internal aavePoolAddr = 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE;
-    address constant internal yearnVaultAddr = 0x03403154afc09Ce8e44C3B185C82C6aD5f86b9ab;
-
 
     using OzSafeERC20 for OzIERC20;
 
@@ -37,20 +28,20 @@ contract StrategyYearnAlusd is IStrategy {
     IYearnAlusd yearnVault;
 
     constructor() {
-        Coins[usdcTicker] = Token(usdcTicker, OzIERC20(usdcAddr));
-        Coins[curveTicker] = Token(curveTicker, OzIERC20(curveTokenAddr));
-        Coins[yearnTicker] = Token(yearnTicker, OzIERC20(yearnTokenAddr));
+        Coins[Constants.USDC_TICKER] = Token(Constants.USDC_TICKER, OzIERC20(Constants.USDC_ADDRESS));
+        Coins[Constants.CURVE_TICKER] = Token(Constants.CURVE_TICKER, OzIERC20(Constants.CURVE_TOKEN_ADDRESS));
+        Coins[Constants.YEARN_TICKER] = Token(Constants.YEARN_TICKER, OzIERC20(Constants.YEARN_TOKEN_ADDRESS));
 
-        aavePool = ICurveAavePool(aavePoolAddr);
-        yearnVault = IYearnAlusd(yearnVaultAddr);
+        aavePool = ICurveAavePool(Constants.CURVE_AAVE_ADDRESS);
+        yearnVault = IYearnAlusd(Constants.YEARN_VAULT_ADDRESS);
     }
 
     function deposit(address _depositer, uint _amount, bytes32 _ticker) external override {
-        require(Coins[usdcTicker].token.balanceOf(_depositer) >= _amount,
+        require(Coins[Constants.USDC_TICKER].token.balanceOf(_depositer) >= _amount,
                 'Insufficent balance of the depositer');
 
-        Coins[usdcTicker].token.transferFrom(_depositer, address(this), _amount);
-        Coins[usdcTicker].token.safeApprove(aavePoolAddr, _amount);
+        Coins[Constants.USDC_TICKER].token.transferFrom(_depositer, address(this), _amount);
+        Coins[Constants.USDC_TICKER].token.safeApprove(Constants.CURVE_AAVE_ADDRESS, _amount);
 
         uint curveTokenAmount = _depositToCurve({
             _depositer: _depositer, _amount: _amount, _ticker: _ticker
@@ -68,19 +59,19 @@ contract StrategyYearnAlusd is IStrategy {
 
         uint curveTokenAmount = aavePool.add_liquidity(coinAmounts, 0, true);
         depositerBalances[_depositer][_ticker] += _amount;
-        depositerBalances[_depositer][curveTicker] += curveTokenAmount;
+        depositerBalances[_depositer][Constants.CURVE_TICKER] += curveTokenAmount;
 
         return curveTokenAmount;
     }
 
     function _depositToYearn(address _depositer, uint _amount) internal {
-        Coins[curveTicker].token.safeApprove(yearnVaultAddr, _amount);
+        Coins[Constants.CURVE_TICKER].token.safeApprove(Constants.YEARN_VAULT_ADDRESS, _amount);
 
         uint yearnTokenAmountBefore = yearnVault.balanceOf(address(this));
         yearnVault.deposit(_amount);
         uint yearnTokenAmount = yearnVault.balanceOf(address(this)) - yearnTokenAmountBefore;
 
-        depositerBalances[_depositer][yearnTicker] += yearnTokenAmount;
+        depositerBalances[_depositer][Constants.YEARN_TICKER] += yearnTokenAmount;
     }
 
     function withdrawAll(address _depositer, int128 _coin, uint _minAmount,
@@ -89,12 +80,12 @@ contract StrategyYearnAlusd is IStrategy {
                 "Insufficient funds for withdrawAll");
 
         uint curveTokenAmount = _withdrawFromYearn({
-             _depositer: _depositer, _amount: depositerBalances[ _depositer][yearnTicker]});
+             _depositer: _depositer, _amount: depositerBalances[ _depositer][Constants.YEARN_TICKER]});
 
         uint amount = aavePool.remove_liquidity_one_coin(curveTokenAmount, _coin, _minAmount, true);
-        depositerBalances[_depositer][curveTicker] = 0;
+        depositerBalances[_depositer][Constants.CURVE_TICKER] = 0;
 
-        Coins[usdcTicker].token.transfer(_depositer, amount);
+        Coins[Constants.USDC_TICKER].token.transfer(_depositer, amount);
         depositerBalances[_depositer][_ticker] = 0;
 
     }
@@ -117,7 +108,7 @@ contract StrategyYearnAlusd is IStrategy {
             _depositer: _depositer, _amount: coinAmounts, curveTokenAmount: curveTokenAmount
             });
 
-        Coins[usdcTicker].token.transfer(_depositer, _amount);
+        Coins[Constants.USDC_TICKER].token.transfer(_depositer, _amount);
         depositerBalances[_depositer][_ticker] -= _amount;
     }
 
@@ -125,19 +116,19 @@ contract StrategyYearnAlusd is IStrategy {
         internal {
 
         aavePool.remove_liquidity_imbalance(_amount, curveTokenAmount, true);
-        depositerBalances[_depositer][curveTicker] -= curveTokenAmount;
+        depositerBalances[_depositer][Constants.CURVE_TICKER] -= curveTokenAmount;
     }
 
     function _withdrawFromYearn(address _depositer, uint _amount)
         internal returns(uint curveTokenAmount) {
-        require(depositerBalances[_depositer][yearnTicker] >= _amount,
+        require(depositerBalances[_depositer][Constants.YEARN_TICKER] >= _amount,
                 "Insufficient funds for Yearn");
 
-        uint curveTokensBefore = Coins[curveTicker].token.balanceOf(address(this));
+        uint curveTokensBefore = Coins[Constants.CURVE_TICKER].token.balanceOf(address(this));
         yearnVault.withdraw(_amount);
-        uint curveTokensAfter = Coins[curveTicker].token.balanceOf(address(this));
+        uint curveTokensAfter = Coins[Constants.CURVE_TICKER].token.balanceOf(address(this));
 
-        depositerBalances[_depositer][yearnTicker] -= _amount;
+        depositerBalances[_depositer][Constants.YEARN_TICKER] -= _amount;
 
         return curveTokensAfter - curveTokensBefore;
     }
