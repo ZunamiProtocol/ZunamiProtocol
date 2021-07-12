@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 import {IERC20 as OzIERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20 as OzSafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {AddressAndTickers as Constant} from '../helpers/AddressAndTickers.sol';
+import {AddressAndTickers as Constants} from '../helpers/AddressAndTickers.sol';
 
 import '../interfaces/IStrategy.sol';
 import '../interfaces/ICurveAavePool.sol';
@@ -26,17 +26,17 @@ contract StrategyCurveAave is IStrategy {
     ICurveAavePool aavePool;
 
     constructor() {
-        Coins[Constant.USDC_TICKER] = Token(Constant.USDC_TICKER, OzIERC20(Constant.USDC_ADDRESS));
-        Coins[Constant.CURVE_TICKER] = Token(Constant.CURVE_TICKER, OzIERC20(Constant.CURVE_TOKEN_ADDRESS));
+        Coins[Constants.USDC_TICKER] = Token(Constants.USDC_TICKER, OzIERC20(Constants.USDC_ADDRESS));
+        Coins[Constants.CURVE_TICKER] = Token(Constants.CURVE_TICKER, OzIERC20(Constants.CURVE_TOKEN_ADDRESS));
 
-        aavePool = ICurveAavePool(Constant.CURVE_AAVE_ADDRESS);
+        aavePool = ICurveAavePool(Constants.CURVE_AAVE_ADDRESS);
     }
 
     function deposit(address _depositer, uint _amount, bytes32 _ticker) external override {
-        require(Coins[Constant.USDC_TICKER].token.balanceOf(_depositer) >= _amount,
+        require(Coins[Constants.USDC_TICKER].token.balanceOf(_depositer) >= _amount,
                 'Insufficent balance of the depositer');
 
-        Coins[Constant.USDC_TICKER].token.safeApprove(Constant.CURVE_AAVE_ADDRESS, _amount);
+        Coins[Constants.USDC_TICKER].token.safeApprove(Constants.CURVE_AAVE_ADDRESS, _amount);
 
         uint[3] memory coinAmounts;
         coinAmounts[0] = 0;
@@ -45,7 +45,7 @@ contract StrategyCurveAave is IStrategy {
 
         uint curveTokenAmount = aavePool.add_liquidity(coinAmounts, 0, true);
         depositerBalances[_depositer][_ticker] += _amount;
-        depositerBalances[_depositer][Constant.CURVE_TICKER] += curveTokenAmount;
+        depositerBalances[_depositer][Constants.CURVE_TICKER] += curveTokenAmount;
     }
 
      function withdraw(address _depositer, uint _amount,
@@ -63,9 +63,9 @@ contract StrategyCurveAave is IStrategy {
         uint curveTokenAmount = aavePool.
             remove_liquidity_imbalance(coinAmounts, curveRequiredAmount, true);
 
-        depositerBalances[_depositer][Constant.CURVE_TICKER] -= curveTokenAmount;
+        depositerBalances[_depositer][Constants.CURVE_TICKER] -= curveTokenAmount;
 
-        Coins[Constant.USDC_TICKER].token.transfer(_depositer, _amount);
+        Coins[Constants.USDC_TICKER].token.transfer(_depositer, _amount);
         depositerBalances[_depositer][_ticker] -= _amount;
      }
 
@@ -76,11 +76,11 @@ contract StrategyCurveAave is IStrategy {
             "Insufficient funds for withdrawAll");
 
         uint amount = aavePool.remove_liquidity_one_coin(
-            depositerBalances[_depositer][Constant.CURVE_TICKER]
+            depositerBalances[_depositer][Constants.CURVE_TICKER]
             , _coin, _minAmount, true);
 
-        depositerBalances[_depositer][Constant.CURVE_TICKER] = 0;
-        Coins[Constant.USDC_TICKER].token.transfer(_depositer, amount);
+        depositerBalances[_depositer][Constants.CURVE_TICKER] = 0;
+        Coins[Constants.USDC_TICKER].token.transfer(_depositer, amount);
         depositerBalances[_depositer][_ticker] = 0;
     }
 
