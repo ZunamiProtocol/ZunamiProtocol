@@ -20,4 +20,3 @@ contract Controller is IController {
         return address(0);
     }
 }
-
