@@ -6,7 +6,14 @@
     "commitMajor": "git cz && standard-version --release-as major && node gitPush.js",
     "commit": "git cz && standard-version && node gitPush.js",
     "fork": "npx hardhat node",
-    "test": "npx hardhat run --network localhost scripts/unblockAddress.js && node test/tools/startTestScript.js"
+    "test": "npx hardhat run --network localhost scripts/unblockAddress.js && node test/tools/startTestScript.js",
+    "tests": "npx hardhat test",
+    "build": "hardhat compile",
+    "console": "hardhat console",
+    "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
+    "format": "yarn prettier --write contracts/*.sol && yarn prettier --write test/*.js",
+    "hint": "solhint \"contracts/**/*.sol\"",
+    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
   },
   "config": {
     "commitizen": {
@@ -32,7 +39,7 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^4.1.0",
+    "@openzeppelin/contracts": "^4.2.0",
     "babel-eslint": "^10.1.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
