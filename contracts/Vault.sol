@@ -1,42 +1,39 @@
-pragma solidity ^0.5.17;
+pragma solidity ^0.8.0;
 
-import "@openzeppelinV2/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelinV2/contracts/math/SafeMath.sol";
-import "@openzeppelinV2/contracts/utils/Address.sol";
-import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelinV2/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelinV2/contracts/token/ERC20/ERC20Detailed.sol";
-import "@openzeppelinV2/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-
-contract yVault is ERC20, ERC20Detailed {
+contract zunamiVault is ERC20 {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
     IERC20 public token;
 
+    // for now it is going to be the address that deploys this contract but in the future it has to be a DAO
+    address public owner;
+
     constructor(address _token)
-        public
-        ERC20Detailed(
-            string(abi.encodePacked("zunami ", ERC20Detailed(_token).name())),
-            string(abi.encodePacked("zun", ERC20Detailed(_token).symbol())),
-            ERC20Detailed(_token).decimals()
+        ERC20(
+            string(abi.encodePacked("zunami", ERC20(_token).name())),
+            string(abi.encodePacked("zun", ERC20(_token).symbol()))
         )
     {
         token = IERC20(_token);
-        
+        owner = msg.sender;
     }
 
     function balance() public view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
-
     // Custom logic in here for how much the vault allows to be borrowed
     // Sets minimum required on-hand to keep small withdrawals cheap
     function available() public view returns (uint256) {
-        return token.balanceOf(address(this)).mul(min).div(max);
+        return token.balanceOf(address(this));
     }
 
     function depositAll() external {
