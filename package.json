@@ -55,5 +55,7 @@
     "solidity-coverage": "^0.7.16",
     "standard-version": "^9.3.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "human-standard-token-abi": "^2.0.0"
+  }
 }
