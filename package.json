@@ -10,7 +10,10 @@
     "fork": "npx hardhat node",
     "test": "node test/tools/startTestScript.js",
     "test:coverage": "npx hardhat coverage  --testfiles 'test/*.js'",
-    "test:verbose": "hardhat test --verbose test/*.js"
+    "test:verbose": "hardhat test --verbose test/*.js",
+    "deploy:matic": "hardhat deploy --network matic --tags ZunamiContracts --gasprice 1000000000",
+    "deploy:polygon": "hardhat deploy --network polygon --tags ZunamiContracts --gasprice 1000000000"
+
   },
   "config": {
     "commitizen": {
@@ -55,5 +58,7 @@
     "solidity-coverage": "^0.7.16",
     "standard-version": "^9.3.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "dotenv": "^10.0.0"
+  }
 }
