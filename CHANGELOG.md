@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.4...v1.4.0) (2021-07-27)
+
+### [1.2.4](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.3...v1.2.4) (2021-07-12)
+
+### [1.2.3](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.2...v1.2.3) (2021-07-12)
+
+
+### Code Refactoring
+
+* **product:** изменить имя обьекта Constant на Constants ([9f5bcd8](https://github.com/ZunamiLab/ZunamiProtocol/commit/9f5bcd8e120841d3cbf05d74aa6f55b883187bd9))
+
+### [1.2.2](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.1...v1.2.2) (2021-07-12)
+
+
+### Code Refactoring
+
+* **product:** remove unnecessary strategies, optimize the code of the remaining ([0ab15af](https://github.com/ZunamiLab/ZunamiProtocol/commit/0ab15af7712fb8aae48841d4ff4a8150db019b54))
+
+### [1.2.1](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.0...v1.2.1) (2021-06-16)
+
+
+### Tests
+
+* **product:** add test for all strategy ([a4066d2](https://github.com/ZunamiLab/ZunamiProtocol/commit/a4066d2a3313d100ab8d26282b8ceecb7f859dc9))
+
+## [1.2.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.1.0...v1.2.0) (2021-06-16)
+
+## [1.1.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.0.0...v1.1.0) (2021-06-16)
+
+## [1.0.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.14...v1.0.0) (2021-06-16)
+
+
+### Code Refactoring
+
+* **product:** make inheritance, correct typos ([f0992ab](https://github.com/ZunamiLab/ZunamiProtocol/commit/f0992aba1d73eebc8fb8467ef038a2094b42d491))
+
+### [0.2.14](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.13...v0.2.14) (2021-06-15)
+
+
+### Code Refactoring
+
+* **product:** leave one strategy ([2273e39](https://github.com/ZunamiLab/ZunamiProtocol/commit/2273e39b38a395f194c548d2f188c11a2173e10e))
+
+### [0.2.13](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.12...v0.2.13) (2021-06-15)
+
+
+### Code Refactoring
+
+* **product:** code optimization ([792fc9a](https://github.com/ZunamiLab/ZunamiProtocol/commit/792fc9afb7fed1bd0d24ec8ff4c13aaef7944240))
+
+### [0.2.12](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.11...v0.2.12) (2021-06-10)
+
 ### [0.2.11](https://github.com/ZunamiLab/ZunamiProtocol/compare/v0.2.10...v0.2.11) (2021-06-03)
 
 

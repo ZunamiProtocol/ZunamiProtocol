@@ -5,8 +5,6 @@ const path = require('path');
 
 require('colors');
 
-
-
 const runConsoleAndTest = async () => {
     console.log('\n<=== Select file for test ===>'.cyan.italic);
 

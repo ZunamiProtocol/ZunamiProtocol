@@ -2,15 +2,15 @@
 pragma solidity 0.8.0;
 
 interface ICurveAavePool {
-    function add_liquidity(uint256[3] calldata amounts, uint256 min_mint_amount,
-                           bool use_underlying) external returns(uint);
+    function add_liquidity(uint256[3] calldata _amounts, uint256 _minMintAmount,
+                           bool _useUnderlying) external returns(uint lpTokenAmount);
 
-    function remove_liquidity_imbalance(uint256[3] calldata amounts, uint256 max_burn_amount,
-                                        bool use_underlying) external returns(uint);
+    function remove_liquidity_imbalance(uint256[3] calldata _amounts, uint256 _maxBurnAmount,
+                                        bool _useUnderlying) external returns(uint lpTokenBurnedAmount);
 
-    function calc_token_amount(uint[3] calldata amounts, bool isDeposit)
-                               external returns(uint lpTokensAmount);
+    function calc_token_amount(uint[3] calldata _amounts, bool _isDeposit)
+                               external returns(uint expectedAmountOfLpTokens);
 
-    function remove_liquidity_one_coin(uint256 _token_amount, int128 _i, uint256 _min_amount, 
-                               bool _use_underlying) external returns(uint) ;
+    function remove_liquidity_one_coin(uint256 _amounts, int128 _numberOfCoin, uint256 _minAmount,
+                               bool _useUnderlying) external returns(uint stableTokenAmount) ;
 }
