@@ -25,7 +25,7 @@ module.exports = {
             accounts: [process.env.PRIVAT_KEY_WALLET],
             gas: 2100000,
             gasPrice: 8000000000,
-        }
+        },
     },
     namedAccounts: {
         DAI: {
