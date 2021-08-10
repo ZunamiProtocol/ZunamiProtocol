@@ -77,8 +77,8 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
             expect(userThreeCRVTokenBalance).to.be.equal(threeCRVToSendFromWhaleAccount);
         });
 
-        // eslint-disable-next-line max-len
-        it(`Contract should be able to partially withdraw $${usdAmountToWithdrawFromCurvePool} in DAI from 3pool curve contract`, async function() {
+        it(`Contract should be able to partially withdraw $${usdAmountToWithdrawFromCurvePool} ` +
+         ` in DAI from 3pool curve contract`, async function() {
             const owner = (await ethers.getSigners())[0];
             const erc20 = new ethers.Contract(daiAddress, erc20TokenABI, owner);
             const intialDaiBalance = Number(ethers.utils
