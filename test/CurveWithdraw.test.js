@@ -52,7 +52,8 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
         });
     });
 
-    describe('Impersonate a 3CRV whale account + transfer the 3CRV + do withdrawal', () => {
+    describe('Impersonate a 3CRV whale account + transfer the 3CRV to current user ' +
+    ' + do withdrawal of 3CRV token in stable coins', () => {
         before(async () => {
             await impersonateThreeCRVWhale();
         });
@@ -77,13 +78,14 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
             expect(userThreeCRVTokenBalance).to.be.equal(threeCRVToSendFromWhaleAccount);
         });
 
-        it(`Contract should be able to partially withdraw $${usdAmountToWithdrawFromCurvePool} ` +
+        it(`User should be able to partially withdraw $${usdAmountToWithdrawFromCurvePool} ` +
          ` in DAI from 3pool curve contract`, async function() {
             const owner = (await ethers.getSigners())[0];
             const erc20 = new ethers.Contract(daiAddress, erc20TokenABI, owner);
             const intialDaiBalance = Number(ethers.utils
                 .formatEther(await erc20.balanceOf(owner.address)));
             console.log('Initial DAI Balance is ', intialDaiBalance);
+
             // THIS IS THE FORMULA FOR CALCULATE,
             // THE AMOUNT OF TOKENS TO SEND TO CURVE CONTRACT FOR WITHDRAWAL
             const threeCRVTokensToWithdraw = parseFloat(usdAmountToWithdrawFromCurvePool) /
@@ -113,7 +115,7 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
             expect(finalDaiBalance).to.be.gt(intialDaiBalance);
         });
 
-        it(`Contract should be able to partially withdraw $${usdAmountToWithdrawFromCurvePool} ` +
+        it(`User should be able to partially withdraw $${usdAmountToWithdrawFromCurvePool} ` +
         `in mixed amounts from 3pool curve contract`, async function() {
             const owner = (await ethers.getSigners())[0];
             const erc20DAI = new ethers.Contract(daiAddress, erc20TokenABI, owner);
@@ -142,10 +144,11 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
             // so I had to switch to web3
             // const balance0 = await curveWithdrawContract.balances(0);
             // console.log(balance0);
+
             // THIS WORKS :)
             const decimalPadding = ethers.BigNumber.from(1000000000000);
             // The indexes are for DAI, USDC and USDT respectively
-            const curveContract = new web3.eth.Contract(threePoolContractABI, 
+            const curveContract = new web3.eth.Contract(threePoolContractABI,
                 threePoolContractAddress);
             const balanceDAIWei = ethers.BigNumber
                 .from(await curveContract.methods.balances(0).call());
