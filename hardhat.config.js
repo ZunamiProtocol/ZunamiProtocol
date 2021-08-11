@@ -9,7 +9,6 @@ module.exports = {
     defaultNetwork: 'hardhat',
     networks: {
         hardhat: {
-            chainId: 31337,
             forking: {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
             },
@@ -21,7 +20,7 @@ module.exports = {
             gasPrice: 8000000000,
         },
         polygon: {
-            url: `https://polygon-mainnet.infura.io/v3/${procces.env.POLYGON_API_KEY}`,
+            url: `https://polygon-mainnet.infura.io/v3/${process.env.POLYGON_API_KEY}`,
             accounts: [process.env.PRIVAT_KEY_WALLET],
             gas: 2100000,
             gasPrice: 8000000000,
