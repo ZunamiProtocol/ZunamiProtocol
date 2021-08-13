@@ -64,8 +64,6 @@ describe('ProfitablePool', function() {
 
     const convexPool = [convexPoolArray.length];
     const convexPoolAddress = [convexPoolArray.length];
-    let maxValue = 0;
-    let maxIndex = 0;
 
     convexPoolArray.map((item, i) => {
         convexPool[i] = item.pool;
@@ -79,19 +77,11 @@ describe('ProfitablePool', function() {
 
     describe('Deployment', function() {
         it('Get profitable pool', async function() {
-            const reward =
+            const maxRewardPool =
                 await profitablePool.getProfitablePool(convexPoolAddress, curvePoolAddress);
-            let value;
-            reward.map((item, i) => {
-                value = item / (10 ** 40);
-                console.log(convexPool[i].toString() + ' ' + value.toString());
-                if (value > maxValue) {
-                    maxValue = value;
-                    maxIndex = i;
-                }
-            });
-            console.log('Max reward Pool:', convexPool[maxIndex].toString());
-            console.log('Max reward value:', maxValue.toString());
+            await profitablePool.setProfitableAddress(maxRewardPool);
+            const profitableAddress = await profitablePool.profitablePoolAddress();
+            console.log('Max reward pool address:', profitableAddress.toString());
         });
     });
 });

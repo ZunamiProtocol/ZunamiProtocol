@@ -12,6 +12,7 @@ interface ICurve {
 
 contract ProfitablePool {
   address public profitablePoolAddress;
+
   function getProfitablePool(address[] calldata convex, address curve) external view returns (address) {
     uint maxValue = 0;
     uint maxIndex = 0;
@@ -34,8 +35,9 @@ contract ProfitablePool {
 
     return convex[maxIndex];
   }
+
+  function setProfitableAddress(address _profitablePoolAddress) external {
+    profitablePoolAddress = _profitablePoolAddress;
+  }
 }
 
-function setProfitableAddress(address _profitablePoolAddress) external {
-  profitablePoolAddress = _profitablePoolAddress;
-}
