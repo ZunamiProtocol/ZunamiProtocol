@@ -11,7 +11,8 @@
     "test": "node test/tools/startTestScript.js",
     "test:coverage": "npx hardhat coverage  --testfiles 'test/*.js'",
     "test:verbose": "hardhat test --verbose test/*.js",
-    "test:withdraw": "hardhat test test/CurveWithdraw.test.js"
+    "test:withdraw": "hardhat test test/CurveWithdraw.test.js",
+    "test:lpToken": "hardhat test test/ZunamiLPTokens.test.js"
   },
   "config": {
     "commitizen": {
