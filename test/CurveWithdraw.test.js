@@ -172,7 +172,7 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
             const totalReserves = Number(ethers.utils.formatEther(totalReservesWei));
             const balanceDAI = Number(ethers.utils.formatEther(balanceDAIWei));
             const balanceUSDC = Number(ethers.utils.formatEther(balanceUSDCWei));
-            const balanceUSDT  = Number(ethers.utils.formatEther(balanceUSDTWei ));
+            const balanceUSDT = Number(ethers.utils.formatEther(balanceUSDTWei ));
 
             const daiReservePercentage = balanceDAI / totalReserves;
             const usdcReservePercentage = balanceUSDC / totalReserves;
@@ -181,7 +181,7 @@ describe('Fetching 3crv price + Checking contract deployment ', () => {
             const singleAmountDai = usdAmountToWithdrawFromCurvePool * daiReservePercentage;
             const singleAmountUsdc = usdAmountToWithdrawFromCurvePool * usdcReservePercentage;
             const singleAmountUsdt = usdAmountToWithdrawFromCurvePool * usdtReservePercentage;
-            const amounts = [ethers.utils.parseEther(String(singleAmountDai)), 
+            const amounts = [ethers.utils.parseEther(String(singleAmountDai)),
                 // we pass USDC and USDT in 6 decimals instead of 18
                 ethers.utils.parseEther(String(singleAmountUsdc)).div(decimalPadding),
                 ethers.utils.parseEther(String(singleAmountUsdt)).div(decimalPadding)];
