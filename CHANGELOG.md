@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.4...v2.0.0) (2021-08-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* 🧨 None
+
+### Features
+
+* 🎸 I implemented the LP tokens feature ([741773c](https://github.com/ZunamiLab/ZunamiProtocol/commit/741773c46aed17123e32ec06649d6477baf58271))
+
 ## [1.4.0](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.4...v1.4.0) (2021-08-02)
 
 ### [1.2.4](https://github.com/ZunamiLab/ZunamiProtocol/compare/v1.2.3...v1.2.4) (2021-07-12)
