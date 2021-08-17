@@ -2,10 +2,9 @@
 pragma solidity 0.8.0;
 
 interface IController {
-
-    function withdraw(address, uint256) external;
-
-    function balanceOf(address) external view returns (uint256);
-
-    function earn(address, uint256) external;
+    function addStrategy(address strategyAddr, bytes32 strategyName) external;
+    function removeStrategy(bytes32 strategyName) external;
+    function addInsurance(address insuranceAddr, bytes32 insuranceName) external;
+    function removeInsurance(bytes32 insuranceName) external;
+    function getOptimalStrategy() external returns(address optimalStrategy);
 }
