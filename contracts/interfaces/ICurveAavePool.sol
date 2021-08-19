@@ -13,4 +13,6 @@ interface ICurveAavePool {
 
     function remove_liquidity_one_coin(uint256 _amounts, int128 _numberOfCoin, uint256 _minAmount,
                                bool _useUnderlying) external returns(uint stableTokenAmount) ;
+
+    function get_virtual_price() external view returns (uint);
 }

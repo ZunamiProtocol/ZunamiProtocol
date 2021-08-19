@@ -1,14 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IConvex {
-  function rewardRate() external view returns (uint);
-  function totalSupply() external view returns (uint);
-}
-
-interface ICurve {
-  function get_virtual_price() external view returns (uint);
-}
+import './interfaces/IConvex.sol';
+import './interfaces/ICurveAavePool.sol';
 
 contract ProfitablePool {
   address public profitablePoolAddress;
@@ -24,9 +18,9 @@ contract ProfitablePool {
     for (uint i = 0; i < convex.length; i++) {
       rewardRate = IConvex(convex[i]).rewardRate();
       totalSupply = IConvex(convex[i]).totalSupply();
-      virtualPrice = ICurve(curve).get_virtual_price();
-      rewards = totalSupply * virtualPrice / rewardRate;
-      rewards = type(uint).max / rewards;
+      virtualPrice = ICurveAavePool(curve).get_virtual_price();
+
+      rewards = type(uint).max * rewardRate / totalSupply / virtualPrice;
       if (rewards > maxValue) {
         maxValue = rewards;
         maxIndex = i;

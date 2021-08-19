@@ -11,6 +11,7 @@
     "test": "node test/tools/startTestScript.js",
     "test:coverage": "npx hardhat coverage  --testfiles 'test/*.js'",
     "test:verbose": "hardhat test --verbose test/*.js",
+    "test:profitablePool": "hardhat test test/ProfitablePool.test.js",
     "test:withdraw": "hardhat test test/CurveWithdraw.test.js"
   },
   "config": {
