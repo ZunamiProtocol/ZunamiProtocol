@@ -33,7 +33,7 @@ contract ZunamiVault is ERC20 {
     ) external {
         require(dai.balanceOf(_userAddr) >= _amountOfDAI, 'Insufficient funds');
         require(usdc.balanceOf(_userAddr) >= _amountOfUSDC, 'Insufficient funds');
-        require(usdt.balanceOf(_userAddr) >= _amountOfUSDT, 'Insufficient funds');
+        require(usdt.balanceOf(_userAddr) >= _amountOfUSDT, 'Insufficient funds for deposit');
 
         uint256 totalStablecoinsAmount = _amountOfDAI + _amountOfUSDC + _amountOfUSDT;
 
@@ -58,8 +58,11 @@ contract ZunamiVault is ERC20 {
     }
 
     function withdrawAll(address _userAddr) external {
-        IStrategy strategy = controller.getOptimalStrategy();
-        strategy.withdrawAll(_userAddr);
+        uint256 daiBalance = dai.balanceOf(_userAddr);
+        uint256 usdcBalance = usdc.balanceOf(_userAddr);
+        uint256 usdtBalance = usdt.balanceOf(_userAddr);
+
+        this.withdraw(_userAddr, daiBalance, usdcBalance, usdtBalance);
     }
 
     function withdraw(
@@ -68,8 +71,22 @@ contract ZunamiVault is ERC20 {
         uint256 _amountOfUSDC,
         uint256 _amountOfUSDT
     ) external {
+        require(
+            _amountOfDAI > 0 || _amountOfUSDC > 0 || _amountOfUSDT > 0,
+            'Insufficient funds for withdraw'
+        );
+
         IStrategy strategy = controller.getOptimalStrategy();
         strategy.withdraw(_userAddr, _amountOfDAI, _amountOfUSDC, _amountOfUSDT);
+
+        uint256 totalStablecoinsForWithdraw = _amountOfDAI + _amountOfUSDC + _amountOfUSDT;
+        uint256 totalSupply = totalSupply();
+        uint256 totalStablecoinsInPool = _totalDepositedStablecoins();
+
+        uint256 sharesForBurn = (totalStablecoinsForWithdraw * totalSupply) /
+            totalStablecoinsInPool;
+
+        _burn(_userAddr, sharesForBurn);
     }
 
     function _totalDepositedStablecoins() private view returns (uint256 balanceOfStablecoins) {
