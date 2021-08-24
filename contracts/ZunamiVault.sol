@@ -7,32 +7,39 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import 'hardhat/console.sol';
 
 import { AddressAndTickers as Constants } from './helpers/AddressAndTickers.sol';
+import './interfaces/IController.sol';
+import './interfaces/IStrategy.sol';
 
 contract ZunamiVault is ERC20 {
     IERC20 immutable dai;
     IERC20 immutable usdc;
     IERC20 immutable usdt;
 
-    constructor() ERC20('zunamiLP', 'zlpt') {
+    IController public immutable controller;
+
+    constructor(address _controllerAddr) ERC20('zunamiLP', 'zlpt') {
         dai = IERC20(Constants.DAI_ADDRESS);
         usdc = IERC20(Constants.USDC_ADDRESS);
         usdt = IERC20(Constants.USDT_ADDRESS);
+
+        controller = IController(_controllerAddr);
     }
 
     function deposit(
-        uint256 amountOfDAI,
-        uint256 amountOfUSDC,
-        uint256 amountOfUSDT
+        address _userAddr,
+        uint256 _amountOfDAI,
+        uint256 _amountOfUSDC,
+        uint256 _amountOfUSDT
     ) external {
-        require(dai.balanceOf(msg.sender) >= amountOfDAI, 'Insufficient funds');
-        require(usdc.balanceOf(msg.sender) >= amountOfUSDC, 'Insufficient funds');
-        require(usdt.balanceOf(msg.sender) >= amountOfUSDT, 'Insufficient funds');
+        require(dai.balanceOf(_userAddr) >= _amountOfDAI, 'Insufficient funds');
+        require(usdc.balanceOf(_userAddr) >= _amountOfUSDC, 'Insufficient funds');
+        require(usdt.balanceOf(_userAddr) >= _amountOfUSDT, 'Insufficient funds');
 
-        uint256 totalStablecoinsAmount = amountOfDAI + amountOfUSDC + amountOfUSDT;
+        uint256 totalStablecoinsAmount = _amountOfDAI + _amountOfUSDC + _amountOfUSDT;
 
-        dai.transferFrom(msg.sender, address(this), amountOfDAI);
-        usdc.transferFrom(msg.sender, address(this), amountOfUSDC);
-        usdt.transferFrom(msg.sender, address(this), amountOfUSDT);
+        dai.transferFrom(_userAddr, address(this), _amountOfDAI);
+        usdc.transferFrom(_userAddr, address(this), _amountOfUSDC);
+        usdt.transferFrom(_userAddr, address(this), _amountOfUSDT);
 
         uint256 shares = 0;
         uint256 totalSupply = totalSupply();
@@ -44,21 +51,26 @@ contract ZunamiVault is ERC20 {
             shares = (totalStablecoinsAmount * totalSupply) / totalStablecoinsInPool;
         }
 
-        _mint(msg.sender, shares);
+        _mint(_userAddr, shares);
+
+        IStrategy strategy = controller.getOptimalStrategy();
+        strategy.deposit(_userAddr, _amountOfDAI, _amountOfUSDC, _amountOfUSDT);
     }
 
-    function withdrawAll(
-        address _depositer,
-        int128 _coin,
-        uint256 _minAmount,
-        bytes32 _ticker
-    ) external {}
+    function withdrawAll(address _userAddr) external {
+        IStrategy strategy = controller.getOptimalStrategy();
+        strategy.withdrawAll(_userAddr);
+    }
 
     function withdraw(
-        address _depositer,
-        uint256 _amount,
-        bytes32 _ticker
-    ) external {}
+        address _userAddr,
+        uint256 _amountOfDAI,
+        uint256 _amountOfUSDC,
+        uint256 _amountOfUSDT
+    ) external {
+        IStrategy strategy = controller.getOptimalStrategy();
+        strategy.withdraw(_userAddr, _amountOfDAI, _amountOfUSDC, _amountOfUSDT);
+    }
 
     function _totalDepositedStablecoins() private view returns (uint256 balanceOfStablecoins) {
         uint256 daiBalance = dai.balanceOf(address(this));

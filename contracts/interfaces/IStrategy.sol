@@ -2,10 +2,19 @@
 pragma solidity 0.8.0;
 
 interface IStrategy {
-    function deposit(address _depositer, uint _amount, bytes32 _ticker) external;
+    function deposit(
+        address _depositer,
+        uint256 daiAmount,
+        uint256 usdcAmount,
+        uint256 usdtAmount
+    ) external;
 
-    function withdraw(address _depositer, uint _amount, bytes32 _ticker) external;
+    function withdraw(
+        address _depositer,
+        uint256 daiAmount,
+        uint256 usdcAmount,
+        uint256 usdtAmount
+    ) external;
 
-    function withdrawAll(address _depositer, int128 _coin, uint _minAmount,
-        bytes32 _ticker) external;
+    function withdrawAll(address _depositer) external;
 }
