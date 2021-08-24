@@ -8,3 +8,4 @@ cache
 .env
 client/src/contracts
 *.swp
+.vscode
