@@ -1,0 +1,10 @@
+//SPDX-License-Identifier: MIT
+pragma solidity 0.8.0;
+
+interface IConvexRewards {
+    function balanceOf(address account) external view returns (uint256);
+
+    function earned(address account) external view returns (uint256);
+
+    function withdrawAllAndUnwrap(bool claim) external;
+}
