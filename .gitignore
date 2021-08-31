@@ -5,6 +5,9 @@ coverage.json
 build
 artifacts
 cache
+dist
 .env
+.log*
+log*
 client/src/contracts
 *.swp
