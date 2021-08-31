@@ -8,36 +8,36 @@ import "./interfaces/IERC20Extended.sol";
 import "./interfaces/IStrategy.sol";
 
 contract Zunami is Ownable {
-    IERC20Extended lp;
+    IERC20Extended lpToken;
     uint8 private constant POOL_ASSETS = 3;
 
     address[POOL_ASSETS] public assets;
-    address public optimalStrategy;
+    address public currentStrategy;
 
-    event Deposited(uint256[] calldatas, uint256 lps);
-    event Withdrawn(uint256[] calldatas, uint256 lps);
+    event Deposited(uint256[] calldatas, uint256 lpShares);
+    event Withdrawn(uint256[] calldatas, uint256 lpShares);
     event StrategyUpdated(address newStrategy);
 
     constructor(address lpAddr) {
         assets[0] = Constants.DAI_ADDRESS;
         assets[1] = Constants.USDC_ADDRESS;
         assets[2] = Constants.USDT_ADDRESS;
-        lp = IERC20Extended(lpAddr);
+        lpToken = IERC20Extended(lpAddr);
     }
 
-    function setLP(address newlp) external onlyOwner {
-        lp = IERC20Extended(newlp);
+    function setLP(address lpAddr) external onlyOwner {
+        lpToken = IERC20Extended(lpAddr);
     }
 
-    function updateStrategy(address newOptimalStrategy) external onlyOwner {
-        IStrategy(optimalStrategy).withdrawAll();
+    function updateStrategy(address newcurrentStrategy) external onlyOwner {
+        IStrategy(currentStrategy).withdrawAll();
         uint256[] memory amounts = new uint256[](POOL_ASSETS);
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             amounts[i] = IERC20(assets[i]).balanceOf(address(this));
         }
-        IStrategy(newOptimalStrategy).deposit(amounts);
-        optimalStrategy = newOptimalStrategy;
-        emit StrategyUpdated(newOptimalStrategy);
+        IStrategy(newcurrentStrategy).deposit(amounts);
+        currentStrategy = newcurrentStrategy;
+        emit StrategyUpdated(newcurrentStrategy);
     }
 
     function deposit(uint256[] calldata amounts) external returns (uint256) {
@@ -45,32 +45,31 @@ contract Zunami is Ownable {
             amounts.length == POOL_ASSETS,
             "Zunami: should have exactly pool assets"
         );
-        uint256 totalValue = IStrategy(optimalStrategy).getTotalValue();
-        uint256 supply = lp.totalSupply();
+        uint256 totalValue = IStrategy(currentStrategy).getTotalValue();
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             sum += amounts[i];
         }
-        uint256 lps = (sum * supply) / totalValue;
-        lp.mint(lps);
-        IStrategy(optimalStrategy).deposit(amounts);
+        uint256 lpShares = sum * lpToken.totalSupply() / totalValue;
+        lpToken.mint(lpShares);
+        IStrategy(currentStrategy).deposit(amounts);
 
-        emit Deposited(amounts, lps);
-        return lps;
+        emit Deposited(amounts, lpShares);
+        return lpShares;
     }
 
-    function withdraw(uint256 lps, uint256[] calldata minAmounts) external {
+    function withdraw(uint256 lpShares, uint256[] calldata minAmounts) external {
         require(
-            lp.balanceOf(_msgSender()) >= lps,
+            lpToken.balanceOf(_msgSender()) >= lpShares,
             "Zunami: not enough LP balance"
         );
-        IStrategy(optimalStrategy).withdraw(
+        IStrategy(currentStrategy).withdraw(
             _msgSender(),
-            lps,
-            lp.totalSupply(),
+            lpShares,
+            lpToken.totalSupply(),
             minAmounts
         );
-        lp.burn(lps);
-        emit Withdrawn(minAmounts, lps);
+        lpToken.burn(lpShares);
+        emit Withdrawn(minAmounts, lpShares);
     }
 }

@@ -93,8 +93,8 @@ contract CurveAaveConvex is Context, Ownable {
                 amounts[i]
             );
         }
-        uint256 lps = aavePool.add_liquidity(amounts, 0, true);
-        aaveLP.safeApprove(Constants.CONVEX_BOOSTER_ADDRESS, lps);
+        uint256 aaveLPs = aavePool.add_liquidity(amounts, 0, true);
+        aaveLP.safeApprove(Constants.CONVEX_BOOSTER_ADDRESS, aaveLPs);
         booster.depositAll(Constants.CONVEX_AAVE_PID, true);
     }
 
@@ -105,7 +105,7 @@ contract CurveAaveConvex is Context, Ownable {
 
     function withdraw(
         address depositor,
-        uint256 lpsShare,
+        uint256 lpShares,
         uint256 totalSupply,
         uint256[] calldata minAmounts
     ) external onlyOwner {
@@ -118,7 +118,7 @@ contract CurveAaveConvex is Context, Ownable {
             minAmounts,
             false
         );
-        uint256 depositedShare = (gauge.balanceOf(address(this)) * lpsShare) /
+        uint256 depositedShare = (gauge.balanceOf(address(this)) * lpShares) /
             totalSupply;
         require(
             depositedShare >= curveRequiredLPs,
@@ -130,7 +130,7 @@ contract CurveAaveConvex is Context, Ownable {
         uint256[] memory balances = new uint256[](POOL_ASSETS);
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             balances[i] =
-                (IERC20(tokens[i]).balanceOf(address(this)) * lpsShare) /
+                (IERC20(tokens[i]).balanceOf(address(this)) * lpShares) /
                 totalSupply;
         }
 
