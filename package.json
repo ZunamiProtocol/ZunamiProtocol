@@ -5,14 +5,17 @@
     "scripts": {
         "commitMajor": "git cz && standard-version --release-as major && node gitPush.js",
         "commit": "git cz && standard-version && node gitPush.js",
-        "lint:contracts": "solhint contracts/**/*.sol",
-        "compile": "hardhat compile",
+        "lint": "npx prettier --write 'contracts/**/*.sol' && npx prettier --write 'scripts/**/*.js' && npx prettier --write 'test/**/*.ts'",
+        "lint:contracts": "npx prettier --write 'contracts/**/*.sol'",
+        "compile": "npx hardhat compile",
         "fork": "npx hardhat node",
-        "test": "node test/tools/startTestScript.js",
-        "test:coverage": "npx hardhat coverage  --testfiles 'test/*.js'",
-        "test:verbose": "hardhat test --verbose test/*.js",
-        "deploy:matic": "hardhat deploy --network matic --tags ZunamiContracts --gasprice 1000000000",
-        "deploy:polygon": "hardhat deploy --network polygon --tags ZunamiContracts --gasprice 1000000000"
+        "test": "npx hardhat test",
+        "test:coverage": "npx hardhat coverage  --testfiles 'test/*.ts'",
+        "test:verbose": "npx hardhat test --verbose test/*.ts",
+        "deploy:mainnet": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
+        "deploy:rinkeby": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
+        "deploy:matic": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
+        "deploy:polygon": "npx hardhat deploy --network polygon --tags Zunami --gasprice 1000000000"
     },
     "config": {
         "commitizen": {
@@ -58,11 +61,16 @@
         "standard-version": "^9.3.0"
     },
     "dependencies": {
+        "@nomiclabs/hardhat-etherscan": "^2.1.6",
+        "@nomiclabs/hardhat-ganache": "^2.0.1",
+        "@nomiclabs/hardhat-truffle5": "^2.0.0",
         "dotenv": "^10.0.0",
+        "hardhat-gas-reporter": "^1.0.4",
         "prettier": "^2.3.2",
         "prettier-plugin-solidity": "^1.0.0-beta.17",
         "ts-node": "^10.2.1",
-        "typescript": "^4.3.5",
-        "waffle": "^0.0.4"
+        "typescript": "^4.4.2",
+        "waffle": "^0.0.4",
+        "yargs": "^17.1.1"
     }
 }

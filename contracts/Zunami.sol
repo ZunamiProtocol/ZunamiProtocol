@@ -25,7 +25,7 @@ contract Zunami is Ownable {
         lpToken = IERC20Extended(lpAddr);
     }
 
-    function setLP(address lpAddr) external onlyOwner {
+    function setLPToken(address lpAddr) external onlyOwner {
         lpToken = IERC20Extended(lpAddr);
     }
 
@@ -50,7 +50,7 @@ contract Zunami is Ownable {
         for (uint256 i = 0; i < amounts.length; ++i) {
             sum += amounts[i];
         }
-        uint256 lpShares = sum * lpToken.totalSupply() / totalValue;
+        uint256 lpShares = (sum * lpToken.totalSupply()) / totalValue;
         lpToken.mint(lpShares);
         IStrategy(currentStrategy).deposit(amounts);
 
@@ -58,7 +58,9 @@ contract Zunami is Ownable {
         return lpShares;
     }
 
-    function withdraw(uint256 lpShares, uint256[] calldata minAmounts) external {
+    function withdraw(uint256 lpShares, uint256[] calldata minAmounts)
+        external
+    {
         require(
             lpToken.balanceOf(_msgSender()) >= lpShares,
             "Zunami: not enough LP balance"
