@@ -14,6 +14,8 @@ import "../interfaces/IUniswapRouter.sol";
 import "../interfaces/IConvexBooster.sol";
 import "../interfaces/IConvexRewards.sol";
 
+import "hardhat/console.sol";
+
 contract CurveAaveConvex is Context, Ownable {
     using SafeERC20 for IERC20;
 
@@ -47,14 +49,8 @@ contract CurveAaveConvex is Context, Ownable {
         crvRewards = IConvexRewards(Constants.CONVEX_CURVE_REWARDS_ADDRESS);
         stakerRewards = IConvexRewards(Constants.CONVEX_STAKER_REWARDS_ADDRESS);
         gauge = ICurveGauge(Constants.CURVE_AAVE_GAUGE_ADDRESS);
-
-        address[] memory underlyings = aavePool.underlying_coins();
-        require(
-            underlyings.length == POOL_ASSETS,
-            "StrategyCurveAave: must have 3 assets in pool"
-        );
-        for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            tokens[i] = underlyings[i];
+        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+            tokens[i] = aavePool.underlying_coins(i);
         }
     }
 

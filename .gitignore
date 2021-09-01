@@ -2,6 +2,8 @@ node_modules
 .idea
 coverage
 coverage.json
+package-lock.json
+yarn.lock
 build
 artifacts
 cache
@@ -9,5 +11,6 @@ dist
 .env
 .log*
 log*
+*error*
 client/src/contracts
 *.swp
