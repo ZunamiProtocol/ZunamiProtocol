@@ -31,6 +31,8 @@ describe("Zunami", function () {
         await this.lp.grantRole(ADMIN_ROLE, this.zunami.address);
         this.strategy = await this.CurveAaveConvex.deploy();
         await this.strategy.deployed();
+        await this.strategy.setZunami(this.zunami.address);
+        await this.zunami.updateStrategy(this.strategy.address);
         this.referenceBlock = await provider.getBlockNumber();
     });
 

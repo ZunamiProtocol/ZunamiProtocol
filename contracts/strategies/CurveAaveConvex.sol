@@ -13,8 +13,7 @@ import "../interfaces/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapRouter.sol";
 import "../interfaces/IConvexBooster.sol";
 import "../interfaces/IConvexRewards.sol";
-
-import "hardhat/console.sol";
+import "../interfaces/IZunami.sol";
 
 contract CurveAaveConvex is Context, Ownable {
     using SafeERC20 for IERC20;
@@ -23,6 +22,8 @@ contract CurveAaveConvex is Context, Ownable {
     uint8 private constant POOL_ASSETS = 3;
 
     address[3] public tokens;
+
+    uint256[3] public protocolShares;
 
     ICurveAavePool aavePool;
     IERC20 crv;
@@ -36,6 +37,7 @@ contract CurveAaveConvex is Context, Ownable {
     ICurveGauge gauge;
     IConvexRewards crvRewards;
     IConvexRewards stakerRewards;
+    IZunami zunami;
 
     constructor() {
         aavePool = ICurveAavePool(Constants.CURVE_AAVE_ADDRESS);
@@ -52,6 +54,18 @@ contract CurveAaveConvex is Context, Ownable {
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             tokens[i] = aavePool.underlying_coins(i);
         }
+    }
+
+    modifier onlyZunami() {
+        require(
+            _msgSender() == address(zunami),
+            "CurveAaveConvex: must be called by Zunami contract"
+        );
+        _;
+    }
+
+    function setZunami(address zunamiAddr) external onlyOwner {
+        zunami = IZunami(zunamiAddr);
     }
 
     function getTotalValue() public returns (uint256) {
@@ -77,14 +91,14 @@ contract CurveAaveConvex is Context, Ownable {
             NORMALIZER;
     }
 
-    function deposit(uint256[] calldata amounts) external onlyOwner {
+    function deposit(uint256[] calldata amounts) external onlyZunami {
         require(
             amounts.length == POOL_ASSETS,
             "StrategyCurveAave: must have length 3"
         );
 
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            IERC20(tokens[i]).safeApprove(
+            IERC20(tokens[i]).safeIncreaseAllowance(
                 Constants.CURVE_AAVE_ADDRESS,
                 amounts[i]
             );
@@ -102,9 +116,8 @@ contract CurveAaveConvex is Context, Ownable {
     function withdraw(
         address depositor,
         uint256 lpShares,
-        uint256 totalSupply,
         uint256[] calldata minAmounts
-    ) external onlyOwner {
+    ) external onlyZunami {
         require(
             minAmounts.length == POOL_ASSETS,
             "StrategyCurveAave: must have length 3"
@@ -115,7 +128,7 @@ contract CurveAaveConvex is Context, Ownable {
             false
         );
         uint256 depositedShare = (gauge.balanceOf(address(this)) * lpShares) /
-            totalSupply;
+            zunami.lpSupply();
         require(
             depositedShare >= curveRequiredLPs,
             "StrategyCurveAave: user lps share should be at least required"
@@ -127,17 +140,37 @@ contract CurveAaveConvex is Context, Ownable {
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             balances[i] =
                 (IERC20(tokens[i]).balanceOf(address(this)) * lpShares) /
-                totalSupply;
+                zunami.lpSupply();
         }
 
-        uint256[] memory amounts = aavePool.remove_liquidity(
+        uint256[] memory liqAmounts = aavePool.remove_liquidity(
             minAmounts,
             depositedShare,
             true
         );
-
+        uint256 totalDeposited = zunami.totalDeposited();
+        uint256 userDeposit = (lpShares * totalDeposited) / zunami.lpSupply();
+        uint256 earned = 0;
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            IERC20(tokens[i]).safeTransfer(depositor, amounts[i] + balances[i]);
+            earned += liqAmounts[i] + balances[i];
+        }
+        uint256 protocolFee = zunami.calculateFee(earned - userDeposit);
+        for (uint8 i = 0; i < POOL_ASSETS; ++i) {
+            uint256 protocolShare = (protocolFee *
+                (liqAmounts[i] + balances[i])) / earned;
+            protocolShares[i] += protocolShare;
+            IERC20(tokens[i]).safeTransfer(
+                depositor,
+                liqAmounts[i] + balances[i] - protocolShare
+            );
+        }
+    }
+
+    function claimProfit() external onlyZunami {
+        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+            uint256 protocolShare = protocolShares[i];
+            protocolShares[i] = 0;
+            IERC20(tokens[i]).safeTransfer(owner(), protocolShare);
         }
     }
 
@@ -163,7 +196,7 @@ contract CurveAaveConvex is Context, Ownable {
         );
     }
 
-    function withdrawAll() external onlyOwner {
+    function withdrawAll() external onlyZunami {
         booster.withdrawAll(Constants.CONVEX_AAVE_PID);
         withdrawRewards();
         sellCrvCvx();
