@@ -7,11 +7,12 @@ interface IStrategy {
     function withdraw(
         address depositer,
         uint256 lpsShare,
-        uint256 totalSupply,
         uint256[] calldata amounts
     ) external;
 
     function withdrawAll() external;
 
     function getTotalValue() external returns (uint256);
+
+    function claimProfit() external;
 }
