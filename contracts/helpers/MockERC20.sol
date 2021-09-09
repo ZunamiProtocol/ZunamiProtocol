@@ -10,7 +10,7 @@ contract MockERC20 is ERC20 {
         string memory name,
         string memory symbol,
         uint8 decimals
-    ) public ERC20(name, symbol) {
+    ) ERC20(name, symbol) {
         _decimals = decimals;
     }
 }

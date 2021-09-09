@@ -128,7 +128,7 @@ contract CurveAaveConvex is Context, Ownable {
             false
         );
         uint256 depositedShare = (gauge.balanceOf(address(this)) * lpShares) /
-            zunami.lpSupply();
+            zunami.totalSupply();
         require(
             depositedShare >= curveRequiredLPs,
             "StrategyCurveAave: user lps share should be at least required"
@@ -140,7 +140,7 @@ contract CurveAaveConvex is Context, Ownable {
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             balances[i] =
                 (IERC20(tokens[i]).balanceOf(address(this)) * lpShares) /
-                zunami.lpSupply();
+                zunami.totalSupply();
         }
 
         uint256[] memory liqAmounts = aavePool.remove_liquidity(
@@ -149,7 +149,8 @@ contract CurveAaveConvex is Context, Ownable {
             true
         );
         uint256 totalDeposited = zunami.totalDeposited();
-        uint256 userDeposit = (lpShares * totalDeposited) / zunami.lpSupply();
+        uint256 userDeposit = (lpShares * totalDeposited) /
+            zunami.totalSupply();
         uint256 earned = 0;
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             earned += liqAmounts[i] + balances[i];
