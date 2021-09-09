@@ -42,7 +42,7 @@ contract Zunami is Context, Ownable {
     }
 
     function calculateFee(uint256 amount) public view returns (uint256) {
-        return (amount * protocolFee) / feeNormalizer;
+        return amount * protocolFee / feeNormalizer;
     }
 
     function updateStrategy(address strategyAddr) external onlyOwner {
@@ -76,8 +76,13 @@ contract Zunami is Context, Ownable {
         }
         deposited[_msgSender()] += sum;
         totalDeposited += sum;
-        uint256 lpShares = (sum * lpToken.totalSupply()) / totalValue;
-        lpToken.mint(lpShares);
+        uint256 lpShares = 0;
+        if (totalValue == 0) {
+            lpShares = sum;
+        } else {
+            lpShares = sum * lpToken.totalSupply() / totalValue;
+        }
+        lpToken.mint(_msgSender(), lpShares);
         for (uint256 i = 0; i < amounts.length; ++i) {
             IERC20(assets[i]).safeTransferFrom(
                 _msgSender(),
@@ -99,8 +104,8 @@ contract Zunami is Context, Ownable {
             "Zunami: not enough LP balance"
         );
         strategy.withdraw(_msgSender(), lpShares, minAmounts);
-        lpToken.burn(lpShares);
-        uint256 userDeposit = (totalDeposited * lpShares) / lpSupply();
+        lpToken.burn(_msgSender(), lpShares);
+        uint256 userDeposit = totalDeposited * lpShares / lpSupply();
         deposited[_msgSender()] -= userDeposit;
         totalDeposited -= userDeposit;
         emit Withdrawn(minAmounts, lpShares);
