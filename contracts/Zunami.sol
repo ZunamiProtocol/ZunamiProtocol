@@ -5,13 +5,15 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./helpers/Constants.sol";
-import "./interfaces/IERC20Extended.sol";
 import "./interfaces/IStrategy.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract Zunami is Context, Ownable {
+import "hardhat/console.sol";
+
+contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20;
-    IERC20Extended public lpToken;
     uint8 private constant POOL_ASSETS = 3;
 
     address[POOL_ASSETS] public assets;
@@ -26,23 +28,18 @@ contract Zunami is Context, Ownable {
     event Withdrawn(uint256[] calldatas, uint256 lpShares);
     event StrategyUpdated(address strategyAddr);
 
-    constructor(address lpAddr) {
+    constructor() ERC20("ZunamiLP", "ZLP") {
         assets[0] = Constants.DAI_ADDRESS;
         assets[1] = Constants.USDC_ADDRESS;
         assets[2] = Constants.USDT_ADDRESS;
-        lpToken = IERC20Extended(lpAddr);
     }
 
-    function setLPToken(address lpAddr) external onlyOwner {
-        lpToken = IERC20Extended(lpAddr);
-    }
-
-    function lpSupply() public view returns (uint256) {
-        return lpToken.totalSupply();
+    function setProtocolFee(uint256 newProtocolFee) external onlyOwner {
+        protocolFee = newProtocolFee;
     }
 
     function calculateFee(uint256 amount) public view returns (uint256) {
-        return amount * protocolFee / feeNormalizer;
+        return (amount * protocolFee) / feeNormalizer;
     }
 
     function updateStrategy(address strategyAddr) external onlyOwner {
@@ -76,20 +73,23 @@ contract Zunami is Context, Ownable {
         }
 
         uint256 totalValue = getTotalValue();
-        if (totalValue == 0) {
-            totalValue = sum;
-        }
-
         deposited[_msgSender()] += sum;
         totalDeposited += sum;
+
         uint256 lpShares = 0;
         if (totalValue == 0) {
             lpShares = sum;
         } else {
-            lpShares = sum * lpToken.totalSupply() / totalValue;
+            lpShares = (sum * totalSupply()) / totalValue;
         }
-        lpToken.mint(_msgSender(), lpShares);
+        _mint(_msgSender(), lpShares);
+
         for (uint256 i = 0; i < amounts.length; ++i) {
+            console.log(
+                "Allowance: ",
+                IERC20(assets[i]).allowance(_msgSender(), address(this))
+            );
+            console.log("Amounts: ", amounts[i]);
             IERC20(assets[i]).safeTransferFrom(
                 _msgSender(),
                 address(strategy),
@@ -106,12 +106,12 @@ contract Zunami is Context, Ownable {
         external
     {
         require(
-            lpToken.balanceOf(_msgSender()) >= lpShares,
+            balanceOf(_msgSender()) >= lpShares,
             "Zunami: not enough LP balance"
         );
         strategy.withdraw(_msgSender(), lpShares, minAmounts);
-        lpToken.burn(_msgSender(), lpShares);
-        uint256 userDeposit = totalDeposited * lpShares / lpSupply();
+        uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
+        _burn(_msgSender(), lpShares);
         deposited[_msgSender()] -= userDeposit;
         totalDeposited -= userDeposit;
         emit Withdrawn(minAmounts, lpShares);

@@ -15,6 +15,8 @@ import "../interfaces/IConvexBooster.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
+import "hardhat/console.sol";
+
 contract CurveAaveConvex is Context, Ownable {
     using SafeERC20 for IERC20;
 
@@ -103,7 +105,9 @@ contract CurveAaveConvex is Context, Ownable {
                 amounts[i]
             );
         }
+        console.log("Ok 1");
         uint256 aaveLPs = aavePool.add_liquidity(amounts, 0, true);
+        console.log("Ok 2");
         aaveLP.safeApprove(Constants.CONVEX_BOOSTER_ADDRESS, aaveLPs);
         booster.depositAll(Constants.CONVEX_AAVE_PID, true);
     }
@@ -128,7 +132,7 @@ contract CurveAaveConvex is Context, Ownable {
             false
         );
         uint256 depositedShare = (gauge.balanceOf(address(this)) * lpShares) /
-            zunami.lpSupply();
+            zunami.totalSupply();
         require(
             depositedShare >= curveRequiredLPs,
             "StrategyCurveAave: user lps share should be at least required"
@@ -140,7 +144,7 @@ contract CurveAaveConvex is Context, Ownable {
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             balances[i] =
                 (IERC20(tokens[i]).balanceOf(address(this)) * lpShares) /
-                zunami.lpSupply();
+                zunami.totalSupply();
         }
 
         uint256[] memory liqAmounts = aavePool.remove_liquidity(
@@ -149,7 +153,8 @@ contract CurveAaveConvex is Context, Ownable {
             true
         );
         uint256 totalDeposited = zunami.totalDeposited();
-        uint256 userDeposit = (lpShares * totalDeposited) / zunami.lpSupply();
+        uint256 userDeposit = (lpShares * totalDeposited) /
+            zunami.totalSupply();
         uint256 earned = 0;
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             earned += liqAmounts[i] + balances[i];

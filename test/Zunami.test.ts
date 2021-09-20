@@ -3,13 +3,11 @@ import { waffle } from 'hardhat';
 import { expect } from 'chai';
 
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ContractFactory } from 'ethers';
+import { ContractFactory, Signer } from 'ethers';
 import { Contract } from '@ethersproject/contracts';
 import erc20ABI from './abi/erc20.abi.json';
 
 const SUPPLY = '100000000000000';
-const ADMIN_ROLE =
-    '0x0000000000000000000000000000000000000000000000000000000000000000';
 const mockProvider = waffle.provider;
 const daiAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
 const usdcAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
@@ -21,10 +19,8 @@ describe('Zunami', function () {
     let bob: SignerWithAddress;
     let carol: SignerWithAddress;
 
-    let LPToken: ContractFactory;
     let Zunami: ContractFactory;
     let CurveAaveConvex: ContractFactory;
-    let lp: Contract;
     let zunami: Contract;
     let strategy: Contract;
     let referenceBlock: number;
@@ -38,7 +34,6 @@ describe('Zunami', function () {
     before(async function () {
         [owner, alice, bob, carol] = await ethers.getSigners();
 
-        LPToken = await ethers.getContractFactory('LPToken');
         Zunami = await ethers.getContractFactory('Zunami');
         CurveAaveConvex = await ethers.getContractFactory('CurveAaveConvex');
         dai = new ethers.Contract(daiAddress, erc20ABI, owner);
@@ -47,14 +42,8 @@ describe('Zunami', function () {
     });
 
     beforeEach(async function () {
-        lp = await LPToken.deploy('LP', 'LP');
-        await lp.deployed();
-        await lp.mint(owner.address, SUPPLY);
-
-        zunami = await Zunami.deploy(lp.address);
+        zunami = await Zunami.deploy();
         await zunami.deployed();
-
-        await lp.grantRole(ADMIN_ROLE, zunami.address);
 
         strategy = await CurveAaveConvex.deploy();
         await strategy.deployed();
@@ -65,8 +54,6 @@ describe('Zunami', function () {
     });
 
     it('should correctly init contracts', async () => {
-        expect(await lp.balanceOf(owner.address)).to.be.equal(SUPPLY);
-
         const token: string = await strategy.tokens(0);
         expect(token).to.equal('0x6B175474E89094C44Da98b954EedeAC495271d0F');
     });
@@ -77,18 +64,25 @@ describe('Zunami', function () {
             params: [impersonateAccount],
         });
 
-        await dai.approve(zunami.address, 1000);
-        await usdc.approve(zunami.address, 1000);
-        await usdt.approve(zunami.address, 1000);
+        const impersonateAccountSigner: Signer =
+            ethers.provider.getSigner(impersonateAccount);
 
-        console.log(
-            `Deposited is ${await zunami.deposited(impersonateAccount)}`
-        );
+        owner.sendTransaction({
+            to: impersonateAccount,
+            value: ethers.utils.parseEther('100'),
+        });
 
-        expect(await zunami.lpSupply()).to.equal(SUPPLY);
-        await zunami.deposit([150, 150, 150]);
+        await dai
+            .connect(impersonateAccountSigner)
+            .approve(zunami.address, 1000);
+        await usdc
+            .connect(impersonateAccountSigner)
+            .approve(zunami.address, 1000);
+        await usdt
+            .connect(impersonateAccountSigner)
+            .approve(zunami.address, 1000);
 
-        // expect(await zunami.lpSupply()).to.above(SUPPLY);
+        await zunami.connect(impersonateAccountSigner).deposit([150, 150, 150]);
 
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
@@ -101,6 +95,8 @@ describe('Zunami', function () {
             method: 'hardhat_impersonateAccount',
             params: [impersonateAccount],
         });
+
+        // Withdraw code should be here
 
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
