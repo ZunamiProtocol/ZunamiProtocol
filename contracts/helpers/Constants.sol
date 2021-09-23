@@ -16,6 +16,8 @@ library Constants {
         0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address internal constant DAI_ADDRESS =
         0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address internal constant WETH_ADDRESS =
+        0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address internal constant CURVE_AAVE_ADDRESS =
         0xDeBF20617708857ebe4F679508E7b7863a8A8EeE;
     address internal constant CURVE_AAVE_GAUGE_ADDRESS =
