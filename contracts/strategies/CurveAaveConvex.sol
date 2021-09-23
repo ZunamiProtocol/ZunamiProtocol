@@ -2,7 +2,7 @@
 pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -15,12 +15,11 @@ import "../interfaces/IConvexBooster.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
-import "hardhat/console.sol";
 
 contract CurveAaveConvex is Context, Ownable {
-    using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20Metadata;
 
-    uint256 private constant NORMALIZER = 1e18;
+    uint256 private constant DENOMINATOR = 1e18;
     uint8 private constant POOL_ASSETS = 3;
 
     address[3] public tokens;
@@ -28,9 +27,9 @@ contract CurveAaveConvex is Context, Ownable {
     uint256[3] public protocolShares;
 
     ICurveAavePool aavePool;
-    IERC20 crv;
-    IERC20 cvx;
-    IERC20 aaveLP;
+    IERC20Metadata crv;
+    IERC20Metadata cvx;
+    IERC20Metadata aaveLP;
     IUniswapRouter router;
     IUniswapV2Pair crvweth;
     IUniswapV2Pair wethcvx;
@@ -43,9 +42,9 @@ contract CurveAaveConvex is Context, Ownable {
 
     constructor() {
         aavePool = ICurveAavePool(Constants.CURVE_AAVE_ADDRESS);
-        aaveLP = IERC20(Constants.CURVE_AAVE_LP_ADDRESS);
-        crv = IERC20(Constants.CURVE_TOKEN_ADDRESS);
-        cvx = IERC20(Constants.CONVEX_TOKEN_ADDRESS);
+        aaveLP = IERC20Metadata(Constants.CURVE_AAVE_LP_ADDRESS);
+        crv = IERC20Metadata(Constants.CURVE_TOKEN_ADDRESS);
+        cvx = IERC20Metadata(Constants.CONVEX_TOKEN_ADDRESS);
         crvweth = IUniswapV2Pair(Constants.SUSHI_CURVE_WETH_ADDRESS);
         wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
         wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
@@ -53,6 +52,7 @@ contract CurveAaveConvex is Context, Ownable {
         crvRewards = IConvexRewards(Constants.CONVEX_CURVE_REWARDS_ADDRESS);
         stakerRewards = IConvexRewards(Constants.CONVEX_STAKER_REWARDS_ADDRESS);
         gauge = ICurveGauge(Constants.CURVE_AAVE_GAUGE_ADDRESS);
+        router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             tokens[i] = aavePool.underlying_coins(i);
         }
@@ -70,7 +70,7 @@ contract CurveAaveConvex is Context, Ownable {
         zunami = IZunami(zunamiAddr);
     }
 
-    function getTotalValue() public returns (uint256) {
+    function getTotalValue() public view returns (uint256) {
         uint256 lpBalance = gauge.balanceOf(address(this));
         uint256 lpPrice = aavePool.get_virtual_price();
         uint256 convexPrice = wethcvx.price1CumulativeLast();
@@ -78,93 +78,106 @@ contract CurveAaveConvex is Context, Ownable {
         uint256 ethPrice = wethusdt.price0CumulativeLast();
         uint256 sum = 0;
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            sum += IERC20(tokens[i]).balanceOf(address(this));
+            uint256 decimalsMultiplier = 1;
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                decimalsMultiplier =
+                    10**(18 - IERC20Metadata(tokens[i]).decimals());
+            }
+            sum +=
+                IERC20Metadata(tokens[i]).balanceOf(address(this)) *
+                decimalsMultiplier;
         }
         return
             sum +
             (lpBalance *
                 lpPrice +
-                ((ethPrice * curvePrice) / NORMALIZER) *
+                ((ethPrice * curvePrice) / DENOMINATOR) *
                 (crvRewards.earned(address(this)) +
                     crv.balanceOf(address(this))) +
-                ((ethPrice * convexPrice) / NORMALIZER) *
+                ((ethPrice * convexPrice) / DENOMINATOR) *
                 (stakerRewards.balanceOf(address(this)) +
                     cvx.balanceOf(address(this)))) /
-            NORMALIZER;
+            DENOMINATOR;
     }
 
-    function deposit(uint256[] calldata amounts) external onlyZunami {
-        require(
-            amounts.length == POOL_ASSETS,
-            "StrategyCurveAave: must have length 3"
-        );
-
+    function deposit(uint256[3] memory amounts) external onlyZunami {
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            IERC20(tokens[i]).safeIncreaseAllowance(
+            IERC20Metadata(tokens[i]).safeIncreaseAllowance(
                 Constants.CURVE_AAVE_ADDRESS,
                 amounts[i]
             );
         }
-        console.log("Ok 1");
+
         uint256 aaveLPs = aavePool.add_liquidity(amounts, 0, true);
-        console.log("Ok 2");
         aaveLP.safeApprove(Constants.CONVEX_BOOSTER_ADDRESS, aaveLPs);
         booster.depositAll(Constants.CONVEX_AAVE_PID, true);
     }
 
     function withdrawRewards() public {
         crvRewards.withdrawAllAndUnwrap(true);
-        stakerRewards.withdrawAllAndUnwrap(true);
     }
 
     function withdraw(
         address depositor,
         uint256 lpShares,
-        uint256[] calldata minAmounts
+        uint256[3] memory minAmounts
     ) external onlyZunami {
-        require(
-            minAmounts.length == POOL_ASSETS,
-            "StrategyCurveAave: must have length 3"
-        );
-
         uint256 curveRequiredLPs = aavePool.calc_token_amount(
             minAmounts,
             false
         );
-        uint256 depositedShare = (gauge.balanceOf(address(this)) * lpShares) /
-            zunami.totalSupply();
+        uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
+            lpShares) / zunami.totalSupply();
         require(
             depositedShare >= curveRequiredLPs,
             "StrategyCurveAave: user lps share should be at least required"
         );
-        booster.withdraw(Constants.CONVEX_AAVE_PID, depositedShare);
+
         withdrawRewards();
         sellCrvCvx();
+
         uint256[] memory balances = new uint256[](POOL_ASSETS);
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             balances[i] =
-                (IERC20(tokens[i]).balanceOf(address(this)) * lpShares) /
+                (IERC20Metadata(tokens[i]).balanceOf(address(this)) *
+                    lpShares) /
                 zunami.totalSupply();
         }
 
-        uint256[] memory liqAmounts = aavePool.remove_liquidity(
-            minAmounts,
+        uint256[3] memory liqAmounts = aavePool.remove_liquidity(
             depositedShare,
+            minAmounts,
             true
         );
+
         uint256 totalDeposited = zunami.totalDeposited();
         uint256 userDeposit = (lpShares * totalDeposited) /
             zunami.totalSupply();
+
         uint256 earned = 0;
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            earned += liqAmounts[i] + balances[i];
+            uint256 decimalsMultiplier = 1;
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                decimalsMultiplier =
+                    10**(18 - IERC20Metadata(tokens[i]).decimals());
+            }
+            earned += (liqAmounts[i] + balances[i]) * decimalsMultiplier;
         }
-        uint256 protocolFee = zunami.calculateFee(earned - userDeposit);
+
+        uint256 protocolFee = zunami.calculateFee(
+            (earned < userDeposit ? 0 : earned - userDeposit)
+        );
+
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
+            uint256 decimalsMultiplier = 1;
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                decimalsMultiplier =
+                    10**(18 - IERC20Metadata(tokens[i]).decimals());
+            }
             uint256 protocolShare = (protocolFee *
                 (liqAmounts[i] + balances[i])) / earned;
             protocolShares[i] += protocolShare;
-            IERC20(tokens[i]).safeTransfer(
+            IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
                 liqAmounts[i] + balances[i] - protocolShare
             );
@@ -175,47 +188,52 @@ contract CurveAaveConvex is Context, Ownable {
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             uint256 protocolShare = protocolShares[i];
             protocolShares[i] = 0;
-            IERC20(tokens[i]).safeTransfer(owner(), protocolShare);
+            IERC20Metadata(tokens[i]).safeTransfer(owner(), protocolShare);
         }
     }
 
     function sellCrvCvx() public {
-        address[] memory path = new address[](2);
-        path[0] = Constants.SUSHI_WETH_CVX_ADDRESS;
-        path[1] = Constants.SUSHI_WETH_USDT_ADDRESS;
+        cvx.safeApprove(address(router), cvx.balanceOf(address(this)));
+        crv.safeApprove(address(router), crv.balanceOf(address(this)));
+
+        address[] memory path = new address[](3);
+        path[0] = Constants.CONVEX_TOKEN_ADDRESS;
+        path[1] = Constants.WETH_ADDRESS;
+        path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
             cvx.balanceOf(address(this)),
             0,
             path,
             address(this),
-            Constants.TRADE_DEADLINE
+            block.timestamp + Constants.TRADE_DEADLINE
         );
-        path[0] = Constants.SUSHI_CURVE_WETH_ADDRESS;
-        path[1] = Constants.SUSHI_WETH_USDT_ADDRESS;
+
+        path[0] = Constants.CURVE_TOKEN_ADDRESS;
+        path[1] = Constants.WETH_ADDRESS;
+        path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
             crv.balanceOf(address(this)),
             0,
             path,
             address(this),
-            Constants.TRADE_DEADLINE
+            block.timestamp + Constants.TRADE_DEADLINE
         );
     }
 
     function withdrawAll() external onlyZunami {
-        booster.withdrawAll(Constants.CONVEX_AAVE_PID);
         withdrawRewards();
         sellCrvCvx();
 
         uint256 lpBalance = aaveLP.balanceOf(address(this));
-        uint256[] memory minAmounts = new uint256[](POOL_ASSETS);
-        uint256[] memory amounts = aavePool.remove_liquidity(
-            minAmounts,
+        uint256[3] memory minAmounts;
+        uint256[3] memory amounts = aavePool.remove_liquidity(
             lpBalance,
+            minAmounts,
             true
         );
 
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
-            IERC20(tokens[i]).safeTransfer(_msgSender(), amounts[i]);
+            IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), amounts[i]);
         }
     }
 }
