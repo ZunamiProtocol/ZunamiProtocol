@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.4;
 
-interface ICurveAavePool {
+interface ICurvePool {
     function underlying_coins(uint256 i) external view returns (address);
 
     function underlying_coins() external view returns (address[] memory);

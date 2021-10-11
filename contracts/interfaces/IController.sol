@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.4;
 
 interface IController {
     function addStrategy(address strategyAddr, bytes32 strategyName) external;

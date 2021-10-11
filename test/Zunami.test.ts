@@ -21,6 +21,7 @@ describe('Zunami', function () {
 
     let Zunami: ContractFactory;
     let CurveAaveConvex: ContractFactory;
+    let CurveIronBankConvex: ContractFactory;
     let zunami: Contract;
     let strategy: Contract;
     let referenceBlock: number;
@@ -37,10 +38,15 @@ describe('Zunami', function () {
 
         Zunami = await ethers.getContractFactory('Zunami');
         CurveAaveConvex = await ethers.getContractFactory('CurveAaveConvex');
+        CurveIronBankConvex = await ethers.getContractFactory(
+            'CurveIronBankConvex'
+        );
         dai = new ethers.Contract(daiAddress, erc20ABI, owner);
         usdc = new ethers.Contract(usdcAddress, erc20ABI, owner);
         usdt = new ethers.Contract(usdtAddress, erc20ABI, owner);
+    });
 
+    beforeEach(async function () {
         owner.sendTransaction({
             to: daiAccount,
             value: ethers.utils.parseEther('100'),
@@ -96,7 +102,7 @@ describe('Zunami', function () {
         });
     });
 
-    beforeEach(async function () {
+    it('aave deposit/withraw/profit', async () => {
         zunami = await Zunami.deploy();
         await zunami.deployed();
 
@@ -105,19 +111,6 @@ describe('Zunami', function () {
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);
 
-        referenceBlock = await mockProvider.getBlockNumber();
-    });
-
-    it('should correctly init contracts', async () => {
-        let token: string = await strategy.tokens(0);
-        expect(token).to.equal(daiAddress);
-        token = await strategy.tokens(1);
-        expect(token).to.equal(usdcAddress);
-        token = await strategy.tokens(2);
-        expect(token).to.equal(usdtAddress);
-    });
-
-    it('deposit/withraw/profit', async () => {
         await dai.approve(zunami.address, '1000000000000000000000');
         await usdc.approve(zunami.address, '1000000000');
         await usdt.approve(zunami.address, '1000000000');
@@ -131,6 +124,54 @@ describe('Zunami', function () {
             '0',
             '0',
         ]);
-        await zunami.claimProfit();
+        await zunami.claimManagementFees(strategy.address);
+    });
+
+    it('ironnank deposit/withraw/profit', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await CurveIronBankConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+        await zunami.withdraw(await zunami.balanceOf(owner.address), [
+            '0',
+            '0',
+            '0',
+        ]);
+        await zunami.claimManagementFees(strategy.address);
+    });
+
+    it('zunami update strategy', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await CurveAaveConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+
+        let strategyIB = await CurveIronBankConvex.deploy();
+        await strategyIB.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
     });
 });
