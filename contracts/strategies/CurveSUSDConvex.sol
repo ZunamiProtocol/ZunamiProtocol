@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../utils/Constants.sol";
-import "../interfaces/ICurvePool.sol";
+import "../interfaces/ICurvePool4.sol";
 import "../interfaces/ICurveGauge.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapRouter.sol";
@@ -17,7 +17,7 @@ import "../interfaces/IZunami.sol";
 
 import "hardhat/console.sol";
 
-contract CurveAaveConvex is Context, Ownable {
+contract CurveSUSDConvex is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
 
     uint256 private constant DENOMINATOR = 1e18;
@@ -27,10 +27,11 @@ contract CurveAaveConvex is Context, Ownable {
 
     uint256[3] public managementFees;
 
-    ICurvePool aavePool;
+    ICurvePool4 susdPool;
     IERC20Metadata crv;
     IERC20Metadata cvx;
-    IERC20Metadata aaveLP;
+    IERC20Metadata susdLP;
+    IERC20Metadata susd;
     IUniswapRouter router;
     IUniswapV2Pair crvweth;
     IUniswapV2Pair wethcvx;
@@ -41,26 +42,27 @@ contract CurveAaveConvex is Context, Ownable {
     IZunami zunami;
 
     constructor() {
-        aavePool = ICurvePool(Constants.CRV_AAVE_ADDRESS);
-        aaveLP = IERC20Metadata(Constants.CRV_AAVE_LP_ADDRESS);
+        susdPool = ICurvePool4(Constants.CRV_SUSD_ADDRESS);
+        susdLP = IERC20Metadata(Constants.CRV_SUSD_LP_ADDRESS);
         crv = IERC20Metadata(Constants.CRV_ADDRESS);
         cvx = IERC20Metadata(Constants.CVX_ADDRESS);
+        susd = IERC20Metadata(Constants.SUSD_ADDRESS);
         crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
         wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
         wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
         booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
-        crvRewards = IConvexRewards(Constants.CVX_AAVE_REWARDS_ADDRESS);
-        gauge = ICurveGauge(Constants.CRV_AAVE_GAUGE_ADDRESS);
+        crvRewards = IConvexRewards(Constants.CVX_SUSD_REWARDS_ADDRESS);
+        gauge = ICurveGauge(Constants.CRV_SUSD_GAUGE_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
-            tokens[i] = aavePool.underlying_coins(i);
+            tokens[i] = susdPool.underlying_coins(i + 1);
         }
     }
 
     modifier onlyZunami() {
         require(
             _msgSender() == address(zunami),
-            "CurveAaveConvex: must be called by Zunami contract"
+            "CurvesusdConvex: must be called by Zunami contract"
         );
         _;
     }
@@ -71,7 +73,7 @@ contract CurveAaveConvex is Context, Ownable {
 
     function getTotalValue() public view virtual returns (uint256) {
         uint256 lpBalance = gauge.balanceOf(address(this));
-        uint256 lpPrice = aavePool.get_virtual_price();
+        uint256 lpPrice = susdPool.get_virtual_price();
         uint256 cvxPrice = wethcvx.price1CumulativeLast();
         uint256 crvPrice = crvweth.price0CumulativeLast();
         uint256 ethPrice = wethusdt.price0CumulativeLast();
@@ -102,14 +104,17 @@ contract CurveAaveConvex is Context, Ownable {
     function deposit(uint256[3] memory amounts) external virtual onlyZunami {
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             IERC20Metadata(tokens[i]).safeIncreaseAllowance(
-                Constants.CRV_AAVE_ADDRESS,
+                Constants.CRV_SUSD_ADDRESS,
                 amounts[i]
             );
         }
-
-        uint256 aaveLPs = aavePool.add_liquidity(amounts, 0, true);
-        aaveLP.safeApprove(Constants.CVX_BOOSTER_ADDRESS, aaveLPs);
-        booster.depositAll(Constants.CVX_AAVE_PID, true);
+        uint256[4] memory amounts4;
+        for (uint8 i = 0; i < POOL_ASSETS; ++i) {
+            amounts4[i + 1] = amounts[i];
+        }
+        uint256 susdLPs = susdPool.add_liquidity(amounts4, 0, true);
+        susdLP.safeApprove(Constants.CVX_BOOSTER_ADDRESS, susdLPs);
+        booster.depositAll(Constants.CVX_SUSD_PID, true);
     }
 
     function withdraw(
@@ -117,16 +122,21 @@ contract CurveAaveConvex is Context, Ownable {
         uint256 lpShares,
         uint256[3] memory minAmounts
     ) external virtual onlyZunami {
-        uint256 crvRequiredLPs = aavePool.calc_token_amount(minAmounts, false);
+        uint256[4] memory minAmounts4;
+        for (uint8 i = 0; i < POOL_ASSETS; ++i) {
+            minAmounts4[i + 1] = minAmounts[i];
+        }
+        uint256 crvRequiredLPs = susdPool.calc_token_amount(minAmounts4, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
             lpShares) / zunami.totalSupply();
         require(
             depositedShare >= crvRequiredLPs,
-            "StrategyCurveAave: user lps share should be at least required"
+            "StrategyCurvesusd: user lps share should be at least required"
         );
 
         crvRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
+        sellSUSD();
 
         uint256[] memory userBalances = new uint256[](POOL_ASSETS);
         uint256[] memory prevBalances = new uint256[](POOL_ASSETS);
@@ -139,7 +149,7 @@ contract CurveAaveConvex is Context, Ownable {
                 zunami.totalSupply();
         }
 
-        aavePool.remove_liquidity(depositedShare, minAmounts, true);
+        susdPool.remove_liquidity(depositedShare, minAmounts4, true);
         uint256[3] memory liqAmounts;
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             liqAmounts[i] =
@@ -161,11 +171,11 @@ contract CurveAaveConvex is Context, Ownable {
         uint256 managementFee = zunami.calcManagementFee(
             (earned < userDeposit ? 0 : earned - userDeposit)
         );
-
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             uint256 managementFeePerAsset = (managementFee *
                 (liqAmounts[i] + userBalances[i])) / earned;
             managementFees[i] += managementFeePerAsset;
+
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
                 liqAmounts[i] + userBalances[i] - managementFeePerAsset
@@ -174,7 +184,7 @@ contract CurveAaveConvex is Context, Ownable {
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+        for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             uint256 managementFee = managementFees[i];
             managementFees[i] = 0;
             IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee);
@@ -209,13 +219,30 @@ contract CurveAaveConvex is Context, Ownable {
         );
     }
 
+    function sellSUSD() public virtual {
+        susd.safeApprove(address(router), cvx.balanceOf(address(this)));
+
+        address[] memory path = new address[](3);
+        path[0] = Constants.SUSD_ADDRESS;
+        path[1] = Constants.WETH_ADDRESS;
+        path[2] = Constants.USDT_ADDRESS;
+        router.swapExactTokensForTokens(
+            cvx.balanceOf(address(this)),
+            0,
+            path,
+            address(this),
+            block.timestamp + Constants.TRADE_DEADLINE
+        );
+    }
+
     function withdrawAll() external virtual onlyZunami {
         crvRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
+        sellSUSD();
 
-        uint256 lpBalance = aaveLP.balanceOf(address(this));
-        uint256[3] memory minAmounts;
-        aavePool.remove_liquidity(lpBalance, minAmounts, true);
+        uint256 lpBalance = susdLP.balanceOf(address(this));
+        uint256[4] memory minAmounts;
+        susdPool.remove_liquidity(lpBalance, minAmounts, true);
 
         for (uint8 i = 0; i < POOL_ASSETS; ++i) {
             IERC20Metadata(tokens[i]).safeTransfer(

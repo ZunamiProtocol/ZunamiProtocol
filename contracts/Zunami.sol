@@ -1,14 +1,14 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-import "./helpers/Constants.sol";
-import "./interfaces/IStrategy.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import "./utils/Constants.sol";
+import "./interfaces/IStrategy.sol";
 
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
@@ -20,7 +20,7 @@ contract Zunami is Context, Ownable, ERC20 {
     uint256 public totalDeposited;
 
     uint256 public FEE_DENOMINATOR = 1000;
-    uint256 public protocolFee = 10; // 1%
+    uint256 public managementFee = 10; // 1%
 
     event Deposited(uint256[3] memorys, uint256 lpShares);
     event Withdrawn(uint256[3] memorys, uint256 lpShares);
@@ -32,15 +32,20 @@ contract Zunami is Context, Ownable, ERC20 {
         tokens[2] = Constants.USDT_ADDRESS;
     }
 
-    function setProtocolFee(uint256 newProtocolFee) external onlyOwner {
-        protocolFee = newProtocolFee;
+    function setManagementFee(uint256 newManagementFee) external onlyOwner {
+        managementFee = newManagementFee;
     }
 
-    function calculateFee(uint256 amount) public view returns (uint256) {
-        return (amount * protocolFee) / FEE_DENOMINATOR;
+    function calcManagementFee(uint256 amount)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
+        return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
-    function updateStrategy(address strategyAddr) external onlyOwner {
+    function updateStrategy(address strategyAddr) external virtual onlyOwner {
         if (address(strategy) != address(0)) {
             strategy.withdrawAll();
             uint256[3] memory amounts;
@@ -55,11 +60,15 @@ contract Zunami is Context, Ownable, ERC20 {
         emit StrategyUpdated(strategyAddr);
     }
 
-    function getTotalValue() public view returns (uint256) {
+    function getTotalValue() public view virtual returns (uint256) {
         return strategy.getTotalValue();
     }
 
-    function deposit(uint256[3] memory amounts) external returns (uint256) {
+    function deposit(uint256[3] memory amounts)
+        external
+        virtual
+        returns (uint256)
+    {
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
@@ -94,7 +103,10 @@ contract Zunami is Context, Ownable, ERC20 {
         return lpShares;
     }
 
-    function withdraw(uint256 lpShares, uint256[3] memory minAmounts) external {
+    function withdraw(uint256 lpShares, uint256[3] memory minAmounts)
+        external
+        virtual
+    {
         require(
             balanceOf(_msgSender()) >= lpShares,
             "Zunami: not enough LP balance"
@@ -107,7 +119,13 @@ contract Zunami is Context, Ownable, ERC20 {
         emit Withdrawn(minAmounts, lpShares);
     }
 
-    function claimProfit() external onlyOwner {
-        strategy.claimProfit();
+    function claimManagementFees(address strategyAddr)
+        external
+        virtual
+        onlyOwner
+    {
+        IStrategy(strategyAddr).claimManagementFees();
     }
+
+    receive() external payable virtual {}
 }

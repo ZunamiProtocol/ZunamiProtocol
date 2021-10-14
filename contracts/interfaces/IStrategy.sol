@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.4;
 
 interface IStrategy {
     function deposit(uint256[3] memory amounts) external;
@@ -14,5 +14,5 @@ interface IStrategy {
 
     function getTotalValue() external view returns (uint256);
 
-    function claimProfit() external;
+    function claimManagementFees() external;
 }
