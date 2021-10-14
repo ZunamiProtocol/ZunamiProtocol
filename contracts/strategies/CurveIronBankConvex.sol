@@ -23,9 +23,8 @@ contract CurveIronBankConvex is Context, Ownable {
     uint256 private constant DENOMINATOR = 1e18;
     uint8 private constant POOL_ASSETS = 3;
 
-    address[3] public tokens;
-
-    uint256[3] public managementFees;
+    address[POOL_ASSETS] public tokens;
+    uint256[POOL_ASSETS] public managementFees;
 
     ICurvePool ironBankPool;
     IERC20Metadata crv;

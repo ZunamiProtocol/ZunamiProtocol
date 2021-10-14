@@ -22,6 +22,13 @@ interface ICurvePool {
         bool useUnderlying
     ) external returns (uint256[3] memory);
 
+    function exchange(
+        int128 i,
+        int128 j,
+        uint256 input,
+        uint256 minOutput
+    ) external returns (uint256);
+
     function calc_token_amount(uint256[3] memory amounts, bool isDeposit)
         external
         view
