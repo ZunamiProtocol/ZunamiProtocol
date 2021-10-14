@@ -23,9 +23,8 @@ contract CurveSUSDConvex is Context, Ownable {
     uint256 private constant DENOMINATOR = 1e18;
     uint8 private constant POOL_ASSETS = 3;
 
-    address[3] public tokens;
-
-    uint256[3] public managementFees;
+    address[POOL_ASSETS] public tokens;
+    uint256[POOL_ASSETS] public managementFees;
 
     ICurvePool4 susdPool;
     IERC20Metadata crv;
@@ -220,14 +219,14 @@ contract CurveSUSDConvex is Context, Ownable {
     }
 
     function sellSUSD() public virtual {
-        susd.safeApprove(address(router), cvx.balanceOf(address(this)));
+        susd.safeApprove(address(router), susd.balanceOf(address(this)));
 
         address[] memory path = new address[](3);
         path[0] = Constants.SUSD_ADDRESS;
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            cvx.balanceOf(address(this)),
+            susd.balanceOf(address(this)),
             0,
             path,
             address(this),
