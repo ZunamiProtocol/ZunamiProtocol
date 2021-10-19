@@ -20,8 +20,11 @@ describe('Zunami', function () {
     let carol: SignerWithAddress;
 
     let Zunami: ContractFactory;
-    let CurveAaveConvex: ContractFactory;
-    let CurveIronBankConvex: ContractFactory;
+    let AaveCurveConvex: ContractFactory;
+    let IronBankCurveConvex: ContractFactory;
+    let SUSDCurveConvex: ContractFactory;
+    let TUSDCurveConvex: ContractFactory;
+    let USDNCurveConvex: ContractFactory;
     let zunami: Contract;
     let strategy: Contract;
     let referenceBlock: number;
@@ -37,9 +40,12 @@ describe('Zunami', function () {
         [owner, alice, bob, carol] = await ethers.getSigners();
 
         Zunami = await ethers.getContractFactory('Zunami');
-        CurveAaveConvex = await ethers.getContractFactory('CurveAaveConvex');
-        CurveIronBankConvex = await ethers.getContractFactory(
-            'CurveIronBankConvex'
+        AaveCurveConvex = await ethers.getContractFactory('AaveCurveConvex');
+        SUSDCurveConvex = await ethers.getContractFactory('SUSDCurveConvex');
+        TUSDCurveConvex = await ethers.getContractFactory('TUSDCurveConvex');
+        USDNCurveConvex = await ethers.getContractFactory('USDNCurveConvex');
+        IronBankCurveConvex = await ethers.getContractFactory(
+            'IronBankCurveConvex'
         );
         dai = new ethers.Contract(daiAddress, erc20ABI, owner);
         usdc = new ethers.Contract(usdcAddress, erc20ABI, owner);
@@ -49,15 +55,15 @@ describe('Zunami', function () {
     beforeEach(async function () {
         owner.sendTransaction({
             to: daiAccount,
-            value: ethers.utils.parseEther('100'),
+            value: ethers.utils.parseEther('10'),
         });
         owner.sendTransaction({
             to: usdcAccount,
-            value: ethers.utils.parseEther('100'),
+            value: ethers.utils.parseEther('10'),
         });
         owner.sendTransaction({
             to: usdtAccount,
-            value: ethers.utils.parseEther('100'),
+            value: ethers.utils.parseEther('10'),
         });
 
         await network.provider.request({
@@ -67,7 +73,7 @@ describe('Zunami', function () {
         const daiAccountSigner: Signer = ethers.provider.getSigner(daiAccount);
         await dai
             .connect(daiAccountSigner)
-            .transfer(owner.address, '1000000000000000000000000');
+            .transfer(owner.address, '100000000000000000000000');
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
             params: [daiAccount],
@@ -81,7 +87,7 @@ describe('Zunami', function () {
             ethers.provider.getSigner(usdcAccount);
         await usdc
             .connect(usdcAccountSigner)
-            .transfer(owner.address, '10000000000000');
+            .transfer(owner.address, '1000000000000');
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
             params: [usdcAccount],
@@ -95,7 +101,7 @@ describe('Zunami', function () {
             ethers.provider.getSigner(usdtAccount);
         await usdt
             .connect(usdtAccountSigner)
-            .transfer(owner.address, '10000000000000');
+            .transfer(owner.address, '1000000000000');
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
             params: [usdtAccount],
@@ -106,7 +112,7 @@ describe('Zunami', function () {
         zunami = await Zunami.deploy();
         await zunami.deployed();
 
-        strategy = await CurveAaveConvex.deploy();
+        strategy = await AaveCurveConvex.deploy();
         await strategy.deployed();
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);
@@ -131,7 +137,7 @@ describe('Zunami', function () {
         zunami = await Zunami.deploy();
         await zunami.deployed();
 
-        strategy = await CurveIronBankConvex.deploy();
+        strategy = await IronBankCurveConvex.deploy();
         await strategy.deployed();
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);
@@ -151,11 +157,86 @@ describe('Zunami', function () {
         await zunami.claimManagementFees(strategy.address);
     });
 
+    it('SUSD deposit/withraw/profit', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await SUSDCurveConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+        await zunami.withdraw(await zunami.balanceOf(owner.address), [
+            '0',
+            '0',
+            '0',
+        ]);
+        await zunami.claimManagementFees(strategy.address);
+    });
+
+    it('TUSD deposit/withraw/profit', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await TUSDCurveConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+        await zunami.withdraw(await zunami.balanceOf(owner.address), [
+            '0',
+            '0',
+            '0',
+        ]);
+        await zunami.claimManagementFees(strategy.address);
+    });
+
+    it('USDN deposit/withraw/profit', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await USDNCurveConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+        await zunami.withdraw(await zunami.balanceOf(owner.address), [
+            '0',
+            '0',
+            '0',
+        ]);
+        await zunami.claimManagementFees(strategy.address);
+    });
+
     it('zunami update strategy', async () => {
         zunami = await Zunami.deploy();
         await zunami.deployed();
 
-        strategy = await CurveAaveConvex.deploy();
+        strategy = await AaveCurveConvex.deploy();
         await strategy.deployed();
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);
@@ -169,7 +250,7 @@ describe('Zunami', function () {
             '1000000000',
         ]);
 
-        let strategyIB = await CurveIronBankConvex.deploy();
+        let strategyIB = await IronBankCurveConvex.deploy();
         await strategyIB.deployed();
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);

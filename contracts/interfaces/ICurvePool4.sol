@@ -2,32 +2,18 @@
 pragma solidity ^0.8.4;
 
 interface ICurvePool4 {
-    function underlying_coins(uint256 i) external view returns (address);
+    function add_liquidity(uint256[4] memory amounts, uint256 minMintAmount)
+        external;
 
-    function underlying_coins() external view returns (address[] memory);
+    function remove_liquidity(uint256 burnAmount, uint256[4] memory minAmounts)
+        external;
 
-    function add_liquidity(
-        uint256[4] memory amounts,
-        uint256 minMintAmount,
-        bool useUnderlying
-    ) external returns (uint256);
-
-    function A() external view returns (uint256);
-
-    function balances(uint256 i) external view returns (uint256);
-
-    function remove_liquidity(
-        uint256 burnAmount,
-        uint256[4] memory minAmounts,
-        bool useUnderlying
-    ) external returns (uint256[4] memory);
-
-    function exchange(
+    function exchange_underlying(
         int128 i,
         int128 j,
         uint256 input,
         uint256 minOutput
-    ) external returns (uint256);
+    ) external;
 
     function calc_token_amount(uint256[4] memory amounts, bool isDeposit)
         external

@@ -67,6 +67,10 @@ library Constants {
         0x06da0fd433C1A5d7a4faa01111c044910A184553;
     address internal constant CVX_BOOSTER_ADDRESS =
         0xF403C135812408BFbE8713b5A23a04b3D48AAE31;
+    address internal constant CRV_3POOL_ADDRESS =
+        0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7;
+    address internal constant CRV_3POOL_LP_ADDRESS =
+        0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
     address internal constant CRV_AAVE_ADDRESS =
         0xDeBF20617708857ebe4F679508E7b7863a8A8EeE;
     address internal constant CRV_AAVE_GAUGE_ADDRESS =
@@ -140,9 +144,9 @@ library Constants {
     address internal constant CVX_USDN_REWARDS_ADDRESS =
         0x4a2631d090e8b40bBDe245e687BF09e5e534A239;
     address internal constant CRV_LUSD_ADDRESS =
-        0x9B8519A9a00100720CCdC8a120fBeD319cA47a14;
-    address internal constant CRV_LUSD_GAUGE_ADDRESS =
         0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA;
+    address internal constant CRV_LUSD_GAUGE_ADDRESS =
+        0x9B8519A9a00100720CCdC8a120fBeD319cA47a14;
     address internal constant CRV_LUSD_LP_ADDRESS =
         0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA;
     address internal constant CVX_LUSD_REWARDS_ADDRESS =
