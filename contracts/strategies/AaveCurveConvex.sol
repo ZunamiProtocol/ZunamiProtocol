@@ -10,8 +10,10 @@ contract AaveCurveConvex is BaseCurveConvex {
             Constants.CRV_AAVE_ADDRESS,
             Constants.CRV_AAVE_LP_ADDRESS,
             Constants.CVX_AAVE_REWARDS_ADDRESS,
-            Constants.CRV_AAVE_GAUGE_ADDRESS,
-            Constants.CVX_AAVE_PID
+            Constants.CVX_AAVE_PID,
+            Constants.CVX_AAVE_EXTRA_ADDRESS,
+            Constants.AAVE_EXTRA_ADDRESS,
+            Constants.AAVE_EXTRA_PAIR_ADDRESS
         )
     {}
 }

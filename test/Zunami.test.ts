@@ -25,6 +25,7 @@ describe('Zunami', function () {
     let SUSDCurveConvex: ContractFactory;
     let TUSDCurveConvex: ContractFactory;
     let USDNCurveConvex: ContractFactory;
+    let MIMCurveConvex: ContractFactory;
     let zunami: Contract;
     let strategy: Contract;
     let referenceBlock: number;
@@ -44,6 +45,7 @@ describe('Zunami', function () {
         SUSDCurveConvex = await ethers.getContractFactory('SUSDCurveConvex');
         TUSDCurveConvex = await ethers.getContractFactory('TUSDCurveConvex');
         USDNCurveConvex = await ethers.getContractFactory('USDNCurveConvex');
+        MIMCurveConvex = await ethers.getContractFactory('MIMCurveConvex');
         IronBankCurveConvex = await ethers.getContractFactory(
             'IronBankCurveConvex'
         );
@@ -162,6 +164,31 @@ describe('Zunami', function () {
         await zunami.deployed();
 
         strategy = await SUSDCurveConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+        await zunami.withdraw(await zunami.balanceOf(owner.address), [
+            '0',
+            '0',
+            '0',
+        ]);
+        await zunami.claimManagementFees(strategy.address);
+    });
+
+    it('MIM deposit/withraw/profit', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await MIMCurveConvex.deploy();
         await strategy.deployed();
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);

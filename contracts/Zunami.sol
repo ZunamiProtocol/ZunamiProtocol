@@ -60,8 +60,8 @@ contract Zunami is Context, Ownable, ERC20 {
         emit StrategyUpdated(strategyAddr);
     }
 
-    function getTotalValue() public view virtual returns (uint256) {
-        return strategy.getTotalValue();
+    function totalHoldings() public view virtual returns (uint256) {
+        return strategy.totalHoldings();
     }
 
     function deposit(uint256[3] memory amounts)
@@ -78,15 +78,15 @@ contract Zunami is Context, Ownable, ERC20 {
             }
             sum += amounts[i] * decimalsMultiplier;
         }
-        uint256 totalValue = getTotalValue();
+        uint256 holdings = totalHoldings();
         deposited[_msgSender()] += sum;
         totalDeposited += sum;
 
         uint256 lpShares = 0;
-        if (totalValue == 0) {
+        if (holdings == 0) {
             lpShares = sum;
         } else {
-            lpShares = (sum * totalSupply()) / totalValue;
+            lpShares = (sum * totalSupply()) / holdings;
         }
         _mint(_msgSender(), lpShares);
 

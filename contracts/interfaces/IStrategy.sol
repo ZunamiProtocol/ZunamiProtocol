@@ -12,7 +12,7 @@ interface IStrategy {
 
     function withdrawAll() external;
 
-    function getTotalValue() external view returns (uint256);
+    function totalHoldings() external view returns (uint256);
 
     function claimManagementFees() external;
 }
