@@ -8,7 +8,7 @@ interface IZunami {
 
     function deposited(address account) external returns (uint256);
 
-    function getTotalValue() external returns (uint256);
+    function totalHoldings() external returns (uint256);
 
     function calcManagementFee(uint256 amount) external returns (uint256);
 }

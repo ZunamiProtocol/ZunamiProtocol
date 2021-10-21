@@ -10,9 +10,11 @@ contract RSVCurveConvex is BaseCurveConvex2 {
             Constants.CRV_RSV_ADDRESS,
             Constants.CRV_RSV_LP_ADDRESS,
             Constants.CVX_RSV_REWARDS_ADDRESS,
-            Constants.CRV_RSV_GAUGE_ADDRESS,
             Constants.CVX_RSV_PID,
-            Constants.RSV_ADDRESS
+            Constants.RSV_ADDRESS,
+            Constants.CVX_RSV_EXTRA_ADDRESS,
+            Constants.RSV_EXTRA_ADDRESS,
+            Constants.RSV_EXTRA_PAIR_ADDRESS
         )
     {}
 }

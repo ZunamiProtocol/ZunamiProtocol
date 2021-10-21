@@ -10,9 +10,11 @@ contract MUSDCurveConvex is BaseCurveConvex2 {
             Constants.CRV_MUSD_ADDRESS,
             Constants.CRV_MUSD_LP_ADDRESS,
             Constants.CVX_MUSD_REWARDS_ADDRESS,
-            Constants.CRV_MUSD_GAUGE_ADDRESS,
             Constants.CVX_MUSD_PID,
-            Constants.MUSD_ADDRESS
+            Constants.MUSD_ADDRESS,
+            Constants.CVX_MUSD_EXTRA_ADDRESS,
+            Constants.MUSD_EXTRA_ADDRESS,
+            Constants.MUSD_EXTRA_PAIR_ADDRESS
         )
     {}
 }
