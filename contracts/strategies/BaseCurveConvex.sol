@@ -167,7 +167,6 @@ contract BaseCurveConvex is Context, Ownable {
                 amounts[i]
             );
         }
-
         uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
         poolLP.safeApprove(address(booster), poolLPs);
         booster.depositAll(cvxPoolPID, true);
