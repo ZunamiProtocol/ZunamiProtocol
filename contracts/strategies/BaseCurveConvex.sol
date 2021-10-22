@@ -11,11 +11,13 @@ import "../interfaces/ICurvePoolUnderlying.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapRouter.sol";
 import "../interfaces/IConvexBooster.sol";
+import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
 contract BaseCurveConvex is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
+    using SafeERC20 for IConvexMinter;
 
     uint256 private constant DENOMINATOR = 1e18;
     uint256 private constant USD_MULTIPLIER = 1e12;
@@ -26,7 +28,7 @@ contract BaseCurveConvex is Context, Ownable {
     ICurvePoolUnderlying public pool;
     IUniswapRouter public router;
     IERC20Metadata public crv;
-    IERC20Metadata public cvx;
+    IConvexMinter public cvx;
     IERC20Metadata public poolLP;
     IUniswapV2Pair public crvweth;
     IUniswapV2Pair public wethcvx;
@@ -51,7 +53,7 @@ contract BaseCurveConvex is Context, Ownable {
         pool = ICurvePoolUnderlying(poolAddr);
         poolLP = IERC20Metadata(poolLPAddr);
         crv = IERC20Metadata(Constants.CRV_ADDRESS);
-        cvx = IERC20Metadata(Constants.CVX_ADDRESS);
+        cvx = IConvexMinter(Constants.CVX_ADDRESS);
         crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
         wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
         wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
@@ -149,7 +151,11 @@ contract BaseCurveConvex is Context, Ownable {
                 (crvRewards.earned(address(this)) +
                     crv.balanceOf(address(this))) +
                 cvxPrice *
-                (crvRewards.earned(address(this)) +
+                ((crvRewards.earned(address(this)) *
+                    (cvx.totalCliffs() -
+                        cvx.totalSupply() /
+                        cvx.reductionPerCliff())) /
+                    cvx.totalCliffs() +
                     cvx.balanceOf(address(this)))) /
             DENOMINATOR;
     }
