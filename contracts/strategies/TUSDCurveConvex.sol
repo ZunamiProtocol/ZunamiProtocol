@@ -16,8 +16,6 @@ import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
-import "hardhat/console.sol";
-
 contract TUSDCurveConvex is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
@@ -84,7 +82,7 @@ contract TUSDCurveConvex is Context, Ownable {
         (reserve0, reserve1, ) = crvweth.getReserves();
         uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
         (reserve0, reserve1, ) = wethusdt.getReserves();
-        uint256 ethPrice = (reserve1 * DENOMINATOR) / reserve0;
+        uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
