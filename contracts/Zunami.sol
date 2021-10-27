@@ -12,6 +12,18 @@ import "./interfaces/IStrategy.sol";
 
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
+
+    struct PendingDeposit {
+        uint256[3] amounts;
+        address depositor;
+    }
+
+    struct PendingWithdrawal {
+        uint256 lpAmount;
+        uint256[3] minAmounts;
+        address withdrawer;
+    }
+
     uint8 private constant POOL_ASSETS = 3;
 
     address[POOL_ASSETS] public tokens;
@@ -22,17 +34,30 @@ contract Zunami is Context, Ownable, ERC20 {
     uint256 public FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
 
-    event Deposited(uint256[3] memorys, uint256 lpShares);
-    event Withdrawn(uint256[3] memorys, uint256 lpShares);
+    address public manager;
+    address public admin;
+    uint256 public completedDeposits;
+    uint256 public completedWithdrawals;
+    PendingDeposit[] public pendingDeposits;
+    PendingWithdrawal[] public pendingWithdrawals;
+
+    event Deposited(address depositor, uint256[3] memorys, uint256 lpShares);
+    event Withdrawn(address withdrawer, uint256[3] memorys, uint256 lpShares);
     event StrategyUpdated(address strategyAddr);
+
+    modifier onlyManager() {
+        require(_msgSender() == manager, "Zunami: sender must be manager");
+        _;
+    }
 
     constructor() ERC20("ZunamiLP", "ZLP") {
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
+        manager = _msgSender();
     }
 
-    function setManagementFee(uint256 newManagementFee) external onlyOwner {
+    function setManagementFee(uint256 newManagementFee) external onlyManager {
         managementFee = newManagementFee;
     }
 
@@ -62,6 +87,61 @@ contract Zunami is Context, Ownable, ERC20 {
 
     function totalHoldings() public view virtual returns (uint256) {
         return strategy.totalHoldings();
+    }
+
+    function delegateDeposit(uint256[3] memory amounts) external virtual {
+        PendingDeposit memory pendingDeposit;
+        pendingDeposit.amounts = amounts;
+        pendingDeposit.depositor = _msgSender();
+        pendingDeposits.push(pendingDeposit);
+    }
+
+    function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts)
+        external
+        virtual
+    {
+        PendingWithdrawal memory pendingWithdrawal;
+        pendingWithdrawal.lpAmount = lpAmount;
+        pendingWithdrawal.minAmounts = minAmounts;
+        pendingWithdrawal.withdrawer = _msgSender();
+        pendingWithdrawals.push(pendingWithdrawal);
+    }
+
+    function completeDeposits(uint256 depositsToComplete)
+        external
+        virtual
+        onlyOwner
+    {
+        for (
+            uint256 i = completedDeposits;
+            i < completedDeposits + depositsToComplete;
+            ++i
+        ) {
+            delegatedDeposit(
+                pendingDeposits[i].depositor,
+                pendingDeposits[i].amounts
+            );
+        }
+        completedDeposits += depositsToComplete;
+    }
+
+    function completeWithdrawals(uint256 withdrawalsToComplete)
+        external
+        virtual
+        onlyOwner
+    {
+        for (
+            uint256 i = completedWithdrawals;
+            i < completedWithdrawals + withdrawalsToComplete;
+            ++i
+        ) {
+            delegatedWithdrawal(
+                pendingWithdrawals[i].withdrawer,
+                pendingWithdrawals[i].lpAmount,
+                pendingWithdrawals[i].minAmounts
+            );
+        }
+        completedWithdrawals += withdrawalsToComplete;
     }
 
     function deposit(uint256[3] memory amounts)
@@ -99,7 +179,46 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         strategy.deposit(amounts);
 
-        emit Deposited(amounts, lpShares);
+        emit Deposited(_msgSender(), amounts, lpShares);
+        return lpShares;
+    }
+
+    function delegatedDeposit(address depositor, uint256[3] memory amounts)
+        internal
+        virtual
+        returns (uint256)
+    {
+        uint256 sum = 0;
+        for (uint256 i = 0; i < amounts.length; ++i) {
+            uint256 decimalsMultiplier = 1;
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                decimalsMultiplier =
+                    10**(18 - IERC20Metadata(tokens[i]).decimals());
+            }
+            sum += amounts[i] * decimalsMultiplier;
+        }
+        uint256 holdings = totalHoldings();
+        deposited[depositor] += sum;
+        totalDeposited += sum;
+
+        uint256 lpShares = 0;
+        if (holdings == 0) {
+            lpShares = sum;
+        } else {
+            lpShares = (sum * totalSupply()) / holdings;
+        }
+        _mint(depositor, lpShares);
+
+        for (uint256 i = 0; i < amounts.length; ++i) {
+            IERC20Metadata(tokens[i]).safeTransferFrom(
+                depositor,
+                address(strategy),
+                amounts[i]
+            );
+        }
+        strategy.deposit(amounts);
+
+        emit Deposited(depositor, amounts, lpShares);
         return lpShares;
     }
 
@@ -116,13 +235,30 @@ contract Zunami is Context, Ownable, ERC20 {
         _burn(_msgSender(), lpShares);
         deposited[_msgSender()] -= userDeposit;
         totalDeposited -= userDeposit;
-        emit Withdrawn(minAmounts, lpShares);
+        emit Withdrawn(_msgSender(), minAmounts, lpShares);
+    }
+
+    function delegatedWithdrawal(
+        address withdrawer,
+        uint256 lpShares,
+        uint256[3] memory minAmounts
+    ) internal virtual {
+        require(
+            balanceOf(withdrawer) >= lpShares,
+            "Zunami: not enough LP balance"
+        );
+        strategy.withdraw(withdrawer, lpShares, minAmounts);
+        uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
+        _burn(withdrawer, lpShares);
+        deposited[withdrawer] -= userDeposit;
+        totalDeposited -= userDeposit;
+        emit Withdrawn(withdrawer, minAmounts, lpShares);
     }
 
     function claimManagementFees(address strategyAddr)
         external
         virtual
-        onlyOwner
+        onlyManager
     {
         IStrategy(strategyAddr).claimManagementFees();
     }
