@@ -10,4 +10,8 @@ interface IUniswapV2Pair {
             uint112,
             uint32
         );
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
 }

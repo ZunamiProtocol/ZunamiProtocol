@@ -10,9 +10,11 @@ contract SUSDCurveConvex is BaseCurveConvex4 {
             Constants.CRV_SUSD_ADDRESS,
             Constants.CRV_SUSD_LP_ADDRESS,
             Constants.CVX_SUSD_REWARDS_ADDRESS,
-            Constants.CRV_SUSD_GAUGE_ADDRESS,
             Constants.CVX_SUSD_PID,
-            Constants.SUSD_ADDRESS
+            Constants.SUSD_ADDRESS,
+            Constants.CVX_SUSD_EXTRA_ADDRESS,
+            Constants.SUSD_EXTRA_ADDRESS,
+            Constants.SUSD_EXTRA_PAIR_ADDRESS
         )
     {}
 }

@@ -9,19 +9,19 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../utils/Constants.sol";
 import "../interfaces/ICurvePool.sol";
 import "../interfaces/ICurvePoolTUSD.sol";
-import "../interfaces/ICurveGauge.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 import "../interfaces/IUniswapRouter.sol";
 import "../interfaces/IConvexBooster.sol";
+import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
-import "hardhat/console.sol";
-
 contract TUSDCurveConvex is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
+    using SafeERC20 for IConvexMinter;
 
     uint256 private constant DENOMINATOR = 1e18;
+    uint256 private constant USD_MULTIPLIER = 1e12;
 
     address[3] public tokens;
     uint256[3] public managementFees;
@@ -30,7 +30,7 @@ contract TUSDCurveConvex is Context, Ownable {
     ICurvePoolTUSD public pool;
     IERC20Metadata public pool3LP;
     IERC20Metadata public crv;
-    IERC20Metadata public cvx;
+    IConvexMinter public cvx;
     IERC20Metadata public poolLP;
     IERC20Metadata public token;
     IUniswapRouter public router;
@@ -38,7 +38,6 @@ contract TUSDCurveConvex is Context, Ownable {
     IUniswapV2Pair public wethcvx;
     IUniswapV2Pair public wethusdt;
     IConvexBooster public booster;
-    ICurveGauge public gauge;
     IConvexRewards public crvRewards;
     IZunami public zunami;
     uint256 private cvxPID;
@@ -49,13 +48,12 @@ contract TUSDCurveConvex is Context, Ownable {
         poolLP = IERC20Metadata(Constants.CRV_TUSD_LP_ADDRESS);
         pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
         crv = IERC20Metadata(Constants.CRV_ADDRESS);
-        cvx = IERC20Metadata(Constants.CVX_ADDRESS);
+        cvx = IConvexMinter(Constants.CVX_ADDRESS);
         crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
         wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
         wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
         booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
         crvRewards = IConvexRewards(Constants.CVX_TUSD_REWARDS_ADDRESS);
-        gauge = ICurveGauge(Constants.CRV_TUSD_GAUGE_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
         cvxPID = Constants.CVX_TUSD_PID;
         token = IERC20Metadata(Constants.TUSD_ADDRESS);
@@ -76,15 +74,17 @@ contract TUSDCurveConvex is Context, Ownable {
         zunami = IZunami(zunamiAddr);
     }
 
-    function getTotalValue() public view virtual returns (uint256) {
-        uint256 lpBalance = gauge.balanceOf(address(this));
+    function totalHoldings() public view virtual returns (uint256) {
+        uint256 lpBalance = crvRewards.balanceOf(address(this));
         uint256 lpPrice = pool.get_virtual_price();
         (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
-        uint256 cvxPrice = (reserve0 * DENOMINATOR) / reserve1;
+        uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
         (reserve0, reserve1, ) = crvweth.getReserves();
-        uint256 crvPrice = (reserve1 * DENOMINATOR) / reserve0;
+        uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
         (reserve0, reserve1, ) = wethusdt.getReserves();
-        uint256 ethPrice = (reserve0 * DENOMINATOR) / reserve1;
+        uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
+        crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
+        cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
         uint256 decimalsMultiplier = 1;
         if (token.decimals() < 18) {
@@ -105,11 +105,15 @@ contract TUSDCurveConvex is Context, Ownable {
             sum +
             (lpBalance *
                 lpPrice +
-                ((ethPrice * crvPrice) / DENOMINATOR) *
+                crvPrice *
                 (crvRewards.earned(address(this)) +
                     crv.balanceOf(address(this))) +
-                ((ethPrice * cvxPrice) / DENOMINATOR) *
-                (crvRewards.earned(address(this)) +
+                cvxPrice *
+                ((crvRewards.earned(address(this)) *
+                    (cvx.totalCliffs() -
+                        cvx.totalSupply() /
+                        cvx.reductionPerCliff())) /
+                    cvx.totalCliffs() +
                     cvx.balanceOf(address(this)))) /
             DENOMINATOR;
     }
