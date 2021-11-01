@@ -4,11 +4,13 @@ import { expect } from 'chai';
 
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ContractFactory, Signer } from 'ethers';
+import { advanceBlockTo } from './utils/index';
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
 const SUPPLY = '100000000000000';
-const mockProvider = waffle.provider;
+const provider = waffle.provider;
+const BLOCKS = 1000;
 const daiAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
 const usdcAddress = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 const usdtAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
@@ -127,6 +129,7 @@ describe('Zunami', function () {
             '1000000000',
             '1000000000',
         ]);
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
         await zunami.withdraw(await zunami.balanceOf(owner.address), [
             '0',
             '0',
@@ -151,6 +154,7 @@ describe('Zunami', function () {
             '1000000000',
             '1000000000',
         ]);
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
         await zunami.withdraw(await zunami.balanceOf(owner.address), [
             '0',
             '0',
@@ -176,6 +180,33 @@ describe('Zunami', function () {
             '1000000000',
             '1000000000',
         ]);
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+        await zunami.withdraw(await zunami.balanceOf(owner.address), [
+            '0',
+            '0',
+            '0',
+        ]);
+        await zunami.claimManagementFees(strategy.address);
+    });
+
+    it('MIM deposit/withraw/profit', async () => {
+        zunami = await Zunami.deploy();
+        await zunami.deployed();
+
+        strategy = await MIMCurveConvex.deploy();
+        await strategy.deployed();
+        strategy.setZunami(zunami.address);
+        zunami.updateStrategy(strategy.address);
+        await dai.approve(zunami.address, '1000000000000000000000');
+        await usdc.approve(zunami.address, '1000000000');
+        await usdt.approve(zunami.address, '1000000000');
+
+        await zunami.deposit([
+            '1000000000000000000000',
+            '1000000000',
+            '1000000000',
+        ]);
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
         await zunami.withdraw(await zunami.balanceOf(owner.address), [
             '0',
             '0',
@@ -226,6 +257,7 @@ describe('Zunami', function () {
             '1000000000',
             '1000000000',
         ]);
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
         await zunami.withdraw(await zunami.balanceOf(owner.address), [
             '0',
             '0',
@@ -251,6 +283,7 @@ describe('Zunami', function () {
             '1000000000',
             '1000000000',
         ]);
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
         await zunami.withdraw(await zunami.balanceOf(owner.address), [
             '0',
             '0',
@@ -279,6 +312,7 @@ describe('Zunami', function () {
 
         let strategyIB = await IronBankCurveConvex.deploy();
         await strategyIB.deployed();
+        await advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
         strategy.setZunami(zunami.address);
         zunami.updateStrategy(strategy.address);
     });
