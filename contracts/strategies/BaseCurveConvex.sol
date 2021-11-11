@@ -161,12 +161,22 @@ contract BaseCurveConvex is Context, Ownable {
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami {
+        uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
             IERC20Metadata(tokens[i]).safeIncreaseAllowance(
                 address(pool),
                 amounts[i]
             );
+
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                _amounts[i]=amounts[i]*10**(18 - IERC20Metadata(tokens[i]).decimals());
+            }else{
+                _amounts[i]=amounts[i];
+            }
+
         }
+        uint256 amountsMin = (_amounts[0]+_amounts[1]+_amounts[2]) * 9990 /10000;
+        require(pool.calc_token_amount(_amounts, 1) * pool.get_virtual_price / 1e18 >= amountsMin, "too low amount!");
         uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
         poolLP.safeApprove(address(booster), poolLPs);
         booster.depositAll(cvxPoolPID, true);
