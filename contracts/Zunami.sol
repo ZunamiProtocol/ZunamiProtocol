@@ -58,6 +58,7 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function setManagementFee(uint256 newManagementFee) external onlyManager {
+        require(newManagementFee < FEE_DENOMINATOR, "wrong fee");
         managementFee = newManagementFee;
     }
 
