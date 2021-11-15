@@ -33,6 +33,7 @@ contract Zunami is Context, Ownable, ERC20 {
 
     uint256 public FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
+    bool public isLocked = false;
 
     address public manager;
     address public admin;
@@ -50,6 +51,11 @@ contract Zunami is Context, Ownable, ERC20 {
         _;
     }
 
+    modifier isLocked() {
+        require(!isLocked, "Zunami: Deposits functions locked");
+        _;
+    }
+
     constructor() ERC20("ZunamiLP", "ZLP") {
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
@@ -63,10 +69,10 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function calcManagementFee(uint256 amount)
-        public
-        view
-        virtual
-        returns (uint256)
+    public
+    view
+    virtual
+    returns (uint256)
     {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
@@ -90,7 +96,7 @@ contract Zunami is Context, Ownable, ERC20 {
         return strategy.totalHoldings();
     }
 
-    function delegateDeposit(uint256[3] memory amounts) external virtual {
+    function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
         PendingDeposit memory pendingDeposit;
         pendingDeposit.amounts = amounts;
         pendingDeposit.depositor = _msgSender();
@@ -109,9 +115,9 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function completeDeposits(uint256 depositsToComplete)
-        external
-        virtual
-        onlyOwner
+    external
+    virtual
+    onlyOwner
     {
         for (
             uint256 i = completedDeposits;
@@ -127,9 +133,9 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function completeWithdrawals(uint256 withdrawalsToComplete)
-        external
-        virtual
-        onlyOwner
+    external
+    virtual
+    onlyOwner
     {
         for (
             uint256 i = completedWithdrawals;
@@ -145,17 +151,15 @@ contract Zunami is Context, Ownable, ERC20 {
         completedWithdrawals += withdrawalsToComplete;
     }
 
-    function deposit(uint256[3] memory amounts)
-        external
-        virtual
-        returns (uint256)
+    function deposit(uint256[3] memory amounts) external virtual isLocked
+    returns (uint256)
     {
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
-                    10**(18 - IERC20Metadata(tokens[i]).decimals());
+                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
             sum += amounts[i] * decimalsMultiplier;
         }
@@ -185,16 +189,16 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function delegatedDeposit(address depositor, uint256[3] memory amounts)
-        internal
-        virtual
-        returns (uint256)
+    internal
+    virtual
+    returns (uint256)
     {
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
-                    10**(18 - IERC20Metadata(tokens[i]).decimals());
+                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
             sum += amounts[i] * decimalsMultiplier;
         }
@@ -224,8 +228,8 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function withdraw(uint256 lpShares, uint256[3] memory minAmounts)
-        external
-        virtual
+    external
+    virtual
     {
         require(
             balanceOf(_msgSender()) >= lpShares,
@@ -256,10 +260,12 @@ contract Zunami is Context, Ownable, ERC20 {
         emit Withdrawn(withdrawer, minAmounts, lpShares);
     }
 
-    function claimManagementFees(address strategyAddr)
-        external
-        virtual
-        onlyManager
+    function setLock(bool _lock) external virtual onlyManager
+    {
+        isLocked = _lock;
+    }
+
+    function claimManagementFees(address strategyAddr) external virtual onlyManager
     {
         IStrategy(strategyAddr).claimManagementFees();
     }
