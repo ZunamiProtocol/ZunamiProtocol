@@ -274,6 +274,4 @@ contract Zunami is Context, Ownable, ERC20 {
     {
         IStrategy(strategyAddr).claimManagementFees();
     }
-
-    receive() external payable virtual {}
 }
