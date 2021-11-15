@@ -77,7 +77,10 @@ contract Zunami is Context, Ownable, ERC20 {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
-    function updateStrategy(address strategyAddr) external virtual onlyOwner {
+    function updateStrategy(address strategyAddr)
+    external
+    virtual
+    onlyOwner {
         if (address(strategy) != address(0)) {
             strategy.withdrawAll();
             uint256[3] memory amounts;
@@ -96,7 +99,10 @@ contract Zunami is Context, Ownable, ERC20 {
         return strategy.totalHoldings();
     }
 
-    function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
+    function delegateDeposit(uint256[3] memory amounts)
+    external
+    virtual
+    isLocked {
         PendingDeposit memory pendingDeposit;
         pendingDeposit.amounts = amounts;
         pendingDeposit.depositor = _msgSender();
@@ -104,8 +110,8 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts)
-        external
-        virtual
+    external
+    virtual
     {
         PendingWithdrawal memory pendingWithdrawal;
         pendingWithdrawal.lpAmount = lpAmount;
@@ -151,7 +157,10 @@ contract Zunami is Context, Ownable, ERC20 {
         completedWithdrawals += withdrawalsToComplete;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual isLocked
+    function deposit(uint256[3] memory amounts)
+    external
+    virtual
+    isLocked
     returns (uint256)
     {
         uint256 sum = 0;
@@ -260,12 +269,17 @@ contract Zunami is Context, Ownable, ERC20 {
         emit Withdrawn(withdrawer, minAmounts, lpShares);
     }
 
-    function setLock(bool _lock) external virtual onlyManager
+    function setLock(bool _lock) external
+    virtual
+    onlyOwner
     {
         isLocked = _lock;
     }
 
-    function claimManagementFees(address strategyAddr) external virtual onlyManager
+    function claimManagementFees(address strategyAddr)
+    external
+    virtual
+    onlyManager
     {
         IStrategy(strategyAddr).claimManagementFees();
     }
