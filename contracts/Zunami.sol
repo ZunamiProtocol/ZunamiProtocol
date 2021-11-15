@@ -104,8 +104,8 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts)
-        external
-        virtual
+    external
+    virtual
     {
         PendingWithdrawal memory pendingWithdrawal;
         pendingWithdrawal.lpAmount = lpAmount;
@@ -260,12 +260,17 @@ contract Zunami is Context, Ownable, ERC20 {
         emit Withdrawn(withdrawer, minAmounts, lpShares);
     }
 
-    function setLock(bool _lock) external virtual onlyManager
+    function setLock(bool _lock) external
+    virtual
+    onlyOwner
     {
         isLocked = _lock;
     }
 
-    function claimManagementFees(address strategyAddr) external virtual onlyManager
+    function claimManagementFees(address strategyAddr)
+    external
+    virtual
+    onlyManager
     {
         IStrategy(strategyAddr).claimManagementFees();
     }
