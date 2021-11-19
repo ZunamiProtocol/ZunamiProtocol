@@ -290,11 +290,11 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory amounts;
         for (uint256 i = 0; i < length; ++i) {
             poolInfo[_from[i]].strategy.withdrawAll();
-            for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-                amounts[_i] = IERC20(tokens[_i]).balanceOf(address(this));
-            }
-            poolInfo[_to].strategy.deposit(amounts);
         }
+        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
+            amounts[_i] = IERC20(tokens[_i]).balanceOf(address(this));
+        }
+        poolInfo[_to].strategy.deposit(amounts);
     }
 
     function emergencyWithdraw() external virtual onlyOwner {
