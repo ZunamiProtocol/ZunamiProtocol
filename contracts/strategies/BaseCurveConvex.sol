@@ -354,27 +354,4 @@ contract BaseCurveConvex is Context, Ownable {
         }
     }
 
-    function withdrawAmount(
-        uint256[3] memory minAmounts
-    ) external virtual onlyZunami {
-        uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
-        crvRewards.withdrawAndUnwrap(crvRequiredLPs, true);
-        sellCrvCvx();
-        if (address(extraToken) != address(0)) {
-            sellExtraToken();
-        }
-        uint256[] memory prevBalances = new uint256[](3);
-        for (uint8 i = 0; i < 3; ++i) {
-            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(
-                address(this)
-            );
-        }
-        pool.remove_liquidity(crvRequiredLPs, minAmounts, true);
-        for (uint256 i = 0; i < 3; ++i) {
-            uint256 _amt = IERC20Metadata(tokens[i]).balanceOf(address(this)) -
-            prevBalances[i];
-            IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), _amt);
-        }
-    }
-
 }

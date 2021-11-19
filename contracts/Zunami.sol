@@ -147,7 +147,8 @@ contract Zunami is Context, Ownable, ERC20 {
         completedWithdrawals += withdrawalsToComplete;
     }
 
-    function deposit(uint256[3] memory amounts, uint256 pid) external virtual isLocked returns (uint256)
+    function deposit(uint256[3] memory amounts, uint256 pid)
+    external virtual isLocked returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
         require(block.timestamp >= poolInfo[pid].startTime, "Zunami: strategy not started yet!");
@@ -223,7 +224,8 @@ contract Zunami is Context, Ownable, ERC20 {
         return lpShares;
     }
 
-    function withdraw(uint256 lpShares, uint256[3] memory minAmounts, uint256 pid) external virtual
+    function withdraw(uint256 lpShares, uint256[3] memory minAmounts, uint256 pid)
+    external virtual
     {
         IStrategy strategy = poolInfo[pid].strategy;
         require(balanceOf(_msgSender()) >= lpShares,
@@ -274,10 +276,11 @@ contract Zunami is Context, Ownable, ERC20 {
         }));
     }
 
-    function moveFunds(uint256 _from, uint256 _to, uint256[3] memory minAmounts) external virtual onlyOwner {
+    function moveFunds(uint256 _from, uint256 _to)
+    external virtual onlyOwner {
         IStrategy fromStrat = poolInfo[_from].strategy;
         IStrategy toStrat = poolInfo[_to].strategy;
-        fromStrat.withdrawAmount(minAmounts);
+        fromStrat.withdrawAll();
         uint256[3] memory amounts;
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             amounts[i] = IERC20(tokens[i]).balanceOf(address(this));
@@ -285,7 +288,8 @@ contract Zunami is Context, Ownable, ERC20 {
         toStrat.deposit(amounts);
     }
 
-    function moveFundsBatch(uint256[] memory _from, uint256 _to) external virtual onlyOwner {
+    function moveFundsBatch(uint256[] memory _from, uint256 _to)
+    external virtual onlyOwner {
         uint256 length = _from.length;
         uint256[3] memory amounts;
         for (uint256 i = 0; i < length; ++i) {
