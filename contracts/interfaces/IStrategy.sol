@@ -15,4 +15,6 @@ interface IStrategy {
     function totalHoldings() external view returns (uint256);
 
     function claimManagementFees() external;
+
+    function withdrawAmount(uint256[3] memory minAmounts) external;
 }
