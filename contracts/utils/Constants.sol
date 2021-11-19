@@ -69,7 +69,7 @@ library Constants {
     address internal constant SUSHI_WETH_USDT_ADDRESS =
         0x06da0fd433C1A5d7a4faa01111c044910A184553;
     address internal constant CVX_BOOSTER_ADDRESS =
-        0xF403C135812408BFbE8713b5A23a04b3D48AAE31;
+         0xF403C135812408BFbE8713b5A23a04b3D48AAE31;
     address internal constant CRV_3POOL_ADDRESS =
         0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7;
     address internal constant CRV_3POOL_LP_ADDRESS =
