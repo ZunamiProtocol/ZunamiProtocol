@@ -194,8 +194,13 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
-            trueAmounts[i] = IERC20(tokens[i]).balanceOf(depositor);
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+            trueAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(depositor);
+            uint256 allowance = IERC20Metadata(tokens[i]).allowance(depositor, address (this));
+            if(allowance < trueAmounts[i])
+            {
+                trueAmounts[i] = allowance;
+            }
+        if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
                 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
@@ -288,7 +293,7 @@ contract Zunami is Context, Ownable, ERC20 {
         fromStrat.withdrawAll();
         uint256[3] memory amounts;
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
-            amounts[i] = IERC20(tokens[i]).balanceOf(address(this));
+            amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
         }
         toStrat.deposit(amounts);
     }
@@ -301,7 +306,7 @@ contract Zunami is Context, Ownable, ERC20 {
             poolInfo[_from[i]].strategy.withdrawAll();
         }
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            amounts[_i] = IERC20(tokens[_i]).balanceOf(address(this));
+            amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
         }
         poolInfo[_to].strategy.deposit(amounts);
     }
@@ -314,7 +319,7 @@ contract Zunami is Context, Ownable, ERC20 {
             poolInfo[i].strategy.withdrawAll();
         }
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            amounts[_i] = IERC20(tokens[_i]).balanceOf(address(this));
+            amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
         }
         poolInfo[0].strategy.deposit(amounts);
     }
