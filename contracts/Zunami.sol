@@ -194,7 +194,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
-            trueAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(depositor);
+            trueAmounts[i] = IERC20(tokens[i]).balanceOf(depositor);
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
                 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
