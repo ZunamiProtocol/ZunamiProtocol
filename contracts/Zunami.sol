@@ -189,36 +189,41 @@ contract Zunami is Context, Ownable, ERC20 {
     function delegatedDeposit(address depositor, uint256[3] memory amounts, uint256 pid)
     internal virtual returns (uint256)
     {
+        uint256[3] memory trueAmounts;
         IStrategy strategy = poolInfo[pid].strategy;
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
+            trueAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(depositor);
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
                 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
-            sum += amounts[i] * decimalsMultiplier;
+            sum += trueAmounts[i] * decimalsMultiplier;
         }
-        uint256 holdings = totalHoldings();
-        deposited[depositor] += sum;
-        totalDeposited += sum;
 
-        uint256 lpShares = 0;
-        if (holdings == 0) {
-            lpShares = sum;
-        } else {
-            lpShares = (sum * totalSupply()) / holdings;
-        }
-        _mint(depositor, lpShares);
+        if(sum > 0) {
+            uint256 holdings = totalHoldings();
+            deposited[depositor] += sum;
+            totalDeposited += sum;
 
-        for (uint256 i = 0; i < amounts.length; ++i) {
-            IERC20Metadata(tokens[i]).safeTransferFrom(
-                depositor,
-                address(strategy),
-                amounts[i]
-            );
+            uint256 lpShares = 0;
+            if (holdings == 0) {
+                lpShares = sum;
+            } else {
+                lpShares = (sum * totalSupply()) / holdings;
+            }
+            _mint(depositor, lpShares);
+
+            for (uint256 i = 0; i < amounts.length; ++i) {
+                IERC20Metadata(tokens[i]).safeTransferFrom(
+                    depositor,
+                    address(strategy),
+                    trueAmounts[i]
+                );
+            }
+            strategy.deposit(trueAmounts);
         }
-        strategy.deposit(amounts);
 
         emit Deposited(depositor, amounts, lpShares);
         return lpShares;
