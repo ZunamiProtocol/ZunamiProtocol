@@ -151,6 +151,7 @@ contract Zunami is Context, Ownable, ERC20 {
     external virtual isLocked returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
+        require(address(strategy)!=address(0),"pool is not exist");
         require(block.timestamp >= poolInfo[pid].startTime, "Zunami: strategy not started yet!");
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
