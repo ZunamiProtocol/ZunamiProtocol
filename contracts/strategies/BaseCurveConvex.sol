@@ -215,7 +215,7 @@ contract BaseCurveConvex is Context, Ownable {
                 address(this)
             );
             userBalances[i] =
-            (prevBalances[i] * lpShares) /
+            ((prevBalances[i] - managementFees[i])* lpShares) /
             zunami.totalSupply();
         }
 
