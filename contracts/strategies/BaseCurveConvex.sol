@@ -215,7 +215,7 @@ contract BaseCurveConvex is Context, Ownable {
                 address(this)
             );
             userBalances[i] =
-            ((prevBalances[i] - managementFees[i])* lpShares) /
+            ((prevBalances[i]-managementFees[i]) * lpShares) /
             zunami.totalSupply();
         }
 
@@ -264,6 +264,7 @@ contract BaseCurveConvex is Context, Ownable {
     function sellCrvCvx() public virtual {
         uint256 cvxBal = cvx.balanceOf(address(this));
         uint256 crvBal = crv.balanceOf(address(this));
+        if(cvxBal==0 || crvBal==0){return;}
         cvx.safeApprove(address(router), cvxBal);
         crv.safeApprove(address(router), crvBal);
 
@@ -272,7 +273,7 @@ contract BaseCurveConvex is Context, Ownable {
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            cvx.balanceOf(address(this)),
+            cvxBal,
             0,
             path,
             address(this),
@@ -283,7 +284,7 @@ contract BaseCurveConvex is Context, Ownable {
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            crv.balanceOf(address(this)),
+            crvBal,
             0,
             path,
             address(this),
@@ -294,6 +295,7 @@ contract BaseCurveConvex is Context, Ownable {
 
     function sellExtraToken() public virtual {
         uint256 extraBal = extraToken.balanceOf(address(this));
+        if(extraBal==0){return;}
         extraToken.safeApprove(
             address(router), extraBal
         );
@@ -306,7 +308,7 @@ contract BaseCurveConvex is Context, Ownable {
             path[1] = Constants.WETH_ADDRESS;
             path[2] = Constants.USDT_ADDRESS;
             router.swapExactTokensForTokens(
-                extraToken.balanceOf(address(this)),
+                extraBal,
                 0,
                 path,
                 address(this),
@@ -325,7 +327,7 @@ contract BaseCurveConvex is Context, Ownable {
             }
         }
         router.swapExactTokensForTokens(
-            extraToken.balanceOf(address(this)),
+            extraBal,
             0,
             path2,
             address(this),
@@ -355,4 +357,3 @@ contract BaseCurveConvex is Context, Ownable {
     }
 
 }
-
