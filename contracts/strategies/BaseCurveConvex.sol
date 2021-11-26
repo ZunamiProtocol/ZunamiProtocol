@@ -182,7 +182,7 @@ contract BaseCurveConvex is Context, Ownable {
         }
         uint256 amountsMin = (_amounts[0]+_amounts[1]+_amounts[2]) * minDepositAmount / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
-        uint256 depositedLp = pool.calc_token_amount(_amounts, true);
+        uint256 depositedLp = pool.calc_token_amount(amounts, true);
         require(depositedLp * lpPrice / 1e18 >= amountsMin, "too low amount!");
         uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
         poolLP.safeApprove(address(booster), poolLPs);
@@ -355,3 +355,4 @@ contract BaseCurveConvex is Context, Ownable {
     }
 
 }
+
