@@ -336,7 +336,7 @@ contract Zunami is Context, Ownable, ERC20 {
 
     // user withdraw funds from list
     function pendingDepositRemove(uint256 _id) external virtual {
-        require(pendingDeposits.depositor == _msgSender(), "Zunami: wrong sender");
+        require(pendingDeposits[_id].depositor == _msgSender(), "Zunami: wrong sender");
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), pendingDeposits[_id].amounts[i]);
         }
