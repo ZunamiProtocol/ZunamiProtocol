@@ -98,6 +98,15 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
+        // user transfer funds to contract
+        for (uint256 i = 0; i < amounts.length; ++i) {
+            IERC20Metadata(tokens[i]).safeTransferFrom(
+                _msgSender(),
+                address(this),
+                amounts[i]
+            );
+        }
+        // add user to list
         PendingDeposit memory pendingDeposit;
         pendingDeposit.amounts = amounts;
         pendingDeposit.depositor = _msgSender();
@@ -118,8 +127,10 @@ contract Zunami is Context, Ownable, ERC20 {
     function completeDeposits(uint256 depositsToComplete, uint256 pid)
     external virtual onlyOwner
     {
-        uint256 maxDepo=depositsToComplete < pendingDeposits.length 
+        IStrategy strategy = poolInfo[pid].strategy;
+        uint256 maxDepo=depositsToComplete < pendingDeposits.length
         ? depositsToComplete:pendingDeposits.length;
+        uint256[3] memory totalAmounts ; // total sum deposit, contract > strategy
         for (uint256 i = 0;i < maxDepo && pendingDeposits.length>0;i++) {
             delegatedDeposit(
                 pendingDeposits[0].depositor,
@@ -129,12 +140,20 @@ contract Zunami is Context, Ownable, ERC20 {
             pendingDeposits[0]=pendingDeposits[pendingDeposits.length-1];
             pendingDeposits.pop();
         }
+        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
+            IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[i]);
+        }
+        // deposit strategy
+        if(!(strategy.deposit(totalAmounts))){
+            emit BadDeposit(depositor, totalAmounts, lpShares);
+            return;
+        }
     }
 
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
     external virtual onlyOwner
     {
-        uint256 maxWithdrawals=withdrawalsToComplete < pendingWithdrawals.length 
+        uint256 maxWithdrawals=withdrawalsToComplete < pendingWithdrawals.length
         ? withdrawalsToComplete:pendingWithdrawals.length;
         for (uint256 i = 0;i < maxWithdrawals && pendingWithdrawals.length>0;i++) {
             delegatedWithdrawal(
@@ -182,7 +201,6 @@ contract Zunami is Context, Ownable, ERC20 {
             );
         }
         require(strategy.deposit(amounts),"too low amount!");
-
         emit Deposited(_msgSender(), amounts, lpShares);
         return lpShares;
     }
@@ -190,23 +208,17 @@ contract Zunami is Context, Ownable, ERC20 {
     function delegatedDeposit(address depositor, uint256[3] memory amounts, uint256 pid)
     internal virtual
     {
-        uint256[3] memory trueAmounts;
         IStrategy strategy = poolInfo[pid].strategy;
         uint256 sum = 0;
         for (uint256 i = 0; i < amounts.length; ++i) {
             uint256 decimalsMultiplier = 1;
-            trueAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(depositor);
-            uint256 allowance = IERC20Metadata(tokens[i]).allowance(depositor, address (this));
-            if(allowance < trueAmounts[i])
-            {
-                trueAmounts[i] = allowance;
-            }
         if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
                 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
-            sum += trueAmounts[i] * decimalsMultiplier;
+            sum += amounts[i] * decimalsMultiplier;
         }
+
         uint256 lpShares = 0;
 
         if(sum > 0) {
@@ -214,27 +226,13 @@ contract Zunami is Context, Ownable, ERC20 {
             deposited[depositor] += sum;
             totalDeposited += sum;
 
-            
             if (holdings == 0) {
                 lpShares = sum;
             } else {
                 lpShares = (sum * totalSupply()) / holdings;
             }
             _mint(depositor, lpShares);
-
-            for (uint256 i = 0; i < amounts.length; ++i) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(
-                    depositor,
-                    address(strategy),
-                    trueAmounts[i]
-                );
-            }
-            if(!(strategy.deposit(trueAmounts))){
-                emit BadDeposit(depositor, amounts, lpShares);
-                return;
-            }
         }
-
         emit Deposited(depositor, amounts, lpShares);
     }
 
