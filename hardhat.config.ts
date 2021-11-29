@@ -12,6 +12,7 @@ dotEnvConfig();
 
 import { HardhatUserConfig } from 'hardhat/types';
 
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 // task("accounts", "Prints the list of accounts", async () => {
@@ -28,7 +29,9 @@ const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',
     gasReporter: {
         currency: 'USD',
-        gasPrice: 100,
+        coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+        showTimeSpent:true,
+        enabled: true
     },
     paths: {
         sources: './contracts',

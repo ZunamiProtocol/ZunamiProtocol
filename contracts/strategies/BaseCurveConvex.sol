@@ -165,13 +165,9 @@ contract BaseCurveConvex is Context, Ownable {
         DENOMINATOR;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami {
+    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns(bool){
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
-            IERC20Metadata(tokens[i]).safeIncreaseAllowance(
-                address(pool),
-                amounts[i]
-            );
 
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 _amounts[i]=amounts[i]*10**(18 - IERC20Metadata(tokens[i]).decimals());
@@ -183,24 +179,35 @@ contract BaseCurveConvex is Context, Ownable {
         uint256 amountsMin = (_amounts[0]+_amounts[1]+_amounts[2]) * minDepositAmount / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
-        require(depositedLp * lpPrice / 1e18 >= amountsMin, "too low amount!");
-        uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
-        poolLP.safeApprove(address(booster), poolLPs);
-        booster.depositAll(cvxPoolPID, true);
+        if(depositedLp * lpPrice / 1e18 >= amountsMin){
+            for (uint8 i = 0; i < 3; ++i) {
+                IERC20Metadata(tokens[i]).safeIncreaseAllowance(
+                    address(pool),
+                    amounts[i]
+                );
+            }
+            uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
+            poolLP.safeApprove(address(booster), poolLPs);
+            booster.depositAll(cvxPoolPID, true);
+            return(true);
+        }else{
+            return(false);
+        }
+        
     }
 
     function withdraw(
         address depositor,
         uint256 lpShares,
         uint256[3] memory minAmounts
-    ) external virtual onlyZunami {
+    ) external virtual onlyZunami returns(bool){
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
         lpShares) / zunami.totalSupply();
-        require(
-            depositedShare >= crvRequiredLPs,
-            "StrategyCurveAave: user lps share should be at least required"
-        );
+
+        if( depositedShare < crvRequiredLPs){
+            return false;
+        }
 
         crvRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
@@ -251,6 +258,7 @@ contract BaseCurveConvex is Context, Ownable {
                 liqAmounts[i] + userBalances[i] - managementFeePerAsset
             );
         }
+        return true;
     }
 
     function claimManagementFees() external virtual onlyZunami {
