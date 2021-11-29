@@ -142,13 +142,10 @@ contract Zunami is Context, Ownable, ERC20 {
             pendingDeposits.pop();
         }
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[i]);
+            IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
         }
         // deposit strategy
-        if (!(strategy.deposit(totalAmounts))) {
-            emit BadDeposit(depositor, totalAmounts, lpShares);
-            return;
-        }
+        strategy.deposit(totalAmounts);
     }
 
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
