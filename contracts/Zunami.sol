@@ -46,8 +46,8 @@ contract Zunami is Context, Ownable, ERC20 {
     address public admin;
     uint256 public completedDeposits;
     uint256 public completedWithdrawals;
-    PendingDeposit[] public pendingDeposits;
     PendingWithdrawal[] public pendingWithdrawals;
+    mapping (address => uint256[]) public accDepositPending;
 
     event Deposited(address depositor, uint256[3] memorys, uint256 lpShares);
     event Withdrawn(address withdrawer, uint256[3] memorys, uint256 lpShares);
@@ -106,11 +106,7 @@ contract Zunami is Context, Ownable, ERC20 {
                 amounts[i]
             );
         }
-        // add user to list
-        PendingDeposit memory pendingDeposit;
-        pendingDeposit.amounts = amounts;
-        pendingDeposit.depositor = _msgSender();
-        pendingDeposits.push(pendingDeposit);
+        accDepositPending[_msgSender()] = amounts;
     }
 
 
@@ -124,18 +120,16 @@ contract Zunami is Context, Ownable, ERC20 {
         pendingWithdrawals.push(pendingWithdrawal);
     }
 
-    function completeDeposits(uint256 depositsToComplete, uint256 pid)
+    function completeDeposits(address[] memory userList, uint256 pid)
     external virtual onlyOwner
     {
         IStrategy strategy = poolInfo[pid].strategy;
-        uint256 maxDepo = depositsToComplete < pendingDeposits.length
-        ? depositsToComplete : pendingDeposits.length;
         uint256[3] memory totalAmounts;
         // total sum deposit, contract > strategy
         uint256 addHoldings = 0;
         // sum for calculate LPs
-        for (uint256 i = 0; i < maxDepo && pendingDeposits.length > 0; i++) {
-            // calculate userLP
+        for (uint256 i = 0; i < userList.length; i++) {
+            // calculate user deposit amounts
             uint256 sum = 0;
             for (uint256 x = 0; x < totalAmounts.length; ++x) {
                 uint256 decimalsMultiplier = 1;
@@ -143,24 +137,23 @@ contract Zunami is Context, Ownable, ERC20 {
                     decimalsMultiplier =
                     10 ** (18 - IERC20Metadata(tokens[x]).decimals());
                 }
-                totalAmounts[x] += pendingDeposits[0].amounts[x];
-                addHoldings += pendingDeposits[0].amounts[x] * decimalsMultiplier;
-                sum += pendingDeposits[0].amounts[x] * decimalsMultiplier;
+                totalAmounts[x] += accDepositPending[userList[i]][x];
+                addHoldings += accDepositPending[userList[i]][x] * decimalsMultiplier;
+                sum += accDepositPending[userList[i]][x] * decimalsMultiplier;
             }
-            // TODO: need check real calculates
+            // calculate lpShares
             uint256 lpShares = 0;
             uint256 holdings = totalHoldings();
-            deposited[pendingDeposits[0].depositor] += sum;
+            deposited[userList[i]] += sum;
             totalDeposited += sum;
             if (holdings == 0) {
                 lpShares = sum;
             } else {
                 lpShares = (sum * totalSupply()) / (holdings + addHoldings - sum);
             }
-            _mint(pendingDeposits[0].depositor, lpShares);
+            _mint(userList[i], lpShares);
             // remove deposit from list
-            pendingDeposits[0] = pendingDeposits[pendingDeposits.length - 1];
-            pendingDeposits.pop();
+            accDepositPending[userList[i]] = [0,0,0];
         }
          for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
             IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
@@ -291,7 +284,6 @@ contract Zunami is Context, Ownable, ERC20 {
                 amounts[i]
             );
         }
-
         toStrat.deposit(amounts);
     }
 
@@ -322,13 +314,11 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     // user withdraw funds from list
-    function pendingDepositRemove(uint256 _id) external virtual {
-        require(pendingDeposits[_id].depositor == _msgSender(), "Zunami: wrong sender");
+    function pendingDepositRemove() external virtual {
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
-            IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), pendingDeposits[_id].amounts[i]);
+            IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), accDepositPending[_msgSender()][i]);
         }
-        pendingDeposits[_id] = pendingDeposits[pendingDeposits.length - 1];
-        pendingDeposits.pop();
+        accDepositPending[_msgSender()] = [0,0,0];
     }
 
 }
