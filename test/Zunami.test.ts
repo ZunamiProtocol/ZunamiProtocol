@@ -313,9 +313,13 @@ describe('Zunami', function () {
 
     });
 
+
+
+
+
     // --- START TEST STRATEGIES ---
 
-    // base1
+    // --- BASE-1 ----
     // describe('AaveCurveConvex', function () {
     //     before(async function () {
     //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
@@ -330,20 +334,7 @@ describe('Zunami', function () {
     // });
 
 
-    // base2
-    // ---- FRAX ----
-    // describe('FraxCurveConvex', function () {
-    //     before(async function () {
-    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('FraxCurveConvex');
-    //         strategy = await FraxCurveConvex.deploy();
-    //         await strategy.deployed();
-    //         zunami = await Zunami.deploy();
-    //         await zunami.deployed();
-    //         strategy.setZunami(zunami.address);
-    //     });
-    //     testStrategy();
-    // });
+    // --- BASE-2 ----
     // ---- BUSDV2 ----
     // describe('BUSDV2CurveConvex', function () {
     //     before(async function () {
@@ -358,10 +349,114 @@ describe('Zunami', function () {
     //     testStrategy();
     // });
     // ---- DUSD ----
-    describe('DUSDCurveConvex', function () {
+    // describe('DUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('DUSDCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- FRAX ----
+    // describe('FraxCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('FraxCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- IRONBANK ----
+    // describe('IronBankCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('IronBankCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- LUSD ----
+    // describe('LUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('LUSDCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- MIM ----
+    // describe('MIMCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('MIMCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- MUSD ----
+    // describe('MUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('MUSDCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- RSV ----
+    // describe('RSVCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('RSVCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- USDK ----
+    // describe('USDKCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDKCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- USDN ----
+    describe('USDNCurveConvex', function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('DUSDCurveConvex');
+            let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDNCurveConvex');
             strategy = await FraxCurveConvex.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();
@@ -370,10 +465,22 @@ describe('Zunami', function () {
         });
         testStrategy();
     });
+    // ---- USDP ----
+    // describe('USDPCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDPCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
 
 
-
-    // base4
+    //  --- BASE-4 ----
     // describe('SUSDCurveConvex', function () {
     //     before(async function () {
     //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
