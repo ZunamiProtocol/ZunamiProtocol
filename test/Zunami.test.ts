@@ -15,7 +15,7 @@ const SUPPLY = '100000000000000';
 const MIN_LOCK_TIME = time.duration.seconds(86400);
 const provider = waffle.provider;
 const BLOCKS = 1000;
-const SKIP_TIMES=10;
+const SKIP_TIMES = 10;
 const daiAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
 const usdcAddress = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 const usdtAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
@@ -40,7 +40,6 @@ describe('Zunami', function () {
     function printBalances() {
         it('print balances', async () => {
             for (const user of [alice, bob, carol]) {
-                console.log("");
                 let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
                 let dai_balance=await dai.balanceOf(user.address);
@@ -205,9 +204,6 @@ describe('Zunami', function () {
             let usdt_balance=await usdt.balanceOf(carol.address);
             let usdc_balance=await usdc.balanceOf(carol.address);
             let dai_balance=await dai.balanceOf(carol.address);
-            console.log("usdt_balance", ethers.utils.formatUnits( usdt_balance,6));
-            console.log("usdc_balance", ethers.utils.formatUnits( usdc_balance,6));
-            console.log("dai_balance", ethers.utils.formatUnits( dai_balance,18));
         });
 
         it('delegateWithdrawal', async () => {
@@ -241,7 +237,7 @@ describe('Zunami', function () {
         });
 
 
-        //printBalances();
+        printBalances();
 
     }
 
@@ -319,11 +315,40 @@ describe('Zunami', function () {
 
     });
 
-    describe('AaveCurveConvex', function () {
+    // base1
+    // describe('AaveCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let AaveCurveConvex: ContractFactory = await ethers.getContractFactory('AaveCurveConvex');;
+    //         strategy = await AaveCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+
+    // base2
+    // describe('FraxCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('FraxCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+
+    // base4
+    describe('SUSDCurveConvex', function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let AaveCurveConvex: ContractFactory = await ethers.getContractFactory('AaveCurveConvex');;
-            strategy = await AaveCurveConvex.deploy();
+            let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
+            strategy = await FraxCurveConvex.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();
             await zunami.deployed();
@@ -333,43 +358,48 @@ describe('Zunami', function () {
     });
 
 
-/*
 
-    it('zunami moveFunds(update strategy)', async () => {
-        strategy = await AaveCurveConvex.deploy();
-        await strategy.deployed();
-        strategy.setZunami(zunami.address);
-        zunami.add(strategy.address);
-        await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-        await dai.approve(zunami.address, '1000000000000000000000');
-        await usdc.approve(zunami.address, '1000000000');
-        await usdt.approve(zunami.address, '1000000000');
-        await zunami.deposit([
-            '1000000000000000000000',
-            '1000000000',
-            '1000000000',
-        ],0);
 
-        await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-        await zunami.claimManagementFees(strategy.address);
 
-        strategy = await USDPCurveConvex.deploy();
-        await strategy.deployed();
-        strategy.setZunami(zunami.address);
-        zunami.add(strategy.address);
-        await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-        await dai.approve(zunami.address, '1000000000000000000000');
-        await usdc.approve(zunami.address, '1000000000');
-        await usdt.approve(zunami.address, '1000000000');
-        await zunami.deposit([
-            '1000000000000000000000',
-            '1000000000',
-            '1000000000',
-        ],0);
-        await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-        await zunami.claimManagementFees(strategy.address);
-        await zunami.moveFunds(0, 1);
-    });
-*/
+
+
+    /*
+
+        it('zunami moveFunds(update strategy)', async () => {
+            strategy = await AaveCurveConvex.deploy();
+            await strategy.deployed();
+            strategy.setZunami(zunami.address);
+            zunami.add(strategy.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            await dai.approve(zunami.address, '1000000000000000000000');
+            await usdc.approve(zunami.address, '1000000000');
+            await usdt.approve(zunami.address, '1000000000');
+            await zunami.deposit([
+                '1000000000000000000000',
+                '1000000000',
+                '1000000000',
+            ],0);
+
+            await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            await zunami.claimManagementFees(strategy.address);
+
+            strategy = await USDPCurveConvex.deploy();
+            await strategy.deployed();
+            strategy.setZunami(zunami.address);
+            zunami.add(strategy.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            await dai.approve(zunami.address, '1000000000000000000000');
+            await usdc.approve(zunami.address, '1000000000');
+            await usdt.approve(zunami.address, '1000000000');
+            await zunami.deposit([
+                '1000000000000000000000',
+                '1000000000',
+                '1000000000',
+            ],0);
+            await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            await zunami.claimManagementFees(strategy.address);
+            await zunami.moveFunds(0, 1);
+        });
+    */
 
 });

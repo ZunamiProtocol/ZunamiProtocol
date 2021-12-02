@@ -100,11 +100,13 @@ contract Zunami is Context, Ownable, ERC20 {
     function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
         // user transfer funds to contract
         for (uint256 i = 0; i < amounts.length; ++i) {
-            IERC20Metadata(tokens[i]).safeTransferFrom(
-                _msgSender(),
-                address(this),
-                amounts[i]
-            );
+            if(amounts[i] > 0) {
+                IERC20Metadata(tokens[i]).safeTransferFrom(
+                    _msgSender(),
+                    address(this),
+                    amounts[i]
+                );
+            }
         }
         accDepositPending[_msgSender()] = amounts;
     }
@@ -156,9 +158,10 @@ contract Zunami is Context, Ownable, ERC20 {
             accDepositPending[userList[i]] = [0,0,0];
         }
          for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
+             if(totalAmounts[_i] > 0){
+                 IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
+             }
          }
-        // deposit strategy
         require(strategy.deposit(totalAmounts), "too low amount!");
     }
 
@@ -206,11 +209,14 @@ contract Zunami is Context, Ownable, ERC20 {
         _mint(_msgSender(), lpShares);
 
         for (uint256 i = 0; i < amounts.length; ++i) {
-            IERC20Metadata(tokens[i]).safeTransferFrom(
-                _msgSender(),
-                address(strategy),
-                amounts[i]
-            );
+           if(amounts[i] > 0)
+           {
+               IERC20Metadata(tokens[i]).safeTransferFrom(
+                   _msgSender(),
+                   address(strategy),
+                   amounts[i]
+               );
+           }
         }
         require(strategy.deposit(amounts), "too low amount!");
         emit Deposited(_msgSender(), amounts, lpShares);
@@ -279,10 +285,12 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory amounts;
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            IERC20Metadata(tokens[i]).safeTransfer(
-                address(toStrat),
-                amounts[i]
-            );
+            if(amounts[i]>0){
+                IERC20Metadata(tokens[i]).safeTransfer(
+                    address(toStrat),
+                    amounts[i]
+                );
+            }
         }
         toStrat.deposit(amounts);
     }
@@ -316,7 +324,9 @@ contract Zunami is Context, Ownable, ERC20 {
     // user withdraw funds from list
     function pendingDepositRemove() external virtual {
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
-            IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), accDepositPending[_msgSender()][i]);
+            if(accDepositPending[_msgSender()][i] > 0){
+                IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), accDepositPending[_msgSender()][i]);
+            }
         }
         accDepositPending[_msgSender()] = [0,0,0];
     }

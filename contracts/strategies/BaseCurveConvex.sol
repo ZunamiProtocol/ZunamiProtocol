@@ -193,7 +193,7 @@ contract BaseCurveConvex is Context, Ownable {
         }else{
             return(false);
         }
-        
+
     }
 
     function withdraw(
@@ -363,5 +363,4 @@ contract BaseCurveConvex is Context, Ownable {
             );
         }
     }
-
 }
