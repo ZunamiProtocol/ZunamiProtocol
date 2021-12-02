@@ -24,7 +24,7 @@ contract BaseCurveConvex4 is Context, Ownable {
     uint256 private constant DENOMINATOR = 1e18;
     uint256 private constant USD_MULTIPLIER = 1e12;
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
-    uint256 public minDepositAmount = 9990; // 99.9%
+    uint256 public minDepositAmount = 9975; // 99.75%
 
     uint256 private wManagementFee = 0;
 
@@ -388,5 +388,10 @@ contract BaseCurveConvex4 is Context, Ownable {
                 managementFees[i]
             );
         }
+    }
+
+    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000);
+        minDepositAmount = _minDepositAmount;
     }
 }

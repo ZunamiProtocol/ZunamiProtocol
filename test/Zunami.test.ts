@@ -25,6 +25,7 @@ describe('Zunami', function () {
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
     let carol: SignerWithAddress;
+    let rosa: SignerWithAddress;
 
     let zunami: Contract;
     let strategy: Contract;
@@ -39,10 +40,11 @@ describe('Zunami', function () {
 
     function printBalances() {
         it('print balances', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                 let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
                 let dai_balance=await dai.balanceOf(user.address);
+                console.log("  ---PRINT BALANCES--- ");
                 console.log("  zunami LP: ",ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18));
                 console.log("  usdt: ",ethers.utils.formatUnits( usdt_balance,6));
                 console.log("  usdc: ",ethers.utils.formatUnits(usdc_balance,6));
@@ -61,7 +63,7 @@ describe('Zunami', function () {
             'Ownable: caller is not the owner');
             await zunami.add(strategy.address);
 
-            for (const user of [owner, alice, bob, carol]) {
+            for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc.connect(user).approve(zunami.address, web3.utils.toWei("1000000", "mwei"));
                 await usdt.connect(user).approve(zunami.address, web3.utils.toWei("1000000", "mwei"));
                 await dai.connect(user).approve(zunami.address, web3.utils.toWei("1000000", "ether"));
@@ -81,7 +83,7 @@ describe('Zunami', function () {
 
         it('deposit after MIN_LOCK_TIME should be successful', async () => {
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                 await zunami.connect(user).deposit([
                     web3.utils.toWei("1000", "ether"),
                     web3.utils.toWei("1000", "mwei"),
@@ -91,7 +93,7 @@ describe('Zunami', function () {
         });
 
         it('check balances after deposit', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("3000.0");
                expect(ethers.utils.formatUnits((await usdt.balanceOf(user.address)),6)).to.equal("0.0");
                expect(ethers.utils.formatUnits((await usdc.balanceOf(user.address)),6)).to.equal("0.0");
@@ -106,7 +108,7 @@ describe('Zunami', function () {
         });
 
         it('withraw', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                 await zunami.connect(user).withdraw(await zunami.balanceOf(user.address), [
                     '0',
                     '0',
@@ -117,7 +119,7 @@ describe('Zunami', function () {
         });
 
         it('check balances after withraw', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
                let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
@@ -138,7 +140,7 @@ describe('Zunami', function () {
         it('add one more pool and deposit to it', async () => {
             await zunami.add(strategy.address);
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                 let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
                 let dai_balance=await dai.balanceOf(user.address);
@@ -155,7 +157,7 @@ describe('Zunami', function () {
         });
 
         it('withraw after moveFunds()', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                 await zunami.connect(user).withdraw(await zunami.balanceOf(user.address), [
                     '0',
                     '0',
@@ -165,7 +167,7 @@ describe('Zunami', function () {
         });
 
         it('check balances after withraw', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
                let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
@@ -178,7 +180,7 @@ describe('Zunami', function () {
         });
 
         it('delegateDeposit', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                 let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
                 let dai_balance=await dai.balanceOf(user.address);
@@ -193,10 +195,7 @@ describe('Zunami', function () {
         it('create new pool and completeDeposits to it', async () => {
             await zunami.add(strategy.address);
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-            // await zunami.completeDeposits(3,2);
-            await zunami.completeDeposits([alice.address, bob.address,
-                // carol.address
-            ],2);
+            await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2);
         });
 
         it('one user withdraw from pending', async () => {
@@ -207,9 +206,8 @@ describe('Zunami', function () {
         });
 
         it('delegateWithdrawal', async () => {
-            for (const user of [alice, bob
-                // , carol
-            ]) {
+            for (const user of [alice, bob, rosa]) {
+
                 let zunami_balance=await zunami.balanceOf(user.address);
                 await zunami.connect(user).delegateWithdrawal(zunami_balance,[
                     0,
@@ -224,7 +222,7 @@ describe('Zunami', function () {
         });
 
         it('check balances after withraw', async () => {
-            for (const user of [alice, bob, carol]) {
+            for (const user of [alice, bob, carol, rosa]) {
                expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
                let usdt_balance=await usdt.balanceOf(user.address);
                 let usdc_balance=await usdc.balanceOf(user.address);
@@ -242,7 +240,7 @@ describe('Zunami', function () {
     }
 
     before(async function () {
-        [owner, alice, bob, carol] = await ethers.getSigners();
+        [owner, alice, bob, carol, rosa] = await ethers.getSigners();
         dai = new ethers.Contract(daiAddress, erc20ABI, owner);
         usdc = new ethers.Contract(usdcAddress, erc20ABI, owner);
         usdt = new ethers.Contract(usdtAddress, erc20ABI, owner);
@@ -301,7 +299,7 @@ describe('Zunami', function () {
             params: [usdtAccount],
         });
 
-        for (const user of [alice, bob, carol]) {
+        for (const user of [alice, bob, carol, rosa]) {
             await usdt
             .connect(owner)
             .transfer(user.address, web3.utils.toWei("1000", "mwei"));
@@ -314,6 +312,8 @@ describe('Zunami', function () {
         }
 
     });
+
+    // --- START TEST STRATEGIES ---
 
     // base1
     // describe('AaveCurveConvex', function () {
@@ -329,7 +329,9 @@ describe('Zunami', function () {
     //     testStrategy();
     // });
 
+
     // base2
+    // ---- FRAX ----
     // describe('FraxCurveConvex', function () {
     //     before(async function () {
     //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
@@ -342,12 +344,24 @@ describe('Zunami', function () {
     //     });
     //     testStrategy();
     // });
-
-    // base4
-    describe('SUSDCurveConvex', function () {
+    // ---- BUSDV2 ----
+    // describe('BUSDV2CurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('BUSDV2CurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- DUSD ----
+    describe('DUSDCurveConvex', function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
+            let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('DUSDCurveConvex');
             strategy = await FraxCurveConvex.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();
@@ -356,6 +370,22 @@ describe('Zunami', function () {
         });
         testStrategy();
     });
+
+
+
+    // base4
+    // describe('SUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
 
 
 

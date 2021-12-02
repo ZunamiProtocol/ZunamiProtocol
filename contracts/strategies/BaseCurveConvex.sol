@@ -22,7 +22,7 @@ contract BaseCurveConvex is Context, Ownable {
     uint256 private constant DENOMINATOR = 1e18;
     uint256 private constant USD_MULTIPLIER = 1e12;
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
-    uint256 public minDepositAmount = 9990; // 99.9%
+    uint256 public minDepositAmount = 9975; // 99.75%
 
     address[3] public tokens;
     uint256[3] public managementFees;
@@ -89,18 +89,18 @@ contract BaseCurveConvex is Context, Ownable {
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = crvRewards.balanceOf(address(this));
         uint256 lpPrice = pool.get_virtual_price();
-        (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
+        (uint112 reserve0, uint112 reserve1,) = wethcvx.getReserves();
         uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
-        (reserve0, reserve1, ) = crvweth.getReserves();
+        (reserve0, reserve1,) = crvweth.getReserves();
         uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
-        (reserve0, reserve1, ) = wethusdt.getReserves();
+        (reserve0, reserve1,) = wethusdt.getReserves();
         uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
         if (address(extraPair) != address(0)) {
             uint256 extraTokenPrice = 0;
-            (reserve0, reserve1, ) = extraPair.getReserves();
+            (reserve0, reserve1,) = extraPair.getReserves();
             for (uint8 i = 0; i < 3; ++i) {
                 if (extraPair.token0() == tokens[i]) {
                     if (i > 0) {
@@ -142,7 +142,7 @@ contract BaseCurveConvex is Context, Ownable {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
-                10**(18 - IERC20Metadata(tokens[i]).decimals());
+                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
             sum +=
             IERC20Metadata(tokens[i]).balanceOf(address(this)) *
@@ -165,21 +165,21 @@ contract BaseCurveConvex is Context, Ownable {
         DENOMINATOR;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns(bool){
+    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (bool){
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
 
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                _amounts[i]=amounts[i]*10**(18 - IERC20Metadata(tokens[i]).decimals());
-            }else{
-                _amounts[i]=amounts[i];
+                _amounts[i] = amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
+            } else {
+                _amounts[i] = amounts[i];
             }
 
         }
-        uint256 amountsMin = (_amounts[0]+_amounts[1]+_amounts[2]) * minDepositAmount / DEPOSIT_DENOMINATOR;
+        uint256 amountsMin = (_amounts[0] + _amounts[1] + _amounts[2]) * minDepositAmount / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
-        if(depositedLp * lpPrice / 1e18 >= amountsMin){
+        if (depositedLp * lpPrice / 1e18 >= amountsMin) {
             for (uint8 i = 0; i < 3; ++i) {
                 IERC20Metadata(tokens[i]).safeIncreaseAllowance(
                     address(pool),
@@ -189,9 +189,9 @@ contract BaseCurveConvex is Context, Ownable {
             uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
             poolLP.safeApprove(address(booster), poolLPs);
             booster.depositAll(cvxPoolPID, true);
-            return(true);
-        }else{
-            return(false);
+            return (true);
+        } else {
+            return (false);
         }
 
     }
@@ -200,12 +200,12 @@ contract BaseCurveConvex is Context, Ownable {
         address depositor,
         uint256 lpShares,
         uint256[3] memory minAmounts
-    ) external virtual onlyZunami returns(bool){
+    ) external virtual onlyZunami returns (bool){
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
         lpShares) / zunami.totalSupply();
 
-        if( depositedShare < crvRequiredLPs){
+        if (depositedShare < crvRequiredLPs) {
             return false;
         }
 
@@ -222,7 +222,7 @@ contract BaseCurveConvex is Context, Ownable {
                 address(this)
             );
             userBalances[i] =
-            ((prevBalances[i]-managementFees[i]) * lpShares) /
+            ((prevBalances[i] - managementFees[i]) * lpShares) /
             zunami.totalSupply();
         }
 
@@ -240,7 +240,7 @@ contract BaseCurveConvex is Context, Ownable {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
-                10**(18 - IERC20Metadata(tokens[i]).decimals());
+                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
             earned += (liqAmounts[i] + userBalances[i]) * decimalsMultiplier;
         }
@@ -272,7 +272,7 @@ contract BaseCurveConvex is Context, Ownable {
     function sellCrvCvx() public virtual {
         uint256 cvxBal = cvx.balanceOf(address(this));
         uint256 crvBal = crv.balanceOf(address(this));
-        if(cvxBal==0 || crvBal==0){return;}
+        if (cvxBal == 0 || crvBal == 0) {return;}
         cvx.safeApprove(address(router), cvxBal);
         crv.safeApprove(address(router), crvBal);
 
@@ -303,7 +303,7 @@ contract BaseCurveConvex is Context, Ownable {
 
     function sellExtraToken() public virtual {
         uint256 extraBal = extraToken.balanceOf(address(this));
-        if(extraBal==0){return;}
+        if (extraBal == 0) {return;}
         extraToken.safeApprove(
             address(router), extraBal
         );
@@ -362,5 +362,10 @@ contract BaseCurveConvex is Context, Ownable {
                 managementFees[i]
             );
         }
+    }
+
+    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000);
+        minDepositAmount = _minDepositAmount;
     }
 }
