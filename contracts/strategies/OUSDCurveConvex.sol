@@ -2,12 +2,12 @@
 pragma solidity ^0.8.4;
 
 import "../utils/Constants.sol";
-import "./BaseCurveConvex4.sol";
+import "./BaseCurveConvex2.sol";
 
-contract OUSDCurveConvex is BaseCurveConvex4 {
+contract OUSDCurveConvex is BaseCurveConvex2 {
     constructor()
     // TODO: need check constants
-    BaseCurveConvex4(
+    BaseCurveConvex2(
         Constants.CRV_OUSD_ADDRESS,
         Constants.CRV_OUSD_LP_ADDRESS,
         Constants.CVX_OUSD_REWARDS_ADDRESS,

@@ -98,9 +98,12 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function totalHoldings() public view virtual returns (uint256) {
+        console.log("strat totalHoldings start 0");
         uint256 lpBalance = crvRewards.balanceOf(address(this));
+        console.log("lpBalance", lpBalance);
         uint256 lpPrice = pool.get_virtual_price();
         (uint112 reserve0, uint112 reserve1,) = wethcvx.getReserves();
+        console.log("strat totalHoldings start 1");
         uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
         (reserve0, reserve1,) = crvweth.getReserves();
         uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
@@ -108,6 +111,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
+        console.log("strat totalHoldings start 2");
         uint256 sum = 0;
         if (address(extraPair) != address(0)) {
             uint256 extraTokenPrice = 0;
@@ -182,6 +186,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (bool){
+        console.log("dep started");
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
@@ -278,7 +283,7 @@ contract BaseCurveConvex2 is Context, Ownable {
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
                 liqAmounts[i] + userBalances[i] - managementFeePerAsset
-            );
+        );
         }
         return true;
     }

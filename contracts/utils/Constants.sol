@@ -52,7 +52,7 @@ library Constants {
     address internal constant LUSD_ADDRESS =
         0x5f98805A4E8be255a32880FDeC7F6728C6568bA0;
     address internal constant USDP_ADDRESS =
-        0x8E870D67F660D95d5be530380D0eC0bd388289E1;
+        0x1456688345527bE1f37E9e627DA0837D6f08C925;
     address internal constant USDN_ADDRESS =
         0x674C6Ad92Fd080e4004b2312b45f796a192D27a0;
     address internal constant USDK_ADDRESS =
@@ -143,14 +143,12 @@ library Constants {
         0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a;
     address internal constant CVX_BUSDV2_REWARDS_ADDRESS =
         0xbD223812d360C9587921292D0644D18aDb6a2ad0;
-
     address internal constant CRV_OUSD_ADDRESS =
-    0x87650D7bbfC3A9F10587d7778206671719d9910D;
+        0x87650D7bbfC3A9F10587d7778206671719d9910D;
     address internal constant CRV_OUSD_LP_ADDRESS =
-    0x87650D7bbfC3A9F10587d7778206671719d9910D;
+        0x87650D7bbfC3A9F10587d7778206671719d9910D;
     address internal constant CVX_OUSD_REWARDS_ADDRESS =
-    0x7D536a737C13561e0D2Decf1152a653B4e615158;
-
+        0x7D536a737C13561e0D2Decf1152a653B4e615158;
     address internal constant CRV_USDN_ADDRESS =
         0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1;
     address internal constant CRV_USDN_LP_ADDRESS =
