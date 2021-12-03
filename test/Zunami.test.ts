@@ -29,6 +29,8 @@ describe('Zunami', function () {
 
     let zunami: Contract;
     let strategy: Contract;
+    let strategy2: Contract;
+    let strategy4: Contract;
     let referenceBlock: number;
     let dai: Contract;
     let usdc: Contract;
@@ -71,8 +73,11 @@ describe('Zunami', function () {
 
         });
 
-        it('deposit before strategy started should be fail', async () => {
+        it('function updateMinDepositAmount change', async () => {
+            await strategy.updateMinDepositAmount(9974);
+        });
 
+        it('deposit before strategy started should be fail', async () => {
             await expectRevert(zunami.deposit([
                 web3.utils.toWei("1000", "ether"),
                 web3.utils.toWei("1000", "mwei"),
@@ -107,6 +112,7 @@ describe('Zunami', function () {
             }
         });
 
+
         it('withraw', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami.connect(user).withdraw(await zunami.balanceOf(user.address), [
@@ -115,8 +121,10 @@ describe('Zunami', function () {
                     '0',
                 ],0);
             }
-
         });
+
+        printBalances()
+
 
         it('check balances after withraw', async () => {
             for (const user of [alice, bob, carol, rosa]) {
@@ -131,7 +139,6 @@ describe('Zunami', function () {
             }
         });
 
-        //printBalances();
 
         it('claim', async () => {
             await zunami.claimManagementFees(strategy.address);
@@ -192,17 +199,17 @@ describe('Zunami', function () {
             }
         });
 
-        it('create new pool and completeDeposits to it', async () => {
-            await zunami.add(strategy.address);
-            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-            await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2);
-        });
-
         it('one user withdraw from pending', async () => {
             await zunami.connect(carol).pendingDepositRemove();
             let usdt_balance=await usdt.balanceOf(carol.address);
             let usdc_balance=await usdc.balanceOf(carol.address);
             let dai_balance=await dai.balanceOf(carol.address);
+        });
+
+        it('create new pool (strategy2) and completeDeposits to it', async () => {
+            await zunami.add(strategy2.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2);
         });
 
         it('delegateWithdrawal', async () => {
@@ -234,6 +241,62 @@ describe('Zunami', function () {
             }
         });
 
+        // strategy 4
+
+        it('delegateDeposit | Strategy 4', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+                await zunami.connect(user).delegateDeposit([
+                    dai_balance,
+                    usdc_balance,
+                    usdt_balance,
+                ]);
+            }
+        });
+
+        it('one user withdraw from pending | Strategy 4', async () => {
+            await zunami.connect(carol).pendingDepositRemove();
+            let usdt_balance=await usdt.balanceOf(carol.address);
+            let usdc_balance=await usdc.balanceOf(carol.address);
+            let dai_balance=await dai.balanceOf(carol.address);
+        });
+
+        it('create new pool (strategy4) and completeDeposits to it', async () => {
+            await zunami.add(strategy4.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
+        });
+
+        it('delegateWithdrawal | Strategy 4', async () => {
+            for (const user of [alice, bob, rosa]) {
+
+                let zunami_balance=await zunami.balanceOf(user.address);
+                await zunami.connect(user).delegateWithdrawal(zunami_balance,[
+                    0,
+                    0,
+                    0,
+                ]);
+            }
+        });
+
+        it('completeWithdrawals | Strategy 4', async () => {
+            await zunami.completeWithdrawals(10,3);
+        });
+
+        it('check balances after withraw | Strategy 4', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
+                let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+                let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
+                    +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
+                    +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
+                expect(SUMM).to.gt(2985);//99.5%
+            }
+        });
 
         printBalances();
 
@@ -315,9 +378,29 @@ describe('Zunami', function () {
 
 
 
-
-
     // --- START TEST STRATEGIES ---
+
+    // --- MULTI-TEST ----
+    describe('MultiTest', function () {
+        before(async function () {
+            let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+            let AaveCurveConvex: ContractFactory = await ethers.getContractFactory('AaveCurveConvex');
+            let BUSDV2CurveConvex: ContractFactory = await ethers.getContractFactory('BUSDV2CurveConvex');
+            let SUSDCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
+            strategy = await AaveCurveConvex.deploy();
+            strategy2 = await BUSDV2CurveConvex.deploy();
+            strategy4 = await SUSDCurveConvex.deploy();
+            await strategy.deployed();
+            await strategy2.deployed();
+            await strategy4.deployed();
+            zunami = await Zunami.deploy();
+            await zunami.deployed();
+            strategy.setZunami(zunami.address);
+            strategy2.setZunami(zunami.address);
+            strategy4.setZunami(zunami.address);
+        });
+        testStrategy();
+    });
 
     // --- BASE-1 ----
     // describe('AaveCurveConvex', function () {
@@ -453,23 +536,10 @@ describe('Zunami', function () {
     //     testStrategy();
     // });
     // ---- USDN ----
-    describe('USDNCurveConvex', function () {
-        before(async function () {
-            let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDNCurveConvex');
-            strategy = await FraxCurveConvex.deploy();
-            await strategy.deployed();
-            zunami = await Zunami.deploy();
-            await zunami.deployed();
-            strategy.setZunami(zunami.address);
-        });
-        testStrategy();
-    });
-    // ---- USDP ----
-    // describe('USDPCurveConvex', function () {
+    // describe('USDNCurveConvex', function () {
     //     before(async function () {
     //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDPCurveConvex');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDNCurveConvex');
     //         strategy = await FraxCurveConvex.deploy();
     //         await strategy.deployed();
     //         zunami = await Zunami.deploy();
@@ -478,7 +548,6 @@ describe('Zunami', function () {
     //     });
     //     testStrategy();
     // });
-
 
     //  --- BASE-4 ----
     // describe('SUSDCurveConvex', function () {
@@ -498,45 +567,45 @@ describe('Zunami', function () {
 
 
 
+    // ---- USDP: NOT WORKING (BAD TESTS) !!!!!----
+    // describe('USDPCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('USDPCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    // ---- OUSD: NOT WORKING (NEW POOL) !!!!!----
+    // describe('OUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('OUSDCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
+    //  --- NO BASE: NOT WORKING (NEW CHANGE FUNCTIONS)----
+    // describe('TUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let FraxCurveConvex: ContractFactory = await ethers.getContractFactory('TUSDCurveConvex');
+    //         strategy = await FraxCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
 
-
-    /*
-
-        it('zunami moveFunds(update strategy)', async () => {
-            strategy = await AaveCurveConvex.deploy();
-            await strategy.deployed();
-            strategy.setZunami(zunami.address);
-            zunami.add(strategy.address);
-            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-            await dai.approve(zunami.address, '1000000000000000000000');
-            await usdc.approve(zunami.address, '1000000000');
-            await usdt.approve(zunami.address, '1000000000');
-            await zunami.deposit([
-                '1000000000000000000000',
-                '1000000000',
-                '1000000000',
-            ],0);
-
-            await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            await zunami.claimManagementFees(strategy.address);
-
-            strategy = await USDPCurveConvex.deploy();
-            await strategy.deployed();
-            strategy.setZunami(zunami.address);
-            zunami.add(strategy.address);
-            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-            await dai.approve(zunami.address, '1000000000000000000000');
-            await usdc.approve(zunami.address, '1000000000');
-            await usdt.approve(zunami.address, '1000000000');
-            await zunami.deposit([
-                '1000000000000000000000',
-                '1000000000',
-                '1000000000',
-            ],0);
-            await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            await zunami.claimManagementFees(strategy.address);
-            await zunami.moveFunds(0, 1);
-        });
-    */
 
 });

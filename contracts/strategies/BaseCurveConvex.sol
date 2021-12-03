@@ -365,7 +365,7 @@ contract BaseCurveConvex is Context, Ownable {
     }
 
     function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000);
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, "Wrong amount!");
         minDepositAmount = _minDepositAmount;
     }
 }

@@ -22,6 +22,7 @@ library Constants {
     uint256 internal constant CVX_LUSD_PID = 33;
     uint256 internal constant CVX_BUSDV2_PID = 34;
     uint256 internal constant CVX_MIM_PID = 40;
+    uint256 internal constant CVX_OUSD_PID = 56;
     uint256 internal constant TRADE_DEADLINE = 2000;
 
     address internal constant CVX_ADDRESS =
@@ -40,6 +41,8 @@ library Constants {
         0x57Ab1ec28D129707052df4dF418D58a2D46d5f51;
     address internal constant BUSD_ADDRESS =
         0x4Fabb145d64652a948d72533023f6E7A623C7C53;
+    address internal constant OUSD_ADDRESS =
+        0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86;
     address internal constant MUSD_ADDRESS =
         0xe2f2a5C287993345a840Db3B0845fbC70f5935a5;
     address internal constant MIM_ADDRESS =
@@ -140,6 +143,14 @@ library Constants {
         0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a;
     address internal constant CVX_BUSDV2_REWARDS_ADDRESS =
         0xbD223812d360C9587921292D0644D18aDb6a2ad0;
+
+    address internal constant CRV_OUSD_ADDRESS =
+    0x87650D7bbfC3A9F10587d7778206671719d9910D;
+    address internal constant CRV_OUSD_LP_ADDRESS =
+    0x87650D7bbfC3A9F10587d7778206671719d9910D;
+    address internal constant CVX_OUSD_REWARDS_ADDRESS =
+    0x7D536a737C13561e0D2Decf1152a653B4e615158;
+
     address internal constant CRV_USDN_ADDRESS =
         0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1;
     address internal constant CRV_USDN_LP_ADDRESS =

@@ -294,7 +294,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     function sellCrvCvx() public virtual {
         uint256 cvxBal = cvx.balanceOf(address(this));
         uint256 crvBal = crv.balanceOf(address(this));
-        if(cvxBal==0 || crvBal==0){return;}
+        if (cvxBal == 0 || crvBal == 0) {return;}
         cvx.safeApprove(address(router), cvxBal);
         crv.safeApprove(address(router), crvBal);
 
@@ -324,13 +324,16 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function sellToken() public virtual {
-        token.safeApprove(address(pool), token.balanceOf(address(this)));
-        pool.exchange_underlying(0, 3, token.balanceOf(address(this)), 0);
+        uint256 sellBal = token.balanceOf(address(this));
+        if (sellBal > 0) {
+            token.safeApprove(address(pool), sellBal);
+            pool.exchange_underlying(0, 3, sellBal, 0);
+        }
     }
 
     function sellExtraToken() public virtual {
         uint256 extraBal = extraToken.balanceOf(address(this));
-        if(extraBal==0){return;}
+        if (extraBal == 0) {return;}
         extraToken.safeApprove(
             address(router),
             extraToken.balanceOf(address(this))
@@ -366,7 +369,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         router.swapExactTokensForTokens(
             extraBal,
             0,
-                path2,
+            path2,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
@@ -396,7 +399,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000);
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, "Wrong amount!");
         minDepositAmount = _minDepositAmount;
     }
 }
