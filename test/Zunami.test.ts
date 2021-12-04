@@ -12,7 +12,7 @@ import { abi as erc20ABI } from '../artifacts/@openzeppelin/contracts/token/ERC2
 
 
 const SUPPLY = '100000000000000';
-const MIN_LOCK_TIME = time.duration.seconds(86400 * 1.1);
+const MIN_LOCK_TIME = time.duration.seconds(86405);
 const provider = waffle.provider;
 const BLOCKS = 1000;
 const SKIP_TIMES = 10;
@@ -125,7 +125,7 @@ describe('Zunami', function () {
 
         printBalances()
 
-
+        // strategy2
         // it('check balances after withraw', async () => {
         //     for (const user of [alice, bob, carol, rosa]) {
         //        expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
@@ -242,7 +242,6 @@ describe('Zunami', function () {
         // });
 
         // strategy 4
-
         // it('delegateDeposit | Strategy 4', async () => {
         //     for (const user of [alice, bob, carol, rosa]) {
         //         let usdt_balance=await usdt.balanceOf(user.address);

@@ -147,6 +147,12 @@ library Constants {
         0x87650D7bbfC3A9F10587d7778206671719d9910D;
     address internal constant CRV_OUSD_LP_ADDRESS =
         0x87650D7bbfC3A9F10587d7778206671719d9910D;
+    address internal constant CRV_OUSD_EXTRA_ADDRESS =
+        0x8A05801c1512F6018e450b0F69e9Ca7b985fCea3;
+    address internal constant OUSD_EXTRA_ADDRESS =
+        0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26;
+    address internal constant OUSD_EXTRA_PAIR_ADDRESS =
+        0x72ea6Ca0D47b337f1EA44314d9d90E2A897eDaF5;
     address internal constant CVX_OUSD_REWARDS_ADDRESS =
         0x7D536a737C13561e0D2Decf1152a653B4e615158;
     address internal constant CRV_USDN_ADDRESS =

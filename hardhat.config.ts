@@ -45,7 +45,8 @@ const config: HardhatUserConfig = {
                 url: `${process.env.NODE_API_KEY}`,
                 // url: 'http://localhost:8545',
                 // blockNumber: 13000000,
-                blockNumber: 13465000,
+                // blockNumber: 13465000,
+                blockNumber: 13670000,
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each

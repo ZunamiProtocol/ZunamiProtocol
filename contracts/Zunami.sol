@@ -85,14 +85,12 @@ contract Zunami is Context, Ownable, ERC20 {
 
     // total holdings for all pools
     function totalHoldings() public view virtual returns (uint256) {
-        console.log("start total holdings");
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; ++pid) {
             totalHold + poolInfo[pid].strategy.totalHoldings();
-            console.log("totalHold", totalHold);
-            return totalHold;
         }
+        return totalHold;
     }
 
     function lpPrice() public view virtual returns (uint256) {
@@ -189,7 +187,6 @@ contract Zunami is Context, Ownable, ERC20 {
     {
         IStrategy strategy = poolInfo[pid].strategy;
         require(block.timestamp >= poolInfo[pid].startTime, "Zunami: strategy not started yet!");
-        console.log("poolInfo", poolInfo.length);
         uint256 sum = 0;
         for (uint256 i = 0; i < 3; ++i) {
             uint256 decimalsMultiplier = 1;

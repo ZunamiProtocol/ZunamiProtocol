@@ -1,7 +1,9 @@
 async function main() {
+    console.log("Start deploy");
     const Zunami = await ethers.getContractFactory("Zunami");
     const zunami = await Zunami.deploy();
     await zunami.deployed();
+    console.log("Zunami deployed to:", zunami.address);
 }
 
 main()
