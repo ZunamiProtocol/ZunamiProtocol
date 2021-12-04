@@ -126,176 +126,176 @@ describe('Zunami', function () {
         printBalances()
 
         // strategy2
-        // it('check balances after withraw', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //        expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
-        //        let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //        let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
-        //        +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
-        //        +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
-        //        expect(SUMM).to.gt(2985);//99.5%
-        //     }
-        // });
-        //
-        //
-        // it('claim', async () => {
-        //     await zunami.claimManagementFees(strategy.address);
-        // });
-        //
-        // it('add one more pool and deposit to it', async () => {
-        //     await zunami.add(strategy.address);
-        //     await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //         let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //         await zunami.connect(user).deposit([
-        //             dai_balance,
-        //             usdc_balance,
-        //             usdt_balance,
-        //         ],1);
-        //     }
-        // });
-        //
-        // it('moveFunds() (update strategy) ', async () => {
-        //     await zunami.moveFunds(1, 0);
-        // });
-        //
-        // it('withraw after moveFunds()', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //         await zunami.connect(user).withdraw(await zunami.balanceOf(user.address), [
-        //             '0',
-        //             '0',
-        //             '0',
-        //         ],0);
-        //     }
-        // });
-        //
-        // it('check balances after withraw', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //        expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
-        //        let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //        let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
-        //        +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
-        //        +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
-        //        expect(SUMM).to.gt(2985);//99.5%
-        //     }
-        // });
-        //
-        // it('delegateDeposit', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //         let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //         await zunami.connect(user).delegateDeposit([
-        //             dai_balance,
-        //             usdc_balance,
-        //             usdt_balance,
-        //         ]);
-        //     }
-        // });
-        //
-        // it('one user withdraw from pending', async () => {
-        //     await zunami.connect(carol).pendingDepositRemove();
-        //     let usdt_balance=await usdt.balanceOf(carol.address);
-        //     let usdc_balance=await usdc.balanceOf(carol.address);
-        //     let dai_balance=await dai.balanceOf(carol.address);
-        // });
-        //
-        // it('create new pool (strategy) and completeDeposits to it', async () => {
-        //     await zunami.add(strategy.address);
-        //     await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-        //     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2);
-        // });
-        //
-        // it('delegateWithdrawal', async () => {
-        //     for (const user of [alice, bob, rosa]) {
-        //
-        //         let zunami_balance=await zunami.balanceOf(user.address);
-        //         await zunami.connect(user).delegateWithdrawal(zunami_balance,[
-        //             0,
-        //             0,
-        //             0,
-        //         ]);
-        //     }
-        // });
-        //
-        // it('completeWithdrawals', async () => {
-        //     await zunami.completeWithdrawals(10,2);
-        // });
-        //
-        // it('check balances after withraw', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //        expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
-        //        let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //        let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
-        //        +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
-        //        +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
-        //        expect(SUMM).to.gt(2985);//99.5%
-        //     }
-        // });
+        it('check balances after withraw', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+               expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
+               let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+               let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
+               +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
+               +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
+               expect(SUMM).to.gt(2985);//99.5%
+            }
+        });
+
+
+        it('claim', async () => {
+            await zunami.claimManagementFees(strategy.address);
+        });
+
+        it('add one more pool and deposit to it', async () => {
+            await zunami.add(strategy2.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            for (const user of [alice, bob, carol, rosa]) {
+                let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+                await zunami.connect(user).deposit([
+                    dai_balance,
+                    usdc_balance,
+                    usdt_balance,
+                ],1);
+            }
+        });
+
+        it('moveFunds() (update strategy) ', async () => {
+            await zunami.moveFunds(1, 0);
+        });
+
+        it('withraw after moveFunds()', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                await zunami.connect(user).withdraw(await zunami.balanceOf(user.address), [
+                    '0',
+                    '0',
+                    '0',
+                ],0);
+            }
+        });
+
+        it('check balances after withraw', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+               expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
+               let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+               let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
+               +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
+               +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
+               expect(SUMM).to.gt(2985);//99.5%
+            }
+        });
+
+        it('delegateDeposit', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+                await zunami.connect(user).delegateDeposit([
+                    dai_balance,
+                    usdc_balance,
+                    usdt_balance,
+                ]);
+            }
+        });
+
+        it('one user withdraw from pending', async () => {
+            await zunami.connect(carol).pendingDepositRemove();
+            let usdt_balance=await usdt.balanceOf(carol.address);
+            let usdc_balance=await usdc.balanceOf(carol.address);
+            let dai_balance=await dai.balanceOf(carol.address);
+        });
+
+        it('create new pool (strategy2) and completeDeposits to it', async () => {
+            await zunami.add(strategy2.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2);
+        });
+
+        it('delegateWithdrawal', async () => {
+            for (const user of [alice, bob, rosa]) {
+
+                let zunami_balance=await zunami.balanceOf(user.address);
+                await zunami.connect(user).delegateWithdrawal(zunami_balance,[
+                    0,
+                    0,
+                    0,
+                ]);
+            }
+        });
+
+        it('completeWithdrawals', async () => {
+            await zunami.completeWithdrawals(10,2);
+        });
+
+        it('check balances after withraw', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+               expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
+               let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+               let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
+               +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
+               +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
+               expect(SUMM).to.gt(2985);//99.5%
+            }
+        });
 
         // strategy 4
-        // it('delegateDeposit | Strategy 4', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //         let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //         await zunami.connect(user).delegateDeposit([
-        //             dai_balance,
-        //             usdc_balance,
-        //             usdt_balance,
-        //         ]);
-        //     }
-        // });
-        //
-        // it('one user withdraw from pending | Strategy 4', async () => {
-        //     await zunami.connect(carol).pendingDepositRemove();
-        //     let usdt_balance=await usdt.balanceOf(carol.address);
-        //     let usdc_balance=await usdc.balanceOf(carol.address);
-        //     let dai_balance=await dai.balanceOf(carol.address);
-        // });
-        //
-        // it('create new pool (strategy4) and completeDeposits to it', async () => {
-        //     await zunami.add(strategy4.address);
-        //     await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-        //     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
-        // });
-        //
-        // it('delegateWithdrawal | Strategy 4', async () => {
-        //     for (const user of [alice, bob, rosa]) {
-        //
-        //         let zunami_balance=await zunami.balanceOf(user.address);
-        //         await zunami.connect(user).delegateWithdrawal(zunami_balance,[
-        //             0,
-        //             0,
-        //             0,
-        //         ]);
-        //     }
-        // });
-        //
-        // it('completeWithdrawals | Strategy 4', async () => {
-        //     await zunami.completeWithdrawals(10,3);
-        // });
-        //
-        // it('check balances after withraw | Strategy 4', async () => {
-        //     for (const user of [alice, bob, carol, rosa]) {
-        //         expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
-        //         let usdt_balance=await usdt.balanceOf(user.address);
-        //         let usdc_balance=await usdc.balanceOf(user.address);
-        //         let dai_balance=await dai.balanceOf(user.address);
-        //         let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
-        //             +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
-        //             +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
-        //         expect(SUMM).to.gt(2985);//99.5%
-        //     }
-        // });
+        it('delegateDeposit | Strategy 4', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+                await zunami.connect(user).delegateDeposit([
+                    dai_balance,
+                    usdc_balance,
+                    usdt_balance,
+                ]);
+            }
+        });
+
+        it('one user withdraw from pending | Strategy 4', async () => {
+            await zunami.connect(carol).pendingDepositRemove();
+            let usdt_balance=await usdt.balanceOf(carol.address);
+            let usdc_balance=await usdc.balanceOf(carol.address);
+            let dai_balance=await dai.balanceOf(carol.address);
+        });
+
+        it('create new pool (strategy4) and completeDeposits to it', async () => {
+            await zunami.add(strategy4.address);
+            await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
+            await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
+        });
+
+        it('delegateWithdrawal | Strategy 4', async () => {
+            for (const user of [alice, bob, rosa]) {
+
+                let zunami_balance=await zunami.balanceOf(user.address);
+                await zunami.connect(user).delegateWithdrawal(zunami_balance,[
+                    0,
+                    0,
+                    0,
+                ]);
+            }
+        });
+
+        it('completeWithdrawals | Strategy 4', async () => {
+            await zunami.completeWithdrawals(10,3);
+        });
+
+        it('check balances after withraw | Strategy 4', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)),18)).to.equal("0.0");
+                let usdt_balance=await usdt.balanceOf(user.address);
+                let usdc_balance=await usdc.balanceOf(user.address);
+                let dai_balance=await dai.balanceOf(user.address);
+                let SUMM=parseFloat(ethers.utils.formatUnits(dai_balance,18))
+                    +parseFloat(ethers.utils.formatUnits(usdc_balance,6))
+                    +parseFloat(ethers.utils.formatUnits( usdt_balance,6));
+                expect(SUMM).to.gt(2985);//99.5%
+            }
+        });
 
         printBalances();
 
@@ -380,26 +380,26 @@ describe('Zunami', function () {
     // --- START TEST STRATEGIES ---
 
     // --- MULTI-TEST ----
-    // describe('MultiTest', function () {
-    //     before(async function () {
-    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-    //         let AaveCurveConvex: ContractFactory = await ethers.getContractFactory('AaveCurveConvex');
-    //         let BUSDV2CurveConvex: ContractFactory = await ethers.getContractFactory('BUSDV2CurveConvex');
-    //         let SUSDCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
-    //         strategy = await AaveCurveConvex.deploy();
-    //         strategy2 = await BUSDV2CurveConvex.deploy();
-    //         strategy4 = await SUSDCurveConvex.deploy();
-    //         await strategy.deployed();
-    //         await strategy2.deployed();
-    //         await strategy4.deployed();
-    //         zunami = await Zunami.deploy();
-    //         await zunami.deployed();
-    //         strategy.setZunami(zunami.address);
-    //         strategy2.setZunami(zunami.address);
-    //         strategy4.setZunami(zunami.address);
-    //     });
-    //     testStrategy();
-    // });
+    describe('MultiTest', function () {
+        before(async function () {
+            let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+            let AaveCurveConvex: ContractFactory = await ethers.getContractFactory('AaveCurveConvex');
+            let OUSDCurveConvex: ContractFactory = await ethers.getContractFactory('OUSDCurveConvex');
+            let SUSDCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
+            strategy = await AaveCurveConvex.deploy();
+            strategy2 = await OUSDCurveConvex.deploy();
+            strategy4 = await SUSDCurveConvex.deploy();
+            await strategy.deployed();
+            await strategy2.deployed();
+            await strategy4.deployed();
+            zunami = await Zunami.deploy();
+            await zunami.deployed();
+            strategy.setZunami(zunami.address);
+            strategy2.setZunami(zunami.address);
+            strategy4.setZunami(zunami.address);
+        });
+        testStrategy();
+    });
 
     // --- BASE-1 ----
     // describe('AaveCurveConvex', function () {
@@ -560,6 +560,19 @@ describe('Zunami', function () {
     //     });
     //     testStrategy();
     // });
+    // ---- OUSD ----
+    // describe('OUSDCurveConvex', function () {
+    //     before(async function () {
+    //         let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+    //         let OUSDCurveConvex: ContractFactory = await ethers.getContractFactory('OUSDCurveConvex');
+    //         strategy = await OUSDCurveConvex.deploy();
+    //         await strategy.deployed();
+    //         zunami = await Zunami.deploy();
+    //         await zunami.deployed();
+    //         strategy.setZunami(zunami.address);
+    //     });
+    //     testStrategy();
+    // });
 
     //  --- BASE-4 ----
     // describe('SUSDCurveConvex', function () {
@@ -576,19 +589,7 @@ describe('Zunami', function () {
     // });
 
 
-    // ---- OUSD: NOT WORKING (NEW POOL) !!!!!----
-    describe('OUSDCurveConvex', function () {
-        before(async function () {
-            let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let OUSDCurveConvex: ContractFactory = await ethers.getContractFactory('OUSDCurveConvex');
-            strategy = await OUSDCurveConvex.deploy();
-            await strategy.deployed();
-            zunami = await Zunami.deploy();
-            await zunami.deployed();
-            strategy.setZunami(zunami.address);
-        });
-        testStrategy();
-    });
+
     //  --- NO BASE: NOT WORKING (NEW CHANGE FUNCTIONS)----
     // describe('TUSDCurveConvex', function () {
     //     before(async function () {
