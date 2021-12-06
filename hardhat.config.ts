@@ -90,6 +90,9 @@ const config: HardhatUserConfig = {
         },
         mainnet: {
             url: `${process.env.NODE_API_KEY}`,
+            chainId: 1,
+            gas: 'auto',
+            gasPrice: 'auto',
             accounts: [`${process.env.PRIVATE_KEY}`],
         },
         rinkeby: {
@@ -109,6 +112,13 @@ const config: HardhatUserConfig = {
             accounts: [`${process.env.PRIVATE_KEY}`],
             gas: 'auto',
             gasPrice: 'auto',
+        },
+        bsctest : {
+            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+            chainId: 97,
+            gas: 'auto',
+            gasPrice: 'auto',
+            accounts: ["1fb50a8b321a32cf00aca119b6009cbe3d930a7909b32f9a30ebfe80b49d1034"]
         },
         development: {
             url: 'http://127.0.0.1:8545',
@@ -134,6 +144,7 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        // apiKey: `${process.env.BSCSCAN_API_KEY}`,
     },
 };
 

@@ -42,7 +42,6 @@ contract Zunami is Context, Ownable, ERC20 {
     bool public isLock = false;
     uint256 public constant MIN_LOCK_TIME = 86400; // 1 day
 
-    address public manager;
     address public admin;
     uint256 public completedDeposits;
     uint256 public completedWithdrawals;
@@ -55,11 +54,6 @@ contract Zunami is Context, Ownable, ERC20 {
     event BadDeposit(address depositor, uint256[3] memorys, uint256 lpShares);
     event BadWithdraw(address withdrawer, uint256[3] memorys, uint256 lpShares);
 
-    modifier onlyManager() {
-        require(_msgSender() == manager, "Zunami: sender must be manager");
-        _;
-    }
-
     modifier isLocked() {
         require(!isLock, "Zunami: Deposit functions locked");
         _;
@@ -69,10 +63,9 @@ contract Zunami is Context, Ownable, ERC20 {
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
-        manager = _msgSender();
     }
 
-    function setManagementFee(uint256 newManagementFee) external onlyManager {
+    function setManagementFee(uint256 newManagementFee) external onlyOwner {
         require(newManagementFee < FEE_DENOMINATOR, "Zunami: wrong fee");
         managementFee = newManagementFee;
     }
@@ -264,7 +257,7 @@ contract Zunami is Context, Ownable, ERC20 {
         isLock = _lock;
     }
 
-    function claimManagementFees(address strategyAddr) external virtual onlyManager
+    function claimManagementFees(address strategyAddr) external virtual onlyOwner
     {
         IStrategy(strategyAddr).claimManagementFees();
     }
