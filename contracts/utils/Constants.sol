@@ -22,6 +22,7 @@ library Constants {
     uint256 internal constant CVX_LUSD_PID = 33;
     uint256 internal constant CVX_BUSDV2_PID = 34;
     uint256 internal constant CVX_MIM_PID = 40;
+    uint256 internal constant CVX_OUSD_PID = 56;
     uint256 internal constant TRADE_DEADLINE = 2000;
 
     address internal constant CVX_ADDRESS =
@@ -40,6 +41,8 @@ library Constants {
         0x57Ab1ec28D129707052df4dF418D58a2D46d5f51;
     address internal constant BUSD_ADDRESS =
         0x4Fabb145d64652a948d72533023f6E7A623C7C53;
+    address internal constant OUSD_ADDRESS =
+        0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86;
     address internal constant MUSD_ADDRESS =
         0xe2f2a5C287993345a840Db3B0845fbC70f5935a5;
     address internal constant MIM_ADDRESS =
@@ -49,7 +52,7 @@ library Constants {
     address internal constant LUSD_ADDRESS =
         0x5f98805A4E8be255a32880FDeC7F6728C6568bA0;
     address internal constant USDP_ADDRESS =
-        0x8E870D67F660D95d5be530380D0eC0bd388289E1;
+        0x1456688345527bE1f37E9e627DA0837D6f08C925;
     address internal constant USDN_ADDRESS =
         0x674C6Ad92Fd080e4004b2312b45f796a192D27a0;
     address internal constant USDK_ADDRESS =
@@ -140,6 +143,18 @@ library Constants {
         0x4807862AA8b2bF68830e4C8dc86D0e9A998e085a;
     address internal constant CVX_BUSDV2_REWARDS_ADDRESS =
         0xbD223812d360C9587921292D0644D18aDb6a2ad0;
+    address internal constant CRV_OUSD_ADDRESS =
+        0x87650D7bbfC3A9F10587d7778206671719d9910D;
+    address internal constant CRV_OUSD_LP_ADDRESS =
+        0x87650D7bbfC3A9F10587d7778206671719d9910D;
+    address internal constant CRV_OUSD_EXTRA_ADDRESS =
+        0x8A05801c1512F6018e450b0F69e9Ca7b985fCea3;
+    address internal constant OUSD_EXTRA_ADDRESS =
+        0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26;
+    address internal constant OUSD_EXTRA_PAIR_ADDRESS =
+        0x72ea6Ca0D47b337f1EA44314d9d90E2A897eDaF5;
+    address internal constant CVX_OUSD_REWARDS_ADDRESS =
+        0x7D536a737C13561e0D2Decf1152a653B4e615158;
     address internal constant CRV_USDN_ADDRESS =
         0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1;
     address internal constant CRV_USDN_LP_ADDRESS =
