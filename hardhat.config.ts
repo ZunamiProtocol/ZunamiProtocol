@@ -92,7 +92,7 @@ const config: HardhatUserConfig = {
             url: `${process.env.NODE_API_KEY}`,
             chainId: 1,
             gas: 'auto',
-            gasPrice: 'auto',
+            gasPrice: 70000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
         },
         rinkeby: {
@@ -117,7 +117,7 @@ const config: HardhatUserConfig = {
             url: "https://data-seed-prebsc-1-s1.binance.org:8545",
             chainId: 97,
             gas: 'auto',
-            gasPrice: 'auto',
+            gasPrice: 20000000000,
             accounts: ["1fb50a8b321a32cf00aca119b6009cbe3d930a7909b32f9a30ebfe80b49d1034"]
         },
         development: {

@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 
 import "../utils/Constants.sol";
 import "../interfaces/ICurvePool4.sol";
@@ -290,18 +289,18 @@ contract BaseCurveConvex4 is Context, Ownable {
     }
 
     function sellCrvCvx() public virtual {
-        uint256 cvxBal = cvx.balanceOf(address(this));
-        uint256 crvBal = crv.balanceOf(address(this));
-        if (cvxBal == 0 || crvBal == 0) {return;}
-        cvx.safeApprove(address(router), cvxBal);
-        crv.safeApprove(address(router), crvBal);
+        uint256 cvxBalance = cvx.balanceOf(address(this));
+        uint256 crvBalance = crv.balanceOf(address(this));
+        if (cvxBalance == 0 || crvBalance == 0) {return;}
+        cvx.safeApprove(address(router), cvxBalance);
+        crv.safeApprove(address(router), crvBalance);
 
         address[] memory path = new address[](3);
         path[0] = Constants.CVX_ADDRESS;
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            cvxBal,
+            cvxBalance,
             0,
             path,
             address(this),
@@ -312,7 +311,7 @@ contract BaseCurveConvex4 is Context, Ownable {
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            crvBal,
+            crvBalance,
             0,
             path,
             address(this),
@@ -321,8 +320,8 @@ contract BaseCurveConvex4 is Context, Ownable {
     }
 
     function sellExtraToken() public virtual {
-        uint256 extraBal = extraToken.balanceOf(address(this));
-        if (extraBal == 0) {return;}
+        uint256 extraBalance = extraToken.balanceOf(address(this));
+        if (extraBalance == 0) {return;}
         extraToken.safeApprove(
             address(router),
             extraToken.balanceOf(address(this))
@@ -337,7 +336,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             path[1] = Constants.WETH_ADDRESS;
             path[2] = Constants.USDT_ADDRESS;
             router.swapExactTokensForTokens(
-                extraBal,
+                extraBalance,
                 0,
                 path,
                 address(this),
@@ -356,7 +355,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             }
         }
         router.swapExactTokensForTokens(
-            extraBal,
+            extraBalance,
             0,
             path2,
             address(this),

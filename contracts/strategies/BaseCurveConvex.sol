@@ -43,7 +43,7 @@ contract BaseCurveConvex is Context, Ownable {
     IZunami public zunami;
     uint256 public cvxPoolPID;
 
-    event SellRewards(uint256 cvxBal, uint256 crvBal, uint256 extraBal);
+    event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
     constructor(
         address poolAddr,
@@ -270,18 +270,18 @@ contract BaseCurveConvex is Context, Ownable {
     }
 
     function sellCrvCvx() public virtual {
-        uint256 cvxBal = cvx.balanceOf(address(this));
-        uint256 crvBal = crv.balanceOf(address(this));
-        if (cvxBal == 0 || crvBal == 0) {return;}
-        cvx.safeApprove(address(router), cvxBal);
-        crv.safeApprove(address(router), crvBal);
+        uint256 cvxBalance = cvx.balanceOf(address(this));
+        uint256 crvBalance = crv.balanceOf(address(this));
+        if (cvxBalance == 0 || crvBalance == 0) {return;}
+        cvx.safeApprove(address(router), cvxBalance);
+        crv.safeApprove(address(router), crvBalance);
 
         address[] memory path = new address[](3);
         path[0] = Constants.CVX_ADDRESS;
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            cvxBal,
+            cvxBalance,
             0,
             path,
             address(this),
@@ -292,20 +292,20 @@ contract BaseCurveConvex is Context, Ownable {
         path[1] = Constants.WETH_ADDRESS;
         path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
-            crvBal,
+            crvBalance,
             0,
             path,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-        emit SellRewards(cvxBal, crvBal, 0);
+        emit SellRewards(cvxBalance, crvBalance, 0);
     }
 
     function sellExtraToken() public virtual {
-        uint256 extraBal = extraToken.balanceOf(address(this));
-        if (extraBal == 0) {return;}
+        uint256 extraBalance = extraToken.balanceOf(address(this));
+        if (extraBalance == 0) {return;}
         extraToken.safeApprove(
-            address(router), extraBal
+            address(router), extraBalance
         );
         if (
             extraPair.token0() == Constants.WETH_ADDRESS ||
@@ -316,7 +316,7 @@ contract BaseCurveConvex is Context, Ownable {
             path[1] = Constants.WETH_ADDRESS;
             path[2] = Constants.USDT_ADDRESS;
             router.swapExactTokensForTokens(
-                extraBal,
+                extraBalance,
                 0,
                 path,
                 address(this),
@@ -335,13 +335,13 @@ contract BaseCurveConvex is Context, Ownable {
             }
         }
         router.swapExactTokensForTokens(
-            extraBal,
+            extraBalance,
             0,
             path2,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-        emit SellRewards(0, 0, extraBal);
+        emit SellRewards(0, 0, extraBalance);
     }
 
     function withdrawAll() external virtual onlyZunami {

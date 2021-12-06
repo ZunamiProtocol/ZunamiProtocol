@@ -48,11 +48,11 @@ contract Zunami is Context, Ownable, ERC20 {
     PendingWithdrawal[] public pendingWithdrawals;
     mapping(address => uint256[]) public accDepositPending;
 
-    event Deposited(address depositor, uint256[3] memorys, uint256 lpShares);
-    event Withdrawn(address withdrawer, uint256[3] memorys, uint256 lpShares);
+    event Deposited(address depositor, uint256[3] amounts, uint256 lpShares);
+    event Withdrawn(address withdrawer, uint256[3] amounts, uint256 lpShares);
     event AddStrategy(address strategyAddr);
-    event BadDeposit(address depositor, uint256[3] memorys, uint256 lpShares);
-    event BadWithdraw(address withdrawer, uint256[3] memorys, uint256 lpShares);
+    event BadDeposit(address depositor, uint256[3] amounts, uint256 lpShares);
+    event BadWithdraw(address withdrawer, uint256[3] amounts, uint256 lpShares);
 
     modifier isLocked() {
         require(!isLock, "Zunami: Deposit functions locked");
@@ -181,7 +181,7 @@ contract Zunami is Context, Ownable, ERC20 {
         IStrategy strategy = poolInfo[pid].strategy;
         require(block.timestamp >= poolInfo[pid].startTime, "Zunami: strategy not started yet!");
         uint256 sum = 0;
-        for (uint256 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier =
