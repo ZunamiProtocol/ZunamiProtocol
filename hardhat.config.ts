@@ -12,6 +12,7 @@ dotEnvConfig();
 
 import { HardhatUserConfig } from 'hardhat/types';
 
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 // task("accounts", "Prints the list of accounts", async () => {
@@ -28,7 +29,9 @@ const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',
     gasReporter: {
         currency: 'USD',
-        gasPrice: 100,
+        coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+        showTimeSpent:true,
+        enabled: true
     },
     paths: {
         sources: './contracts',
@@ -42,7 +45,8 @@ const config: HardhatUserConfig = {
                 url: `${process.env.NODE_API_KEY}`,
                 // url: 'http://localhost:8545',
                 // blockNumber: 13000000,
-                blockNumber: 13465000,
+                // blockNumber: 13465000,
+                blockNumber: 13670000,
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each
@@ -86,6 +90,9 @@ const config: HardhatUserConfig = {
         },
         mainnet: {
             url: `${process.env.NODE_API_KEY}`,
+            chainId: 1,
+            gas: 'auto',
+            gasPrice: 70000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
         },
         rinkeby: {
@@ -105,6 +112,13 @@ const config: HardhatUserConfig = {
             accounts: [`${process.env.PRIVATE_KEY}`],
             gas: 'auto',
             gasPrice: 'auto',
+        },
+        bsctest : {
+            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+            chainId: 97,
+            gas: 'auto',
+            gasPrice: 20000000000,
+            accounts: ["1fb50a8b321a32cf00aca119b6009cbe3d930a7909b32f9a30ebfe80b49d1034"]
         },
         development: {
             url: 'http://127.0.0.1:8545',
@@ -130,6 +144,7 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        // apiKey: `${process.env.BSCSCAN_API_KEY}`,
     },
 };
 
