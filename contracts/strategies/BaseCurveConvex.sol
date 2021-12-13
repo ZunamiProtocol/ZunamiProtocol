@@ -165,7 +165,7 @@ contract BaseCurveConvex is Context, Ownable {
         DENOMINATOR;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (bool){
+    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256){
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
 
@@ -189,9 +189,9 @@ contract BaseCurveConvex is Context, Ownable {
             uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
             poolLP.safeApprove(address(booster), poolLPs);
             booster.depositAll(cvxPoolPID, true);
-            return (true);
+            return (poolLPs * pool.get_virtual_price() / DENOMINATOR);
         } else {
-            return (false);
+            return (0);
         }
 
     }

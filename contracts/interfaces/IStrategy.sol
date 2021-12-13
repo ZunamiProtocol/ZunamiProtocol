@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 interface IStrategy {
-    function deposit(uint256[3] memory amounts) external returns(bool);
+    function deposit(uint256[3] memory amounts) external returns(uint256);
 
     function withdraw(
         address depositer,
