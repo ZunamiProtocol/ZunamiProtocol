@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 import "./utils/Constants.sol";
 import "./interfaces/IStrategy.sol";
 
@@ -159,7 +158,7 @@ contract Zunami is Context, Ownable, ERC20 {
             // remove deposit from list
             accDepositPending[userList[z]] = [0, 0, 0];
         }
-        userCompleteHoldings.length = 0;
+        delete userCompleteHoldings;
         require(sum > 0, "too low amount!");
     }
 
