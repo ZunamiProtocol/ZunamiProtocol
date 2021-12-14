@@ -87,7 +87,7 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function lpPrice() public view virtual returns (uint256) {
-        return totalHoldings() / totalSupply();
+        return totalHoldings() * 1e18 / totalSupply();
     }
 
     function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
