@@ -35,12 +35,6 @@ library Constants {
         0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address internal constant DAI_ADDRESS =
         0x6B175474E89094C44Da98b954EedeAC495271d0F;
-//    address internal constant USDC_ADDRESS =
-//    0x15658E0c7616ec94910134c2861C7B0699a726D7;
-//    address internal constant USDT_ADDRESS =
-//    0x0e628AFA58406343694AA7736b302356E86eB8E7;
-//    address internal constant DAI_ADDRESS =
-//    0x3400DDE27aafF9F733cff6903A57d87C8b2Fc907;
     address internal constant TUSD_ADDRESS =
         0x0000000000085d4780B73119b644AE5ecd22b376;
     address internal constant SUSD_ADDRESS =
