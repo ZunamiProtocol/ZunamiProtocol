@@ -6,6 +6,7 @@ import '@nomiclabs/hardhat-truffle5';
 import '@nomiclabs/hardhat-ganache';
 
 import 'hardhat-gas-reporter';
+import 'solidity-coverage'
 
 import { config as dotEnvConfig } from 'dotenv';
 dotEnvConfig();

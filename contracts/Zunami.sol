@@ -122,7 +122,6 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory totalAmounts;
         // total sum deposit, contract > strategy
         uint256 addHoldings = 0;
-        uint256 userListLength = userList.length;
         for (uint256 i = 0; i < userList.length; i++) {
             userCompleteHoldings.push(0);
             for (uint256 x = 0; x < totalAmounts.length; ++x) {
