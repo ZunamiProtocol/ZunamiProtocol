@@ -293,6 +293,12 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
             amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
+            if (amounts[_i] > 0) {
+                IERC20Metadata(tokens[_i]).safeTransfer(
+                    address(poolInfo[0].strategy),
+                    amounts[_i]
+                );
+            }
         }
         require(poolInfo[_to].strategy.deposit(amounts) > 0, "too low amount!");
     }
@@ -306,6 +312,12 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
             amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
+            if (amounts[_i] > 0) {
+                IERC20Metadata(tokens[_i]).safeTransfer(
+                    address(poolInfo[0].strategy),
+                    amounts[_i]
+                );
+            }
         }
         require(poolInfo[0].strategy.deposit(amounts) > 0, "too low amount!");
     }
