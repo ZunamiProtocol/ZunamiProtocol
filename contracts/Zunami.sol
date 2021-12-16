@@ -48,6 +48,7 @@ contract Zunami is Context, Ownable, ERC20 {
     PendingWithdrawal[] public pendingWithdrawals;
     mapping(address => uint256[]) public accDepositPending;
 
+    event PendingDeposit(address depositor, uint256[3] amounts);
     event Deposited(address depositor, uint256[3] amounts, uint256 lpShares);
     event Withdrawn(address withdrawer, uint256[3] amounts, uint256 lpShares);
     event AddStrategy(address strategyAddr);
@@ -102,6 +103,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
         }
         accDepositPending[_msgSender()] = amounts;
+        emit PendingDeposit(_msgSender(), amounts);
     }
 
 
