@@ -173,7 +173,7 @@ contract BaseCurveConvex4 is Context, Ownable {
         DENOMINATOR;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (bool) {
+    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         // check decimal amounts
         uint256 decAmounts = 0;
         for (uint8 i = 0; i < 3; ++i) {
@@ -200,13 +200,13 @@ contract BaseCurveConvex4 is Context, Ownable {
                     amounts[i]
                 );
             }
-
+            uint256 depositedAmount = pool.calc_token_amount(amounts4, true);
             pool.add_liquidity(amounts4, 0);
             poolLP.safeApprove(address(booster), poolLP.balanceOf(address(this)));
             booster.depositAll(cvxPoolPID, true);
-            return (true);
+            return (depositedAmount * pool.get_virtual_price() / DENOMINATOR);
         } else {
-            return (false);
+            return (0);
         }
     }
 
@@ -226,6 +226,7 @@ contract BaseCurveConvex4 is Context, Ownable {
         if (depositedShare < crvRequiredLPs) {
             return false;
         }
+
 
         crvRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
@@ -281,10 +282,11 @@ contract BaseCurveConvex4 is Context, Ownable {
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = managementFees[i];
+            uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
             managementFees[i] = 0;
-            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee);
+            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
         }
     }
 

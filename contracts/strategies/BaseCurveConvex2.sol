@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-
 import "../utils/Constants.sol";
 import "../interfaces/ICurvePool.sol";
 import "../interfaces/ICurvePool2.sol";
@@ -16,6 +15,7 @@ import "../interfaces/IConvexBooster.sol";
 import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
+
 
 contract BaseCurveConvex2 is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -180,7 +180,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         DENOMINATOR;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (bool){
+    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256){
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
@@ -206,9 +206,9 @@ contract BaseCurveConvex2 is Context, Ownable {
             uint256 poolLPs = pool.add_liquidity(amounts2, 0);
             poolLP.safeApprove(address(booster), poolLPs);
             booster.depositAll(cvxPoolPID, true);
-            return (true);
+            return (poolLPs * pool.get_virtual_price() / DENOMINATOR);
         } else {
-            return (false);
+            return (0);
         }
     }
 
@@ -277,16 +277,17 @@ contract BaseCurveConvex2 is Context, Ownable {
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
                 liqAmounts[i] + userBalances[i] - managementFeePerAsset
-        );
+            );
         }
         return true;
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = managementFees[i];
+            uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
             managementFees[i] = 0;
-            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee);
+            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
         }
     }
 
