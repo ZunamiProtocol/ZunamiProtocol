@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./utils/Constants.sol";
 import "./interfaces/IStrategy.sol";
-import "hardhat/console.sol";
 
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
@@ -171,7 +170,6 @@ contract Zunami is Context, Ownable, ERC20 {
     {
         uint256 maxWithdrawals = withdrawalsToComplete < pendingWithdrawals.length
         ? withdrawalsToComplete : pendingWithdrawals.length;
-        console.log("maxWithdrawals", maxWithdrawals);
         for (uint256 i = 0; i < maxWithdrawals && pendingWithdrawals.length > 0; i++) {
             delegatedWithdrawal(
                 pendingWithdrawals[0].withdrawer,
@@ -204,7 +202,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 sum = strategy.deposit(amounts);
 
         uint256 lpShares = 0;
-        if (holdings == 0) {
+        if (totalSupply() == 0) {
             lpShares = sum;
         } else {
             lpShares = (sum * totalSupply()) / holdings;
@@ -240,7 +238,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory minAmounts,
         uint256 pid
     ) internal virtual {
-        if (balanceOf(withdrawer) >= lpShares && lpShares > 0) {
+        if ((balanceOf(withdrawer) >= lpShares) && lpShares > 0) {
             IStrategy strategy = poolInfo[pid].strategy;
             if (!(strategy.withdraw(withdrawer, lpShares, minAmounts))) {
                 emit BadWithdraw(withdrawer, minAmounts, lpShares);
@@ -248,7 +246,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
             uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
             _burn(withdrawer, lpShares);
-            deposited[withdrawer] -= userDeposit;
+            deposited[withdrawer] -= userDeposit > deposited[withdrawer] ? deposited[withdrawer] : userDeposit;
             totalDeposited -= userDeposit;
             emit Withdrawn(withdrawer, minAmounts, lpShares);
         }
