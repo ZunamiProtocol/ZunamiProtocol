@@ -227,6 +227,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             return false;
         }
 
+
         crvRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
 
@@ -281,10 +282,11 @@ contract BaseCurveConvex4 is Context, Ownable {
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = managementFees[i];
+            uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
             managementFees[i] = 0;
-            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee);
+            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
         }
     }
 

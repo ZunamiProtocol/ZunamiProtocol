@@ -31,6 +31,7 @@ describe('Zunami', function () {
     let zunami: Contract;
     let strategy: Contract;
     let strategy2: Contract;
+    let strategy2b: Contract;
     let strategy4: Contract;
     let referenceBlock: number;
     let dai: Contract;
@@ -147,7 +148,10 @@ describe('Zunami', function () {
             await zunami.setManagementFee(20); //2%
         });
 
-        // TODO: MOVE FUNDS BATCH
+        it('setLock test', async () => {
+            await zunami.setLock(true);
+            await zunami.setLock(false);
+        });
 
         it('claim', async () => {
             await zunami.claimManagementFees(strategy.address);
@@ -238,14 +242,13 @@ describe('Zunami', function () {
         });
 
         it('create new pool (strategy2) and completeDeposits to it', async () => {
-            await zunami.add(strategy2.address);
+            await zunami.add(strategy2b.address);
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
             await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2);
         });
 
         it('delegateWithdrawal', async () => {
             for (const user of [alice, bob, rosa]) {
-
                 let zunami_balance = await zunami.balanceOf(user.address);
                 await zunami.connect(user).delegateWithdrawal(zunami_balance, [
                     0,
@@ -259,7 +262,7 @@ describe('Zunami', function () {
             await zunami.completeWithdrawals(10, 2);
         });
 
-        it('check balances after withraw', async () => {
+        it('check balances after withdraw', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 expect(ethers.utils.formatUnits((await zunami.balanceOf(user.address)), 18)).to.equal("0.0");
                 let usdt_balance = await usdt.balanceOf(user.address);
@@ -288,15 +291,18 @@ describe('Zunami', function () {
 
         it('one user withdraw from pending | Strategy 4', async () => {
             await zunami.connect(carol).pendingDepositRemove();
-            let usdt_balance = await usdt.balanceOf(carol.address);
-            let usdc_balance = await usdc.balanceOf(carol.address);
-            let dai_balance = await dai.balanceOf(carol.address);
         });
 
         it('create new pool (strategy4) and completeDeposits to it', async () => {
             await zunami.add(strategy4.address);
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
             await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
+        });
+
+        it('skip blocks', async () => {
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
         });
 
         it('delegateWithdrawal | Strategy 4', async () => {
@@ -312,10 +318,19 @@ describe('Zunami', function () {
         });
 
         it('completeWithdrawals | Strategy 4', async () => {
-            await zunami.completeWithdrawals(10, 3);
+            await zunami.completeWithdrawals(5, 3);
         });
 
+        printBalances()
+
         // rosa: emergency withdraw and delegate withdraw next from 0 pool
+
+        it('claim all strats', async () => {
+            await zunami.claimManagementFees(strategy.address);
+            await zunami.claimManagementFees(strategy2b.address);
+            await zunami.claimManagementFees(strategy2.address);
+            await zunami.claimManagementFees(strategy4.address);
+        });
 
         it('emergencyWithdraw() test', async () => {
             await zunami.emergencyWithdraw();
@@ -471,18 +486,22 @@ describe('Zunami', function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
             let AaveCurveConvex: ContractFactory = await ethers.getContractFactory('AaveCurveConvex');
             let OUSDCurveConvex: ContractFactory = await ethers.getContractFactory('OUSDCurveConvex');
+            let USDPCurveConvex: ContractFactory = await ethers.getContractFactory('USDPCurveConvex');
             let SUSDCurveConvex: ContractFactory = await ethers.getContractFactory('SUSDCurveConvex');
             strategy = await AaveCurveConvex.deploy();
             strategy2 = await OUSDCurveConvex.deploy();
+            strategy2b = await USDPCurveConvex.deploy();
             strategy4 = await SUSDCurveConvex.deploy();
             await strategy.deployed();
             await strategy2.deployed();
+            await strategy2b.deployed();
             await strategy4.deployed();
             zunami = await Zunami.deploy();
             await zunami.deployed();
             strategy.setZunami(zunami.address);
             strategy2.setZunami(zunami.address);
             strategy4.setZunami(zunami.address);
+            strategy2b.setZunami(zunami.address);
         });
         testStrategy();
     });

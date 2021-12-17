@@ -16,6 +16,7 @@ import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
+
 contract BaseCurveConvex2 is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
@@ -282,10 +283,11 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = managementFees[i];
+            uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
             managementFees[i] = 0;
-            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee);
+            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
         }
     }
 

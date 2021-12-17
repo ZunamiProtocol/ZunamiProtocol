@@ -122,8 +122,9 @@ contract Zunami is Context, Ownable, ERC20 {
     {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
-        // total sum deposit, contract > strategy
+        // total sum deposit, contract => strategy
         uint256 addHoldings = 0;
+        uint256 holdings = totalHoldings();
         for (uint256 i = 0; i < userList.length; i++) {
             userCompleteHoldings.push(0);
             for (uint256 x = 0; x < totalAmounts.length; ++x) {
@@ -144,16 +145,17 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         uint256 sum = strategy.deposit(totalAmounts);
         uint256 lpShares = 0;
-        uint256 holdings = 0;
+        uint256 changedHoldings = 0;
         uint256 currentUserAmount = 0;
         for (uint256 z = 0; z < userList.length; z++) {
             currentUserAmount = sum * userCompleteHoldings[z] / addHoldings;
             deposited[userList[z]] += currentUserAmount;
             totalDeposited += currentUserAmount;
-            if (holdings == 0) {
+            changedHoldings += currentUserAmount;
+            if (totalSupply() == 0) {
                 lpShares = currentUserAmount;
             } else {
-                lpShares = (currentUserAmount * totalSupply()) / (holdings + addHoldings - currentUserAmount);
+                lpShares = (currentUserAmount * totalSupply()) / (holdings + changedHoldings - currentUserAmount);
             }
             _mint(userList[z], lpShares);
             // remove deposit from list
@@ -200,7 +202,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 sum = strategy.deposit(amounts);
 
         uint256 lpShares = 0;
-        if (holdings == 0) {
+        if (totalSupply() == 0) {
             lpShares = sum;
         } else {
             lpShares = (sum * totalSupply()) / holdings;
@@ -236,7 +238,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory minAmounts,
         uint256 pid
     ) internal virtual {
-        if (balanceOf(withdrawer) >= lpShares && lpShares > 0) {
+        if ((balanceOf(withdrawer) >= lpShares) && lpShares > 0) {
             IStrategy strategy = poolInfo[pid].strategy;
             if (!(strategy.withdraw(withdrawer, lpShares, minAmounts))) {
                 emit BadWithdraw(withdrawer, minAmounts, lpShares);
@@ -244,7 +246,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
             uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
             _burn(withdrawer, lpShares);
-            deposited[withdrawer] -= userDeposit;
+            deposited[withdrawer] -= userDeposit > deposited[withdrawer] ? deposited[withdrawer] : userDeposit;
             totalDeposited -= userDeposit;
             emit Withdrawn(withdrawer, minAmounts, lpShares);
         }
