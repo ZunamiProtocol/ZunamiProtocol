@@ -299,6 +299,12 @@ describe('Zunami', function () {
             await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
         });
 
+        it('skip blocks', async () => {
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+        });
+
         it('delegateWithdrawal | Strategy 4', async () => {
             for (const user of [alice, bob]) {
 
