@@ -148,7 +148,10 @@ describe('Zunami', function () {
             await zunami.setManagementFee(20); //2%
         });
 
-        // TODO: MOVE FUNDS BATCH
+        it('setLock test', async () => {
+            await zunami.setLock(true);
+            await zunami.setLock(false);
+        });
 
         it('claim', async () => {
             await zunami.claimManagementFees(strategy.address);
