@@ -308,13 +308,20 @@ describe('Zunami', function () {
             }
         });
 
-        printBalances()
-
         it('completeWithdrawals | Strategy 4', async () => {
             await zunami.completeWithdrawals(5, 3);
         });
 
+        printBalances()
+
         // rosa: emergency withdraw and delegate withdraw next from 0 pool
+
+        it('claim all strats', async () => {
+            await zunami.claimManagementFees(strategy.address);
+            await zunami.claimManagementFees(strategy2b.address);
+            await zunami.claimManagementFees(strategy2.address);
+            await zunami.claimManagementFees(strategy4.address);
+        });
 
         it('emergencyWithdraw() test', async () => {
             await zunami.emergencyWithdraw();
