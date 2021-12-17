@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./utils/Constants.sol";
 import "./interfaces/IStrategy.sol";
+import "hardhat/console.sol";
 
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
@@ -122,8 +123,9 @@ contract Zunami is Context, Ownable, ERC20 {
     {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
-        // total sum deposit, contract > strategy
+        // total sum deposit, contract => strategy
         uint256 addHoldings = 0;
+        uint256 holdings = totalHoldings();
         for (uint256 i = 0; i < userList.length; i++) {
             userCompleteHoldings.push(0);
             for (uint256 x = 0; x < totalAmounts.length; ++x) {
@@ -144,16 +146,17 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         uint256 sum = strategy.deposit(totalAmounts);
         uint256 lpShares = 0;
-        uint256 holdings = 0;
+        uint256 changedHoldings = 0;
         uint256 currentUserAmount = 0;
         for (uint256 z = 0; z < userList.length; z++) {
             currentUserAmount = sum * userCompleteHoldings[z] / addHoldings;
             deposited[userList[z]] += currentUserAmount;
             totalDeposited += currentUserAmount;
-            if (holdings == 0) {
+            changedHoldings += currentUserAmount;
+            if (totalSupply() == 0) {
                 lpShares = currentUserAmount;
             } else {
-                lpShares = (currentUserAmount * totalSupply()) / (holdings + addHoldings - currentUserAmount);
+                lpShares = (currentUserAmount * totalSupply()) / (holdings + changedHoldings - currentUserAmount);
             }
             _mint(userList[z], lpShares);
             // remove deposit from list
@@ -168,6 +171,7 @@ contract Zunami is Context, Ownable, ERC20 {
     {
         uint256 maxWithdrawals = withdrawalsToComplete < pendingWithdrawals.length
         ? withdrawalsToComplete : pendingWithdrawals.length;
+        console.log("maxWithdrawals", maxWithdrawals);
         for (uint256 i = 0; i < maxWithdrawals && pendingWithdrawals.length > 0; i++) {
             delegatedWithdrawal(
                 pendingWithdrawals[0].withdrawer,
