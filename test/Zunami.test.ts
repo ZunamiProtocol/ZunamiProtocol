@@ -5,14 +5,13 @@ import "@nomiclabs/hardhat-web3";
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ContractFactory, Signer} from 'ethers';
 
-const {expectRevert, advanceBlockTo, BN, time, ZERO_ADDRESS} = require('@openzeppelin/test-helpers');
+const {expectRevert, time} = require('@openzeppelin/test-helpers');
 
 const {web3} = require('@openzeppelin/test-helpers/src/setup');
 import {Contract} from '@ethersproject/contracts';
 import {abi as erc20ABI} from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
 
-const SUPPLY = '100000000000000';
 const MIN_LOCK_TIME = time.duration.seconds(86405);
 const provider = waffle.provider;
 const BLOCKS = 1000;
@@ -33,7 +32,6 @@ describe('Zunami', function () {
     let strategy2: Contract;
     let strategy2b: Contract;
     let strategy4: Contract;
-    let referenceBlock: number;
     let dai: Contract;
     let usdc: Contract;
     let usdt: Contract;
@@ -60,7 +58,7 @@ describe('Zunami', function () {
                     + parseFloat(ethers.utils.formatUnits(usdt_balance, 6)));
             }
         });
-    };
+    }
 
     function testStrategy() {
 
