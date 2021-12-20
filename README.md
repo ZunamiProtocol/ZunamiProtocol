@@ -1,32 +1,37 @@
 # Zunami Protocol
+
 ## The First Decentralized Revenue Aggregator
-Zunami Protocol is your gateway to the era of emerging financial opportunities. The cryptocurrency market still doesn’t have a reliable and straightforward solution for stablecoin deposits. Created by the visioners of alternative banking solutions, the platform is bridging this gap by introducing the first decentralized revenue aggregator that generates profits unimaginable in traditional finance
 
-## How it works
-Zunami’s decentralized revenue aggregator for stablecoins selects the most profitable pools automatically. Using a smart rebalancing mechanism, it allocates users’ funds to the best-performing ones daily. The rewards received are automatically sold and then reinvested so that users can enjoy the full power of compound interest
+There is no doubt that high commissions are a fundamental problem on the Ethereum network. The further progress and future of DeFi are impossible without overcoming these vital inefficiencies. When a transaction consists of deposits in several smart contracts in a row, the commission for its implementation goes beyond all reasonable boundaries. Nowadays, the gates to the yield-farming realm are closed for the people who only have small deposits, so they are ultimately being cut off from this profitable global finance game. Zunami Protocol team has come up with a solution though.
 
-## Technical details
-Our project consists of three main entities:
+We have created a multi-layer smart contract or Transaction Streamlining Mechanism (TSM) to counter this issue. How does it work? Users deposit funds into the Zunami.sol smart contract using the delegateDeposit() function. Then, at least once a day, the mechanism of automatic sending to the pools will be launched the completeDeposit() function and allocate user funds to strategies.
 
-### 1. Zunami Vault
-Zunami is the main mechanism for dealing with stable coins. We accept coins such as DAI, USDC and USDT from users. Using this functionality, the user can deposit or withdraw his money.
+## 1. Finding the most profitable pool
 
-1. `deposit(amounts[])`, deposits DAI-USDC-USDT in specified amounts to the strategy, returns minted lp token shares 
-2. `withdraw(lpShares, minAmounts[])`, burns lp shares in exchange for stablecoins from strategy, returns it with profits, at min amounts specified.
-3. `claimProfit`, claim profit share for Zunami protocol team
-4. `updateStrategy`, updates strategy from Zunami contract owner according to the most profitable strategy calculated on The Graph network each day.
+The return rates in stablecoin pools are highly volatile. Today, one of the pools shows the best APY / APR on the market, but it is already an outsider a week later. Finding the best pools and transferring funds from pool to pool is expensive and requires constant market research, which is not suitable for generating passive income.
 
-### 2. Strategies
-Strategies are a mechanism for interacting with the protocols of our partners such as Curve, Yearn and others. The strategies also have functionality for insuring the deposits of our users. Current strategy is to deposit into Curve Aave stable pool (USDC-DAI-USDT) and stake LPs in Convex to receive both CRV and CVX, then sell them for stable coins profits. 
+The Zunami Protocol uses a couple formulas to calculate APR / APY and select the most profitable pool when depositing funds. When a user wants to withdraw the funds, the most unprofitable pool is calculated and funds are withdrawn from it. If funds are stagnant in a non-profitable strategy, the mechanism of manual rebalancing of funds is used, which is specified in the moveFunds() and moveFundsBatch() functions. The funds from the least profitable strategy are transferred to the best pool. There is also a mechanism for withdrawing funds in case of force majeure emergencyWithdraw().
 
-#### CurveAaveConvex:
-Controlled by Zunami contract
+## 2. Strategies
 
-1. `deposit(amounts[])`, deposits DAI-USDC-USDT in specified amounts to the strategy
-2. `withdraw(depositor, lpShares, minAmounts[])`, withdraws user curve lp token share in exchange for stablecoins from strategy with rewards, sells CRV and CVX, sends it to the user.
-3. `withdrawAll()`, full withdrawal for strategy switch.
+The DeFi ecosystem is becoming more and more complex. One of the best stablecoin farming solutions nowadays is Curve Protocol. But to get the maximum yield now it is not enough to make a deposit only to Curve - yield boosters (Yearn, Convex) have entered the market. The user needs to make a deposit first in Curve, and then take LP tokens to Yearn or Convex.
+
+The Zunami protocol has created a number of strategies and automated this process in one transaction, making life easier for users. As rewards, Users receive rewards in the form of tokens. For users with small deposits, the sale of rewards is not profitable at all due to high commissions in the ETH network. Zunami sells rewards for you and all you have to do is enjoy the full power of compound interest.
+
+## 3. Pools
+
+Zunami works with the following strategies at Convex:
+
+MIM, USDP, MUSD, OUSD, FRAX, Iron Bank, SUSD, BUSD, BUSD V2, RSV, USDK, ALUSD, DUSD, USDN, TUSD
 
 ## Our contacts
+
 #### 1. Twitter - https://twitter.com/zunamiprotocol?s=21
-#### 2. Medium  - https://medium.com/@ZunamiProtocol
-#### 3. Email   - hello@zunami.io
+
+#### 2. Medium - https://zunamiprotocol.medium.com/
+
+#### 3. Telegram - https://t.me/ZunamiCommunityChat
+
+#### 4. Discord - https://discord.gg/BnC6kTWkUe
+
+#### 5. Email - hello@zunami.io
