@@ -299,12 +299,6 @@ describe('Zunami', function () {
             await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
         });
 
-        it('skip blocks', async () => {
-            for (var i = 0; i < SKIP_TIMES; i++) {
-                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            }
-        });
-
         it('delegateWithdrawal | Strategy 4', async () => {
             for (const user of [alice, bob]) {
 
@@ -377,9 +371,20 @@ describe('Zunami', function () {
             }
         });
 
-        it('completeDeposits to 1,2 pool', async () => {
-            await zunami.completeDeposits([alice.address, bob.address], 1);
+        it('completeDeposits to 0,1,2 pool', async () => {
+            await zunami.completeDeposits([bob.address], 0);
+            await zunami.completeDeposits([alice.address], 1);
             await zunami.completeDeposits([carol.address, rosa.address], 2);
+        });
+
+        it('skip blocks', async () => {
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+        });
+
+        it('moveFunds() (update strategy) ', async () => {
+            await zunami.moveFunds(0, 1);
         });
 
         it('moveFundsBatch() (update strategy) ', async () => {
