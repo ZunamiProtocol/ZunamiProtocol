@@ -5,14 +5,13 @@ import "@nomiclabs/hardhat-web3";
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {ContractFactory, Signer} from 'ethers';
 
-const {expectRevert, advanceBlockTo, BN, time, ZERO_ADDRESS} = require('@openzeppelin/test-helpers');
+const {expectRevert, time} = require('@openzeppelin/test-helpers');
 
 const {web3} = require('@openzeppelin/test-helpers/src/setup');
 import {Contract} from '@ethersproject/contracts';
 import {abi as erc20ABI} from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
 
-const SUPPLY = '100000000000000';
 const MIN_LOCK_TIME = time.duration.seconds(86405);
 const provider = waffle.provider;
 const BLOCKS = 1000;
@@ -33,7 +32,6 @@ describe('Zunami', function () {
     let strategy2: Contract;
     let strategy2b: Contract;
     let strategy4: Contract;
-    let referenceBlock: number;
     let dai: Contract;
     let usdc: Contract;
     let usdt: Contract;
@@ -60,7 +58,7 @@ describe('Zunami', function () {
                     + parseFloat(ethers.utils.formatUnits(usdt_balance, 6)));
             }
         });
-    };
+    }
 
     function testStrategy() {
 
@@ -299,12 +297,6 @@ describe('Zunami', function () {
             await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3);
         });
 
-        it('skip blocks', async () => {
-            for (var i = 0; i < SKIP_TIMES; i++) {
-                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            }
-        });
-
         it('delegateWithdrawal | Strategy 4', async () => {
             for (const user of [alice, bob]) {
 
@@ -377,9 +369,20 @@ describe('Zunami', function () {
             }
         });
 
-        it('completeDeposits to 1,2 pool', async () => {
-            await zunami.completeDeposits([alice.address, bob.address], 1);
+        it('completeDeposits to 0,1,2 pool', async () => {
+            await zunami.completeDeposits([bob.address], 0);
+            await zunami.completeDeposits([alice.address], 1);
             await zunami.completeDeposits([carol.address, rosa.address], 2);
+        });
+
+        it('skip blocks', async () => {
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+        });
+
+        it('moveFunds() (update strategy) ', async () => {
+            await zunami.moveFunds(0, 1);
         });
 
         it('moveFundsBatch() (update strategy) ', async () => {
