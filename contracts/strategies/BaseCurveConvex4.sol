@@ -24,8 +24,6 @@ contract BaseCurveConvex4 is Context, Ownable {
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
     uint256 public minDepositAmount = 9975; // 99.75%
 
-    uint256 private wManagementFee = 0;
-
     address[3] public tokens;
     uint256 public managementFees;
 
