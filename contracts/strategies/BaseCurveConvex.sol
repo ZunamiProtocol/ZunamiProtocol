@@ -202,12 +202,10 @@ contract BaseCurveConvex is Context, Ownable {
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint256 i = 0; i < 3; ++i) {
-            uint256 managementFee = managementFees[i];
-            uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            managementFees[i] = 0;
-            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
-        }
+        uint256 managementFee = managementFees[2];
+        uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
+        managementFees[2] = 0;
+        IERC20Metadata(tokens[2]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
     }
 
     function sellCrvCvx() public virtual {

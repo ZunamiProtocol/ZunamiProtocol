@@ -25,8 +25,6 @@ contract BaseCurveConvex2 is Context, Ownable {
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
     uint256 public minDepositAmount = 9975; // 100% = 10000
 
-    uint256 private wManagementFee = 0;
-
     address[3] public tokens;
     uint256[3] public managementFees;
 
@@ -264,12 +262,10 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        for (uint256 i = 0; i < 3; ++i) {
-            uint256 managementFee = managementFees[i];
+            uint256 managementFee = managementFees[2];
             uint256 stratBalance = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            managementFees[i] = 0;
-            IERC20Metadata(tokens[i]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
-        }
+            managementFees[2] = 0;
+            IERC20Metadata(tokens[2]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
     }
 
     function sellCrvCvx() public virtual {
