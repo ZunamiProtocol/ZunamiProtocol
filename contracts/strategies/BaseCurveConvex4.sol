@@ -46,6 +46,8 @@ contract BaseCurveConvex4 is Context, Ownable {
     IZunami public zunami;
     uint256 public cvxPoolPID;
 
+    event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
+
     constructor(
         address poolAddr,
         address poolLPAddr,
