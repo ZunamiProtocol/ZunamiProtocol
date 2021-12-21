@@ -15,7 +15,6 @@ import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
-
 contract BaseCurveConvex4 is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
@@ -255,27 +254,10 @@ contract BaseCurveConvex4 is Context, Ownable {
             prevBalances[i];
         }
 
-        uint256 earned = 0;
         for (uint8 i = 0; i < 3; ++i) {
-            uint256 decimalsMultiplier = 1;
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplier =
-                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            }
-            earned += (liqAmounts[i] + userBalances[i]) * decimalsMultiplier;
-        }
-
-        wManagementFee = zunami.calcManagementFee(
-            (earned < zunami.deposited(depositor) ? 0 : earned - zunami.deposited(depositor))
-        );
-
-        for (uint8 i = 0; i < 3; ++i) {
-            uint256 managementFeePerAsset = (wManagementFee *
-            (liqAmounts[i] + userBalances[i])) / earned;
-            managementFees[i] += managementFeePerAsset;
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
-                liqAmounts[i] + userBalances[i] - managementFeePerAsset
+                liqAmounts[i] + userBalances[i] - managementFees[i]
             );
         }
         return true;
@@ -296,7 +278,7 @@ contract BaseCurveConvex4 is Context, Ownable {
         if (cvxBalance == 0 || crvBalance == 0) {return;}
         cvx.safeApprove(address(router), cvxBalance);
         crv.safeApprove(address(router), crvBalance);
-
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
         address[] memory path = new address[](3);
         path[0] = Constants.CVX_ADDRESS;
         path[1] = Constants.WETH_ADDRESS;
@@ -319,6 +301,11 @@ contract BaseCurveConvex4 is Context, Ownable {
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
+        uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        managementFees[2] = zunami.calcManagementFee(
+            usdtBalanceAfter - usdtBalanceBefore - managementFees[2]
+        );
+        emit SellRewards(cvxBalance, crvBalance, 0);
     }
 
     function sellExtraToken() public virtual {
@@ -328,6 +315,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             address(router),
             extraToken.balanceOf(address(this))
         );
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
 
         if (
             extraPair.token0() == Constants.WETH_ADDRESS ||
@@ -362,6 +350,10 @@ contract BaseCurveConvex4 is Context, Ownable {
             path2,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
+        );
+        uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        managementFees[2] = zunami.calcManagementFee(
+            usdtBalanceAfter - usdtBalanceBefore - managementFees[2]
         );
     }
 

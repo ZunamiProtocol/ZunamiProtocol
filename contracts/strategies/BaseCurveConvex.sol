@@ -192,28 +192,10 @@ contract BaseCurveConvex is Context, Ownable {
             prevBalances[i];
         }
 
-        uint256 userDeposit = zunami.deposited(depositor);
-        uint256 earned = 0;
         for (uint8 i = 0; i < 3; ++i) {
-            uint256 decimalsMultiplier = 1;
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplier =
-                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            }
-            earned += (liqAmounts[i] + userBalances[i]) * decimalsMultiplier;
-        }
-
-        uint256 managementFee = zunami.calcManagementFee(
-            (earned < userDeposit ? 0 : earned - userDeposit)
-        );
-
-        for (uint8 i = 0; i < 3; ++i) {
-            uint256 managementFeePerAsset = (managementFee *
-            (liqAmounts[i] + userBalances[i])) / earned;
-            managementFees[i] += managementFeePerAsset;
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
-                liqAmounts[i] + userBalances[i] - managementFeePerAsset
+                liqAmounts[i] + userBalances[i] - managementFees[i]
             );
         }
         return true;
@@ -235,6 +217,7 @@ contract BaseCurveConvex is Context, Ownable {
         cvx.safeApprove(address(router), cvxBalance);
         crv.safeApprove(address(router), crvBalance);
 
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
         address[] memory path = new address[](3);
         path[0] = Constants.CVX_ADDRESS;
         path[1] = Constants.WETH_ADDRESS;
@@ -256,6 +239,11 @@ contract BaseCurveConvex is Context, Ownable {
             path,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
+        );
+
+        uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        managementFees[2] = zunami.calcManagementFee(
+            usdtBalanceAfter - usdtBalanceBefore - managementFees[2]
         );
         emit SellRewards(cvxBalance, crvBalance, 0);
     }
