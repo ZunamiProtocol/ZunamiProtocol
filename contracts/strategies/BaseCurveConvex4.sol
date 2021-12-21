@@ -27,7 +27,7 @@ contract BaseCurveConvex4 is Context, Ownable {
     uint256 private wManagementFee = 0;
 
     address[3] public tokens;
-    uint256[3] public managementFees;
+    uint256 public managementFees;
 
     ICurvePool4 public pool;
     IERC20Metadata public crv;
@@ -239,11 +239,12 @@ contract BaseCurveConvex4 is Context, Ownable {
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
         for (uint8 i = 0; i < 3; ++i) {
+            uint256 managementFee = (i == 2) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(
                 address(this)
             );
             userBalances[i] =
-            ((prevBalances[i] - managementFees[i]) * lpShares) /
+            ((prevBalances[i] - managementFee) * lpShares) /
             zunami.totalSupply();
         }
 
@@ -257,19 +258,19 @@ contract BaseCurveConvex4 is Context, Ownable {
         }
 
         for (uint8 i = 0; i < 3; ++i) {
+            uint256 managementFee = (i == 2) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
-                liqAmounts[i] + userBalances[i] - managementFees[i]
+                liqAmounts[i] + userBalances[i] - managementFee
             );
         }
         return true;
     }
 
     function claimManagementFees() external virtual onlyZunami {
-        uint256 managementFee = managementFees[2];
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees[2] = 0;
-        IERC20Metadata(tokens[2]).safeTransfer(owner(), managementFee > stratBalance ? stratBalance : managementFee);
+        managementFees = 0;
+        IERC20Metadata(tokens[2]).safeTransfer(owner(), managementFees > stratBalance ? stratBalance : managementFees);
     }
 
     function sellCrvCvx() public virtual {
@@ -302,8 +303,8 @@ contract BaseCurveConvex4 is Context, Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
         uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees[2] = zunami.calcManagementFee(
-            usdtBalanceAfter - usdtBalanceBefore - managementFees[2]
+        managementFees = zunami.calcManagementFee(
+            usdtBalanceAfter - usdtBalanceBefore
         );
         emit SellRewards(cvxBalance, crvBalance, 0);
     }
@@ -352,8 +353,8 @@ contract BaseCurveConvex4 is Context, Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
         uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees[2] = zunami.calcManagementFee(
-            usdtBalanceAfter - usdtBalanceBefore - managementFees[2]
+        managementFees = zunami.calcManagementFee(
+            usdtBalanceAfter - usdtBalanceBefore
         );
     }
 
@@ -375,10 +376,11 @@ contract BaseCurveConvex4 is Context, Ownable {
         sellToken();
 
         for (uint8 i = 0; i < 3; ++i) {
+            uint256 managementFee = (i == 2) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) -
-                managementFees[i]
+                managementFee
             );
         }
     }
