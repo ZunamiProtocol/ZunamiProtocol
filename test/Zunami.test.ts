@@ -315,6 +315,13 @@ describe('Zunami', function () {
 
         printBalances();
 
+        it('function updateMinDepositAmount for all strats', async () => {
+            await strategy.updateMinDepositAmount(9970);
+            await strategy2.updateMinDepositAmount(9970);
+            await strategy2b.updateMinDepositAmount(9970);
+            await strategy4.updateMinDepositAmount(9970);
+        });
+
         it('emergencyWithdraw() test', async () => {
             await zunami.emergencyWithdraw();
         });
