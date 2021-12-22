@@ -172,13 +172,13 @@ describe('Zunami', function () {
 
         it('check totalHoldings()', async () => {
             let totalHoldings = await zunami.totalHoldings();
-            expect(parseFloat(ethers.utils.formatUnits(totalHoldings,18))).to.gt(1190);
+            expect(parseFloat(ethers.utils.formatUnits(totalHoldings, 18))).to.gt(1190);
             console.log("totalHoldings:", totalHoldings);
         });
 
         it('check totalSupply()', async () => {
             let totalSupply = await zunami.totalSupply();
-            expect(parseFloat(ethers.utils.formatUnits(totalSupply,18))).to.gt(1190);
+            expect(parseFloat(ethers.utils.formatUnits(totalSupply, 18))).to.gt(1190);
             console.log("totalSupply:", totalSupply);
         });
 
@@ -313,15 +313,13 @@ describe('Zunami', function () {
             await zunami.completeWithdrawals(5, 3);
         });
 
-        printBalances()
+        printBalances();
 
-        // rosa: emergency withdraw and delegate withdraw next from 0 pool
-
-        it('claim all strats', async () => {
-            await zunami.claimManagementFees(strategy.address);
-            await zunami.claimManagementFees(strategy2b.address);
-            await zunami.claimManagementFees(strategy2.address);
-            await zunami.claimManagementFees(strategy4.address);
+        it('function updateMinDepositAmount for all strats', async () => {
+            await strategy.updateMinDepositAmount(9970);
+            await strategy2.updateMinDepositAmount(9970);
+            await strategy2b.updateMinDepositAmount(9970);
+            await strategy4.updateMinDepositAmount(9970);
         });
 
         it('emergencyWithdraw() test', async () => {
@@ -386,7 +384,7 @@ describe('Zunami', function () {
         });
 
         it('moveFundsBatch() (update strategy) ', async () => {
-            await zunami.moveFundsBatch([1,2], 0);
+            await zunami.moveFundsBatch([1, 2], 0);
         });
 
         it('delegateWithdrawal and completeWithdrawals (0)', async () => {
@@ -400,6 +398,23 @@ describe('Zunami', function () {
             }
             // complete
             await zunami.completeWithdrawals(10, 0);
+        });
+
+        it('claim all strats', async () => {
+            console.log("strategys managementFees:",
+                await strategy.managementFees(),
+                await strategy2.managementFees(),
+                await strategy2b.managementFees(),
+                await strategy4.managementFees());
+            console.log("strategys USDT balanaces:",
+                await usdt.balanceOf(strategy.address),
+                await usdt.balanceOf(strategy2.address),
+                await usdt.balanceOf(strategy2b.address),
+                await usdt.balanceOf(strategy4.address));
+            await zunami.claimManagementFees(strategy.address);
+            await zunami.claimManagementFees(strategy2b.address);
+            await zunami.claimManagementFees(strategy2.address);
+            await zunami.claimManagementFees(strategy4.address);
         });
 
         printBalances();
