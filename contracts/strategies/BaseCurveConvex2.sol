@@ -339,6 +339,10 @@ contract BaseCurveConvex2 is Context, Ownable {
                 address(this),
                 block.timestamp + Constants.TRADE_DEADLINE
             );
+            uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+            managementFees = zunami.calcManagementFee(
+                usdtBalanceAfter - usdtBalanceBefore
+            );
             return;
         }
         address[] memory path2 = new address[](2);
