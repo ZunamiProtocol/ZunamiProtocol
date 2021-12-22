@@ -26,6 +26,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     uint256 public minDepositAmount = 9975; // 100% = 10000
 
     address[3] public tokens;
+    uint256 public usdtPoolId = 2;
     uint256 public managementFees;
 
     ICurvePool public pool3;
@@ -232,7 +233,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
         for (uint8 i = 0; i < 3; ++i) {
-            uint256 managementFee = (i == 2) ? managementFees : 0;
+            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(
                 address(this)
             );
@@ -254,7 +255,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         }
 
         for (uint8 i = 0; i < 3; ++i) {
-            uint256 managementFee = (i == 2) ? managementFees : 0;
+            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
                 liqAmounts[i] + userBalances[i] - managementFee
@@ -265,8 +266,8 @@ contract BaseCurveConvex2 is Context, Ownable {
 
     function claimManagementFees() external virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees = 0;
         IERC20Metadata(tokens[2]).safeTransfer(owner(), managementFees > stratBalance ? stratBalance : managementFees);
+        managementFees = 0;
     }
 
     function sellCrvCvx() public virtual {
@@ -383,7 +384,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         pool3.remove_liquidity(pool3LP.balanceOf(address(this)), minAmounts);
 
         for (uint8 i = 0; i < 3; ++i) {
-            uint256 managementFee = (i == 2) ? managementFees : 0;
+            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee
