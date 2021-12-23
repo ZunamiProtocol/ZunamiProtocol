@@ -316,7 +316,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             extraToken.balanceOf(address(this))
         );
         uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
-
+        uint256 usdtBalanceAfter;
         if (
             extraPair.token0() == Constants.WETH_ADDRESS ||
             extraPair.token1() == Constants.WETH_ADDRESS
@@ -332,7 +332,7 @@ contract BaseCurveConvex4 is Context, Ownable {
                 address(this),
                 block.timestamp + Constants.TRADE_DEADLINE
             );
-            uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+            usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
             managementFees = zunami.calcManagementFee(
                 usdtBalanceAfter - usdtBalanceBefore
             );
@@ -355,7 +355,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-        uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
         managementFees = zunami.calcManagementFee(
             usdtBalanceAfter - usdtBalanceBefore
         );
