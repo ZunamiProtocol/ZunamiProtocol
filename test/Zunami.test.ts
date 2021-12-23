@@ -437,12 +437,12 @@ describe('Zunami', function () {
             // withdraw
             const aliceBalance = await zunami.balanceOf(alice.address);
             const bobBalance = await zunami.balanceOf(bob.address);
-            await zunami.connect(alice).withdraw(bobBalance, [
+            await zunami.connect(alice).withdraw(aliceBalance < bobBalance ? aliceBalance : bobBalance, [
                 '0',
                 '0',
                 '0',
             ], 2);
-            await zunami.connect(bob).withdraw(aliceBalance, [
+            await zunami.connect(bob).withdraw(bobBalance < aliceBalance ? bobBalance : aliceBalance, [
                 '0',
                 '0',
                 '0',
