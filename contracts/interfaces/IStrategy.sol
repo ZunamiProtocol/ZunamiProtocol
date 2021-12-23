@@ -15,4 +15,8 @@ interface IStrategy {
     function totalHoldings() external view returns (uint256);
 
     function claimManagementFees() external;
+
+    function updateZunamiLpInStrat(uint256 _newAmount, bool _isMint) external;
+
+    function getZunamiLpInStrat() external view returns (uint256);
 }

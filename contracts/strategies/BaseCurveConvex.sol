@@ -27,6 +27,7 @@ contract BaseCurveConvex is Context, Ownable {
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public managementFees;
+    uint256 public zunamiLpInStrat = 0;
 
     ICurvePoolUnderlying public pool;
     IUniswapRouter public router;
@@ -85,6 +86,10 @@ contract BaseCurveConvex is Context, Ownable {
     // security centralization
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function getZunamiLpInStrat() external view virtual returns (uint256){
+        return zunamiLpInStrat;
     }
 
     function totalHoldings() public view virtual returns (uint256) {
@@ -164,7 +169,7 @@ contract BaseCurveConvex is Context, Ownable {
     ) external virtual onlyZunami returns (bool){
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
-        lpShares) / zunami.totalSupply();
+        lpShares) / zunamiLpInStrat;
 
         if (depositedShare < crvRequiredLPs) {
             return false;
@@ -183,7 +188,7 @@ contract BaseCurveConvex is Context, Ownable {
             );
             userBalances[i] =
             ((prevBalances[i] - managementFee) * lpShares) /
-            zunami.totalSupply();
+            zunamiLpInStrat;
         }
 
         pool.remove_liquidity(depositedShare, minAmounts, true);
@@ -267,8 +272,12 @@ contract BaseCurveConvex is Context, Ownable {
         }
     }
 
-    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+    function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, "Wrong amount!");
         minDepositAmount = _minDepositAmount;
+    }
+
+    function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
+        _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 }
