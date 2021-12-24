@@ -28,6 +28,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public managementFees;
+    uint256 public zunamiLpInStrat = 0;
 
     ICurvePool public pool3;
     ICurvePool2 public pool;
@@ -92,6 +93,10 @@ contract BaseCurveConvex2 is Context, Ownable {
 
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function getZunamiLpInStrat() external view virtual returns (uint256){
+        return zunamiLpInStrat;
     }
 
     function totalHoldings() public view virtual returns (uint256) {
@@ -218,7 +223,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         uint256[2] memory minAmounts2;
         minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
-        lpShares) / zunami.totalSupply();
+        lpShares) / zunamiLpInStrat;
 
         if (depositedShare < pool.calc_token_amount(minAmounts2, false)) {
             return false;
@@ -229,7 +234,6 @@ contract BaseCurveConvex2 is Context, Ownable {
         if (address(extraToken) != address(0)) {
             sellExtraToken();
         }
-
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
         for (uint8 i = 0; i < 3; ++i) {
@@ -239,7 +243,7 @@ contract BaseCurveConvex2 is Context, Ownable {
             );
             userBalances[i] =
             ((prevBalances[i] - managementFee) * lpShares) /
-            zunami.totalSupply();
+            zunamiLpInStrat;
         }
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
         pool.remove_liquidity(depositedShare, minAmounts2);
@@ -253,7 +257,6 @@ contract BaseCurveConvex2 is Context, Ownable {
             IERC20Metadata(tokens[i]).balanceOf(address(this)) -
             prevBalances[i];
         }
-
         for (uint8 i = 0; i < 3; ++i) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
@@ -392,8 +395,12 @@ contract BaseCurveConvex2 is Context, Ownable {
         }
     }
 
-    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+    function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, "Wrong amount!");
         minDepositAmount = _minDepositAmount;
+    }
+
+    function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
+        _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 }

@@ -27,6 +27,7 @@ contract BaseCurveConvex4 is Context, Ownable {
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public managementFees;
+    uint256 public zunamiLpInStrat = 0;
 
     ICurvePool4 public pool;
     IERC20Metadata public crv;
@@ -87,6 +88,10 @@ contract BaseCurveConvex4 is Context, Ownable {
 
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function getZunamiLpInStrat() external view virtual returns (uint256){
+        return zunamiLpInStrat;
     }
 
     function totalHoldings() public view virtual returns (uint256) {
@@ -221,7 +226,7 @@ contract BaseCurveConvex4 is Context, Ownable {
         }
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
-        lpShares) / zunami.totalSupply();
+        lpShares) / zunamiLpInStrat;
 
         if (depositedShare < crvRequiredLPs) {
             return false;
@@ -244,7 +249,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             );
             userBalances[i] =
             ((prevBalances[i] - managementFee) * lpShares) /
-            zunami.totalSupply();
+            zunamiLpInStrat;
         }
 
         pool.remove_liquidity(depositedShare, minAmounts4);
@@ -316,7 +321,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             extraToken.balanceOf(address(this))
         );
         uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
-
+        uint256 usdtBalanceAfter;
         if (
             extraPair.token0() == Constants.WETH_ADDRESS ||
             extraPair.token1() == Constants.WETH_ADDRESS
@@ -332,7 +337,7 @@ contract BaseCurveConvex4 is Context, Ownable {
                 address(this),
                 block.timestamp + Constants.TRADE_DEADLINE
             );
-            uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+            usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
             managementFees = zunami.calcManagementFee(
                 usdtBalanceAfter - usdtBalanceBefore
             );
@@ -355,7 +360,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-        uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
         managementFees = zunami.calcManagementFee(
             usdtBalanceAfter - usdtBalanceBefore
         );
@@ -388,8 +393,12 @@ contract BaseCurveConvex4 is Context, Ownable {
         }
     }
 
-    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+    function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, "Wrong amount!");
         minDepositAmount = _minDepositAmount;
+    }
+
+    function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
+        _isMint ? (zunamiLpInStrat += _amount) :  (zunamiLpInStrat -= _amount);
     }
 }
