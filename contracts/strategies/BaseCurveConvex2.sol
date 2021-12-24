@@ -16,8 +16,6 @@ import "../interfaces/IConvexMinter.sol";
 import "../interfaces/IConvexRewards.sol";
 import "../interfaces/IZunami.sol";
 
-import "hardhat/console.sol";
-
 contract BaseCurveConvex2 is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
@@ -226,7 +224,6 @@ contract BaseCurveConvex2 is Context, Ownable {
         minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
         lpShares) / zunamiLpInStrat;
-        console.log("withdraw - depositedShare", zunamiLpInStrat);
 
         if (depositedShare < pool.calc_token_amount(minAmounts2, false)) {
             return false;
@@ -237,7 +234,6 @@ contract BaseCurveConvex2 is Context, Ownable {
         if (address(extraToken) != address(0)) {
             sellExtraToken();
         }
-        console.log("withdraw - 2", zunamiLpInStrat);
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
         for (uint8 i = 0; i < 3; ++i) {

@@ -403,8 +403,6 @@ describe('Zunami', function () {
             for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
                 expect(ethers.utils.formatUnits(await strat.managementFees(), 6))
                     .to.equal(ethers.utils.formatUnits(await usdt.balanceOf(strat.address), 6));
-                // console.log("managementFees strat", ethers.utils.formatUnits(await strat.managementFees(), 6));
-                // console.log("usdt balance strat", ethers.utils.formatUnits(await usdt.balanceOf(strat.address), 6));
                 await zunami.claimManagementFees(strat.address);
             }
         });
