@@ -9,11 +9,7 @@ export async function advanceBlock() {
 
 export async function advanceBlockTo(blockNum: number) {
     const blockNumber = BN.from(blockNum);
-    for (
-        let i = await provider.getBlockNumber();
-        i < blockNumber.toNumber();
-        i++
-    ) {
+    for (let i = await provider.getBlockNumber(); i < blockNumber.toNumber(); i++) {
         await advanceBlock();
     }
 }
