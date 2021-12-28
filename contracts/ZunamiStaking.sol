@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -34,7 +34,7 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
         uint256 maxLockPeriod; // for example 52 week
     }
 
-    zunToken public Zun;
+    IERC20 public Zun;
     address public devAddress;
     address public catsyOperations;
 
@@ -44,7 +44,7 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
 
     event Add(IERC20 indexed lpToken);
     event Set(uint256 indexed pid, uint256 indexed allocPoint);
-    event UpdateStartBlock( uint256 indexed startBlock);
+    event UpdateStartBlock(uint256 indexed startBlock);
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -53,9 +53,9 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
     event AddCatsyPool(IERC20 _mainToken, address _jcatsyToken);
 
     constructor(
-        zunToken _Zun,
+        IERC20 _Zun,
         uint256 _startBlock
-    ) public {
+    ) {
         Zun = _Zun;
         startBlock = _startBlock;
     }
@@ -69,13 +69,13 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
         _lpToken.balanceOf(address(this));
         uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
         poolInfo.push(PoolInfo({
-        lpToken: _lpToken,
-        ZunPerBlock: _ZunPerBlock,
-        lastRewardBlock: lastRewardBlock,
-        accZunPerShare: 0,
-        lpSupply:0,
-        minLockPeriod: _minLockPeriod,
-        maxLockPeriod: _maxLockPeriod
+        lpToken : _lpToken,
+        ZunPerBlock : _ZunPerBlock,
+        lastRewardBlock : lastRewardBlock,
+        accZunPerShare : 0,
+        lpSupply : 0,
+        minLockPeriod : _minLockPeriod,
+        maxLockPeriod : _maxLockPeriod
         }));
         emit Add(_lpToken);
     }
@@ -83,7 +83,7 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
     // Update the given pool's Zun allocation point and deposit fee. Can only be called by the owner.
     function set(uint256 _pid, uint256 _ZunPerBlock) external onlyOwner {
         poolInfo[_pid].ZunPerBlock = _ZunPerBlock;
-        emit Set(_pid,_ZunPerBlock);
+        emit Set(_pid, _ZunPerBlock);
     }
 
     // Return reward multiplier over the given _from to _to block.
@@ -143,20 +143,21 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
                 safeZunTransfer(msg.sender, pending);
             }
         }
+        uint256 lockupPeriod = block.timestamp + _lockPeriod;
         if (_amount > 0) {
-            if (user.withdrawTimestamp = 0){
-                user.withdrawTimestamp = block.timestamp + _lockPeriod;
+            if (user.withdrawTimestamp == 0) {
+                user.withdrawTimestamp = lockupPeriod;
                 user.lockPeriod = _lockPeriod;
             } else {
-                // need calculate average timestamp
-                user.withdrawTimestamp = block.timestamp + _lockPeriod;
+                user.withdrawTimestamp = user.withdrawTimestamp > lockupPeriod ? user.withdrawTimestamp : lockupPeriod;
+                // need calculate average lockPeriod
                 user.lockPeriod = _lockPeriod;
             }
-            uint256 balancebefore=pool.lpToken.balanceOf(address(this));
+            uint256 balancebefore = pool.lpToken.balanceOf(address(this));
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-            uint256 final_amount=pool.lpToken.balanceOf(address(this)).sub(balancebefore);
+            uint256 final_amount = pool.lpToken.balanceOf(address(this)).sub(balancebefore);
             user.amount = user.amount.add(final_amount);
-            pool.lpSupply=pool.lpSupply.add(final_amount);
+            pool.lpSupply = pool.lpSupply.add(final_amount);
         }
         user.rewardDebt = user.amount.mul(pool.accZunPerShare).div(1e18);
         emit Deposit(msg.sender, _pid, _amount);
@@ -166,6 +167,7 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
     function withdraw(uint256 _pid, uint256 _amount) public nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+        require(block.timestamp > user.withdrawTimestamp, "Withdraw: too early");
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.accZunPerShare).div(1e18).sub(user.rewardDebt);
@@ -175,7 +177,11 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
-            pool.lpSupply=pool.lpSupply.sub(_amount);
+            pool.lpSupply = pool.lpSupply.sub(_amount);
+        }
+        if (user.amount == 0) {
+            user.withdrawTimestamp = 0;
+            user.lockPeriod = 0;
         }
         user.rewardDebt = user.amount.mul(pool.accZunPerShare).div(1e18);
         emit Withdraw(msg.sender, _pid, _amount);
@@ -185,9 +191,12 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
     function emergencyWithdraw(uint256 _pid) public nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+        require(block.timestamp > user.withdrawTimestamp, "Emergency: too early");
         uint256 amount = user.amount;
         user.amount = 0;
         user.rewardDebt = 0;
+        user.withdrawTimestamp = 0;
+        user.lockPeriod = 0;
         pool.lpToken.safeTransfer(address(msg.sender), amount);
         emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
