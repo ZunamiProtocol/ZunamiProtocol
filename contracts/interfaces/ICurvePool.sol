@@ -2,11 +2,9 @@
 pragma solidity ^0.8.4;
 
 interface ICurvePool {
-    function add_liquidity(uint256[3] memory amounts, uint256 minMintAmount)
-        external;
+    function add_liquidity(uint256[3] memory amounts, uint256 minMintAmount) external;
 
-    function remove_liquidity(uint256 burnAmount, uint256[3] memory minAmounts)
-        external;
+    function remove_liquidity(uint256 burnAmount, uint256[3] memory minAmounts) external;
 
     function exchange(
         int128 i,

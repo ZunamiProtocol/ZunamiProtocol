@@ -118,9 +118,7 @@ const config: HardhatUserConfig = {
             chainId: 97,
             gas: 'auto',
             gasPrice: 20000000000,
-            accounts: [
-                '1fb50a8b321a32cf00aca119b6009cbe3d930a7909b32f9a30ebfe80b49d1034',
-            ],
+            accounts: ['1fb50a8b321a32cf00aca119b6009cbe3d930a7909b32f9a30ebfe80b49d1034'],
         },
         development: {
             url: 'http://127.0.0.1:8545',
