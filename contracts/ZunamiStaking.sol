@@ -150,8 +150,10 @@ contract ZunamiStaker is Ownable, ReentrancyGuard {
                 user.lockPeriod = _lockPeriod;
             } else {
                 user.withdrawTimestamp = user.withdrawTimestamp > lockupPeriod ? user.withdrawTimestamp : lockupPeriod;
-                // need calculate average lockPeriod
-                user.lockPeriod = _lockPeriod;
+                uint256 sumAmounts = user.amount + _amount;
+                uint256 currentLockCalc = user.amount * 1e18 / sumAmounts * user.lockPeriod;
+                uint256 newLockCalc = _amount * 1e18 / sumAmounts * _lockPeriod;
+                user.lockPeriod = (currentLockCalc + newLockCalc) / 1e36;
             }
             uint256 balancebefore = pool.lpToken.balanceOf(address(this));
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
