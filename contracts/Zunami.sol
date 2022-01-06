@@ -94,9 +94,9 @@ contract Zunami is Context, Ownable, ERC20 {
         for (uint256 i = 0; i < amounts.length; ++i) {
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
-            }
+                accDepositPending[_msgSender()][i] += amounts[i];
+            } else accDepositPending[_msgSender()][i] += 0;
         }
-        accDepositPending[_msgSender()] += amounts;
         emit PendingDepositEvent(_msgSender(), amounts);
     }
 
