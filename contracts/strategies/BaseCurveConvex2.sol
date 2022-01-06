@@ -102,18 +102,18 @@ contract BaseCurveConvex2 is Context, Ownable {
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = crvRewards.balanceOf(address(this));
         uint256 lpPrice = pool.get_virtual_price();
-        (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
+        (uint112 reserve0, uint112 reserve1,) = wethcvx.getReserves();
         uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
-        (reserve0, reserve1, ) = crvweth.getReserves();
+        (reserve0, reserve1,) = crvweth.getReserves();
         uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
-        (reserve0, reserve1, ) = wethusdt.getReserves();
+        (reserve0, reserve1,) = wethusdt.getReserves();
         uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
         if (address(extraPair) != address(0)) {
             uint256 extraTokenPrice = 0;
-            (reserve0, reserve1, ) = extraPair.getReserves();
+            (reserve0, reserve1,) = extraPair.getReserves();
             for (uint8 i = 0; i < 3; ++i) {
                 if (extraPair.token0() == tokens[i]) {
                     if (i > 0) {
@@ -133,56 +133,56 @@ contract BaseCurveConvex2 is Context, Ownable {
             if (extraTokenPrice == 0) {
                 if (extraPair.token0() == Constants.WETH_ADDRESS) {
                     extraTokenPrice =
-                        (((reserve0 * DENOMINATOR) / reserve1) * ethPrice) /
-                        DENOMINATOR;
+                    (((reserve0 * DENOMINATOR) / reserve1) * ethPrice) /
+                    DENOMINATOR;
                 } else {
                     extraTokenPrice =
-                        (((reserve1 * DENOMINATOR) / reserve0) * ethPrice) /
-                        DENOMINATOR;
+                    (((reserve1 * DENOMINATOR) / reserve0) * ethPrice) /
+                    DENOMINATOR;
                 }
             }
             sum +=
-                (extraTokenPrice *
-                    (extraRewards.earned(address(this)) + extraToken.balanceOf(address(this)))) /
-                DENOMINATOR;
+            (extraTokenPrice *
+            (extraRewards.earned(address(this)) + extraToken.balanceOf(address(this)))) /
+            DENOMINATOR;
         }
         uint256 decimalsMultiplier = 1;
         if (token.decimals() < 18) {
-            decimalsMultiplier = 10**(18 - token.decimals());
+            decimalsMultiplier = 10 ** (18 - token.decimals());
         }
         sum += token.balanceOf(address(this)) * decimalsMultiplier;
         for (uint8 i = 0; i < 3; ++i) {
             decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[i]).decimals());
+                decimalsMultiplier = 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
             sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplier;
         }
         return
-            sum +
-            (lpBalance *
-                lpPrice +
-                crvPrice *
-                (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
-                cvxPrice *
-                ((crvRewards.earned(address(this)) *
-                    (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
-                    cvx.totalCliffs() +
-                    cvx.balanceOf(address(this)))) /
-            DENOMINATOR;
+        sum +
+        (lpBalance *
+        lpPrice +
+        crvPrice *
+        (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
+        cvxPrice *
+        ((crvRewards.earned(address(this)) *
+        (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
+        cvx.totalCliffs() +
+        cvx.balanceOf(address(this)))) /
+        DENOMINATOR;
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                _amounts[i] = amounts[i] * 10**(18 - IERC20Metadata(tokens[i]).decimals());
+                _amounts[i] = amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             } else {
                 _amounts[i] = amounts[i];
             }
         }
         uint256 amountsMin = ((_amounts[0] + _amounts[1] + _amounts[2]) * minDepositAmount) /
-            DEPOSIT_DENOMINATOR;
+        DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool3.get_virtual_price();
         uint256 depositedLp = pool3.calc_token_amount(amounts, true);
         if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
@@ -304,6 +304,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     function sellExtraToken() public virtual {
         uint256 extraBalance = extraToken.balanceOf(address(this));
         uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        uint256 usdtBalanceAfter = 0;
         if (extraBalance == 0) {
             return;
         }
@@ -324,7 +325,7 @@ contract BaseCurveConvex2 is Context, Ownable {
                 address(this),
                 block.timestamp + Constants.TRADE_DEADLINE
             );
-            uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+            usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
             managementFees = zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
             return;
         }
@@ -342,7 +343,7 @@ contract BaseCurveConvex2 is Context, Ownable {
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-        uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
+        usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
         managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
         emit SellRewards(0, 0, extraBalance);
     }
