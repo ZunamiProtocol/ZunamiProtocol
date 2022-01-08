@@ -9,8 +9,6 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
-import "hardhat/console.sol";
-
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
 
