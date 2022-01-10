@@ -47,6 +47,7 @@ contract Zunami is Context, Ownable, ERC20 {
     uint256 public completedWithdrawals;
     PendingWithdrawal[] public pendingWithdrawals;
     mapping(address => uint256[]) public accDepositPending;
+    mapping(address => bool) public userExistence;
 
     event PendingDepositEvent(address depositor, uint256[3] amounts);
     event Deposited(address depositor, uint256[3] amounts, uint256 lpShares);
@@ -93,16 +94,17 @@ contract Zunami is Context, Ownable, ERC20 {
 
     function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
         // user transfer funds to contract
+        if (userExistence[_msgSender()] == false) {
+            accDepositPending[_msgSender()] = [0, 0, 0];
+            userExistence[_msgSender()] = true;
+        }
+
         for (uint256 i = 0; i < amounts.length; ++i) {
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(
-                    _msgSender(),
-                    address(this),
-                    amounts[i]
-                );
+                IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
+                accDepositPending[_msgSender()][i] += amounts[i];
             }
         }
-        accDepositPending[_msgSender()] = amounts;
         emit PendingDepositEvent(_msgSender(), amounts);
     }
 
@@ -310,7 +312,7 @@ contract Zunami is Context, Ownable, ERC20 {
             amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
             if (amounts[_i] > 0) {
                 IERC20Metadata(tokens[_i]).safeTransfer(
-                    address(poolInfo[0].strategy),
+                    address(poolInfo[_to].strategy),
                     amounts[_i]
                 );
             }
