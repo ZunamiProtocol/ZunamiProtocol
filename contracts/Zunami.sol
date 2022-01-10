@@ -312,7 +312,7 @@ contract Zunami is Context, Ownable, ERC20 {
             amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
             if (amounts[_i] > 0) {
                 IERC20Metadata(tokens[_i]).safeTransfer(
-                    address(poolInfo[0].strategy),
+                    address(poolInfo[_to].strategy),
                     amounts[_i]
                 );
             }
