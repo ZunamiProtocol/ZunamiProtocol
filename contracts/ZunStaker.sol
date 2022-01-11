@@ -40,6 +40,8 @@ contract StakingPool is Ownable {
     uint256 public lastRewardBlock = 0; // change in prod
     uint256 public ZunPerBlock = 1e18; // change in prod
 
+    bool public isClaimLock = false;
+
     constructor(
         IERC20 _Zun,
         IVeZunToken _veZun,
@@ -55,6 +57,11 @@ contract StakingPool is Ownable {
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver);
     event Withdrawn(uint256 indexed depositId, address indexed receiver, uint256 amount);
+
+    modifier isClaimLocked() {
+        require(!isClaimLock, 'ZunStaker: Claim functions locked');
+        _;
+    }
 
     // Update reward variables of the given pool to be up-to-date.
     function updatePool() public {
@@ -179,13 +186,19 @@ contract StakingPool is Ownable {
         require(transferSuccess, "safeZunTransfer: Transfer failed");
     }
 
+    // change rewards per block
     function updateZunPerBlock(uint256 _ZunPerBlock) external onlyOwner {
         updatePool();
         ZunPerBlock = _ZunPerBlock;
     }
 
     // claim functions
-    function Claim(uint256 _depositId) external {
+
+    function changeClaimLock(bool _isClaimLock) external onlyOwner {
+        isClaimLock = _isClaimLock;
+    }
+
+    function Claim(uint256 _depositId) external isClaimLocked {
         Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
         uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
         if (pending > 0) {
@@ -194,7 +207,7 @@ contract StakingPool is Ownable {
         userDeposit.rewardDebt = userDeposit.mintedAmount * accCakePerShare / 1e18;
     }
 
-    function ClaimAll() external {
+    function ClaimAll() external isClaimLocked {
         uint256 length = depositsOf[_msgSender()].length;
 
         for (uint256 depId = 0; depId < length; ++depId) {
