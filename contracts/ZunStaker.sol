@@ -178,4 +178,9 @@ contract StakingPool is Ownable {
         }
         require(transferSuccess, "safeZunTransfer: Transfer failed");
     }
+
+    function updateZunPerBlock(uint256 _ZunPerBlock) external onlyOwner {
+        updatePool();
+        ZunPerBlock = _ZunPerBlock;
+    }
 }
