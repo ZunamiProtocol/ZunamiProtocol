@@ -22,9 +22,6 @@ contract StakingPool is Ownable {
     uint256 public immutable maxLockDuration;
     uint256 public constant MIN_LOCK_DURATION = 2 weeks;
 
-    mapping(address => Deposit[]) public depositsOf;
-    mapping(address => uint256) public totalDepositOf;
-
     struct Deposit {
         uint256 amount;
         uint256 mintedAmount;
@@ -32,6 +29,9 @@ contract StakingPool is Ownable {
         uint64 start;
         uint64 end;
     }
+
+    mapping(address => Deposit[]) public depositsOf;
+    mapping(address => uint256) public totalDepositOf;
 
     IERC20 public Zun; // main&reward token
     IVeZunToken public veZun; // governance token
@@ -183,4 +183,27 @@ contract StakingPool is Ownable {
         updatePool();
         ZunPerBlock = _ZunPerBlock;
     }
+
+    // claim functions
+    function Claim(uint256 _depositId) external {
+        Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
+        uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
+        if (pending > 0) {
+            safeZunTransfer(msg.sender, pending);
+        }
+        userDeposit.rewardDebt = userDeposit.mintedAmount * accCakePerShare / 1e18;
+    }
+
+    function ClaimAll() external {
+        uint256 length = depositsOf[_msgSender()].length;
+
+        for (uint256 depId = 0; depId < length; ++depId) {
+            uint256 pending = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18 - depositsOf[_msgSender()][depId].rewardDebt;
+            if (pending > 0) {
+                safeZunTransfer(msg.sender, pending);
+            }
+            depositsOf[_msgSender()][depId].rewardDebt = depositsOf[_msgSender()][depId].mintedAmount * accCakePerShare / 1e18;
+        }
+    }
+
 }
