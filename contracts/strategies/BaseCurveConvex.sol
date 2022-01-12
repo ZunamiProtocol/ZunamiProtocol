@@ -14,6 +14,7 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
+import '../interfaces/IZunStaker.sol';
 
 contract BaseCurveConvex is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -23,6 +24,7 @@ contract BaseCurveConvex is Context, Ownable {
     uint256 private constant USD_MULTIPLIER = 1e12;
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
     uint256 public minDepositAmount = 9975; // 99.75%
+    uint256 public adminFeeShare = 5000; // 50%
 
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
@@ -43,6 +45,7 @@ contract BaseCurveConvex is Context, Ownable {
     IUniswapV2Pair public extraPair;
     IConvexRewards public extraRewards;
     IZunami public zunami;
+    IZunStaker public zunStaker;
     uint256 public cvxPoolPID;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
@@ -86,6 +89,10 @@ contract BaseCurveConvex is Context, Ownable {
     // security centralization
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function setZunStaker(address zunStakerAddr) external onlyOwner {
+        zunStaker = IZunStaker(zunStakerAddr);
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {
@@ -192,10 +199,19 @@ contract BaseCurveConvex is Context, Ownable {
 
     function claimManagementFees() external virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        IERC20Metadata(tokens[2]).safeTransfer(
-            owner(),
-            managementFees > stratBalance ? stratBalance : managementFees
-        );
+        uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
+        if(transferBalance > 0) {
+            IERC20Metadata(tokens[2]).safeTransfer(
+                owner(),
+                transferBalance * adminFeeShare / DENOMINATOR
+            );
+            if(adminFeeShare < DENOMINATOR) {
+                IERC20Metadata(tokens[2]).safeTransfer(
+                    address(zunStaker),
+                    transferBalance * (DENOMINATOR - adminFeeShare) / DENOMINATOR
+                );
+            }
+        }
         managementFees = 0;
     }
 
