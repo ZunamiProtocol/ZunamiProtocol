@@ -25,6 +25,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     uint256 private constant USD_MULTIPLIER = 1e12;
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
     uint256 public minDepositAmount = 9975; // 100% = 10000
+    uint256 public adminFeeShare = 5000; // 50%
 
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
@@ -254,10 +255,19 @@ contract BaseCurveConvex2 is Context, Ownable {
 
     function claimManagementFees() external virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        IERC20Metadata(tokens[2]).safeTransfer(
-            owner(),
-            managementFees > stratBalance ? stratBalance : managementFees
-        );
+        uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
+        if(transferBalance > 0) {
+            IERC20Metadata(tokens[2]).safeTransfer(
+                owner(),
+                transferBalance * adminFeeShare / DENOMINATOR
+            );
+            if(adminFeeShare < DENOMINATOR) {
+                IERC20Metadata(tokens[2]).safeTransfer(
+                    zunStaker,
+                    transferBalance * (DENOMINATOR - adminFeeShare) / DENOMINATOR
+                );
+            }
+        }
         managementFees = 0;
     }
 
