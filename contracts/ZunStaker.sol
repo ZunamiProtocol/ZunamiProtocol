@@ -204,7 +204,7 @@ contract StakingPool is Ownable {
         if (pending > 0) {
             safeZunTransfer(msg.sender, pending);
         }
-        userDeposit.rewardDebt = userDeposit.mintedAmount * accCakePerShare / 1e18;
+        userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
     }
 
     function ClaimAll() external isClaimLocked {
@@ -215,7 +215,7 @@ contract StakingPool is Ownable {
             if (pending > 0) {
                 safeZunTransfer(msg.sender, pending);
             }
-            depositsOf[_msgSender()][depId].rewardDebt = depositsOf[_msgSender()][depId].mintedAmount * accCakePerShare / 1e18;
+            depositsOf[_msgSender()][depId].rewardDebt = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18;
         }
     }
 
