@@ -15,6 +15,7 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
+import '../interfaces/IZunStaker.sol';
 
 contract BaseCurveConvex2 is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -47,6 +48,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     IUniswapV2Pair public extraPair;
     IConvexRewards public extraRewards;
     IZunami public zunami;
+    IZunStaker public zunStaker;
     uint256 public cvxPoolPID;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
@@ -93,6 +95,10 @@ contract BaseCurveConvex2 is Context, Ownable {
 
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function setZunStaker(address zunStakerAddr) external onlyOwner {
+        zunStaker = IZunStaker(zunStakerAddr);
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {
