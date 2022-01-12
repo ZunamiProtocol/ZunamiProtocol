@@ -35,8 +35,11 @@ contract StakingPool is Ownable {
 
     IERC20 public Zun; // main&reward token
     IVeZunToken public veZun; // governance token
+    IERC20 public constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+
     uint256 public lpSupply; // total supply
-    uint256 public accZunPerShare;
+    uint256 public accZunPerShare = 0;
+    uint256 public accUsdtPerShare = 0;
     uint256 public lastRewardBlock = 0; // change in prod
     uint256 public ZunPerBlock = 1e18; // change in prod
 
@@ -217,6 +220,12 @@ contract StakingPool is Ownable {
             }
             depositsOf[_msgSender()][depId].rewardDebt = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18;
         }
+    }
+
+    // update management fee rewards by Zunami
+    function updateUsdtPerShare(uint256 _amount) external {
+        USDT.safeTransferFrom(_msgSender(), address(this), _amount);
+        accUsdtPerShare += _amount * 1e18 / lpSupply;
     }
 
 }
