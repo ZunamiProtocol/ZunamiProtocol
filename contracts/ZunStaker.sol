@@ -26,6 +26,7 @@ contract StakingPool is Ownable {
         uint256 amount;
         uint256 mintedAmount;
         uint256 rewardDebt;
+        uint256 usdtRewardDebt;
         uint64 start;
         uint64 end;
     }
@@ -99,6 +100,7 @@ contract StakingPool is Ownable {
             Deposit({amount : _amount,
         mintedAmount : mintAmount,
         rewardDebt : mintAmount * accZunPerShare / 1e18,
+        usdtRewardDebt : mintAmount * accUsdtPerShare / 1e18,
         start : uint64(block.timestamp),
         end : uint64(block.timestamp) + uint64(duration)})
         );
@@ -148,7 +150,10 @@ contract StakingPool is Ownable {
         if (pending > 0) {
             safeZunTransfer(msg.sender, pending);
         }
-
+        uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
+        if (usdtPending > 0) {
+            safeUsdtTransfer(msg.sender, usdtPending);
+        }
         // remove Deposit
         totalDepositOf[_msgSender()] -= userDeposit.amount;
         depositsOf[_msgSender()][_depositId] = depositsOf[_msgSender()][depositsOf[_msgSender()].length - 1];
@@ -178,6 +183,15 @@ contract StakingPool is Ownable {
         return userDeposit.mintedAmount * localShare / 1e18 - userDeposit.rewardDebt;
     }
 
+    function pendingUsdt(uint256 _depositId, address _user) external view returns (uint256) {
+        Deposit memory userDeposit = depositsOf[_user][_depositId];
+        uint256 localShare = accUsdtPerShare;
+        if (lpSupply != 0) {
+            localShare = accUsdtPerShare * 1e18 / lpSupply;
+        }
+        return userDeposit.mintedAmount * localShare / 1e18 - userDeposit.usdtRewardDebt;
+    }
+
     function safeZunTransfer(address _to, uint256 _amount) internal {
         uint256 ZunBal = Zun.balanceOf(address(this));
         bool transferSuccess = false;
@@ -187,6 +201,17 @@ contract StakingPool is Ownable {
             transferSuccess = Zun.transfer(_to, _amount);
         }
         require(transferSuccess, "safeZunTransfer: Transfer failed");
+    }
+
+    function safeUsdtTransfer(address _to, uint256 _amount) internal {
+        uint256 usdtBal = USDT.balanceOf(address(this));
+        bool transferSuccess = false;
+        if (_amount > usdtBal) {
+            transferSuccess = USDT.transfer(_to, usdtBal);
+        } else {
+            transferSuccess = USDT.transfer(_to, _amount);
+        }
+        require(transferSuccess, "safeUsdtTransfer: Transfer failed");
     }
 
     // change rewards per block
@@ -206,6 +231,10 @@ contract StakingPool is Ownable {
         uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
         if (pending > 0) {
             safeZunTransfer(msg.sender, pending);
+        }
+        uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
+        if (usdtPending > 0) {
+            safeUsdtTransfer(msg.sender, usdtPending);
         }
         userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
     }
