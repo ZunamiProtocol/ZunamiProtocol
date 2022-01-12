@@ -263,7 +263,7 @@ contract BaseCurveConvex2 is Context, Ownable {
             );
             if(adminFeeShare < DENOMINATOR) {
                 IERC20Metadata(tokens[2]).safeTransfer(
-                    zunStaker,
+                    address(zunStaker),
                     transferBalance * (DENOMINATOR - adminFeeShare) / DENOMINATOR
                 );
             }
