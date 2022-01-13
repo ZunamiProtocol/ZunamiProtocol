@@ -102,11 +102,11 @@ contract BaseCurveConvex is Context, Ownable {
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = crvRewards.balanceOf(address(this));
         uint256 lpPrice = pool.get_virtual_price();
-        (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
+        (uint112 reserve0, uint112 reserve1,) = wethcvx.getReserves();
         uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
-        (reserve0, reserve1, ) = crvweth.getReserves();
+        (reserve0, reserve1,) = crvweth.getReserves();
         uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
-        (reserve0, reserve1, ) = wethusdt.getReserves();
+        (reserve0, reserve1,) = wethusdt.getReserves();
         uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
@@ -114,35 +114,35 @@ contract BaseCurveConvex is Context, Ownable {
         for (uint8 i = 0; i < 3; ++i) {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[i]).decimals());
+                decimalsMultiplier = 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             }
             sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplier;
         }
         return
-            sum +
-            (lpBalance *
-                lpPrice +
-                crvPrice *
-                (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
-                cvxPrice *
-                ((crvRewards.earned(address(this)) *
-                    (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
-                    cvx.totalCliffs() +
-                    cvx.balanceOf(address(this)))) /
-            DENOMINATOR;
+        sum +
+        (lpBalance *
+        lpPrice +
+        crvPrice *
+        (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
+        cvxPrice *
+        ((crvRewards.earned(address(this)) *
+        (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
+        cvx.totalCliffs() +
+        cvx.balanceOf(address(this)))) /
+        DENOMINATOR;
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; ++i) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                _amounts[i] = amounts[i] * 10**(18 - IERC20Metadata(tokens[i]).decimals());
+                _amounts[i] = amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             } else {
                 _amounts[i] = amounts[i];
             }
         }
         uint256 amountsMin = ((_amounts[0] + _amounts[1] + _amounts[2]) * minDepositAmount) /
-            DEPOSIT_DENOMINATOR;
+        DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
         if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
@@ -200,12 +200,12 @@ contract BaseCurveConvex is Context, Ownable {
     function claimManagementFees() external virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
-        if(transferBalance > 0) {
+        if (transferBalance > 0) {
             IERC20Metadata(tokens[2]).safeTransfer(
                 owner(),
                 transferBalance * adminFeeShare / DENOMINATOR
             );
-            if(adminFeeShare < DENOMINATOR) {
+            if (adminFeeShare < DENOMINATOR) {
                 IERC20Metadata(tokens[2]).safeTransfer(
                     address(zunStaker),
                     transferBalance * (DENOMINATOR - adminFeeShare) / DENOMINATOR

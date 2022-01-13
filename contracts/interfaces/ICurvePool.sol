@@ -14,9 +14,9 @@ interface ICurvePool {
     ) external;
 
     function calc_token_amount(uint256[3] memory amounts, bool isDeposit)
-        external
-        view
-        returns (uint256);
+    external
+    view
+    returns (uint256);
 
     function get_virtual_price() external view returns (uint256);
 }
