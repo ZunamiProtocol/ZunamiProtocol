@@ -1,15 +1,15 @@
-"use strict";
+'use strict';
 
-const { contract } = require("hardhat");
-const { promisify } = require("util");
-const { resolve } = require("path");
-const fs = require("fs");
+const { contract } = require('hardhat');
+const { promisify } = require('util');
+const { resolve } = require('path');
+const fs = require('fs');
 
 const EIP170 = 24576;
 const CONTRACTS = `${__dirname}/../artifacts/contracts`;
 const READDIR = promisify(fs.readdir);
 const STAT = promisify(fs.stat);
-const LIST = ["strategies/CurveAaveConvex.sol", "Zunami.sol"];
+const LIST = ['strategies/CurveAaveConvex.sol', 'Zunami.sol'];
 
 async function generateReport() {
     let bytecodeSize;
@@ -26,7 +26,7 @@ async function generateReport() {
             bytecodeSize = contractData.deployedBytecode.length / 2 - 1;
 
             if (bytecodeSize > 0) {
-                file = file.replace(/^.*[\\\/]/, "");
+                file = file.replace(/^.*[\\\/]/, '');
                 file = `${file.substring(0, file.length - 5)}.sol`;
                 result[file] = bytecodeSize;
             }
@@ -74,7 +74,7 @@ async function main() {
             result[key] = diffDict[key];
         });
 
-    console.log("CONTRACT BYTECODE SIZE CHANGES");
+    console.log('CONTRACT BYTECODE SIZE CHANGES');
     console.table(result);
 }
 

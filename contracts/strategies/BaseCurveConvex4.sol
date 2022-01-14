@@ -399,6 +399,6 @@ contract BaseCurveConvex4 is Context, Ownable {
     }
 
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
-        _isMint ? (zunamiLpInStrat += _amount) :  (zunamiLpInStrat -= _amount);
+        _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 }

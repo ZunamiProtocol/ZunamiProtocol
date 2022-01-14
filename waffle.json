@@ -3,4 +3,4 @@
     "compilerVersion": "0.8.0",
     "sourceDirectory": "./contracts",
     "outputDirectory": "./build"
-  }
+}
