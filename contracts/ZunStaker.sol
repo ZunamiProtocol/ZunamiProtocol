@@ -55,8 +55,10 @@ contract StakingPool is Ownable {
         Zun = _Zun;
         veZun = _veZun;
         require(_maxLockDuration >= MIN_LOCK_DURATION, "bad _maxLockDuration");
-        maxBonus = _maxBonus; // x + 18zeros
-        maxLockDuration = _maxLockDuration; // in seconds
+        maxBonus = _maxBonus;
+        // x + 18zeros
+        maxLockDuration = _maxLockDuration;
+        // in seconds
     }
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver);
