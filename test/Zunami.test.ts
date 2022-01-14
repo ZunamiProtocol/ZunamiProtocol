@@ -3,8 +3,7 @@ import { waffle } from 'hardhat';
 import { expect } from 'chai';
 import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import {ContractFactory, Signer} from 'ethers';
-import BigNumber from "bignumber.js";
+import { ContractFactory, Signer } from 'ethers';
 
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 
@@ -252,24 +251,29 @@ describe('Zunami', function () {
                 let usdt_balance = await usdt.balanceOf(user.address);
                 let usdc_balance = await usdc.balanceOf(user.address);
                 let dai_balance = await dai.balanceOf(user.address);
-                await zunami.connect(user).delegateDeposit([dai_balance, usdc_balance, usdt_balance]);
+                await zunami
+                    .connect(user)
+                    .delegateDeposit([dai_balance, usdc_balance, usdt_balance]);
             }
         });
 
         it('try double delegateDeposit', async () => {
             for (const user of [carol, rosa]) {
-                await zunami.connect(user).delegateDeposit([
-                    web3.utils.toWei('100', 'ether'),
-                    web3.utils.toWei('100', 'mwei'),
-                    web3.utils.toWei('100', 'mwei')
-                ]);
+                await zunami
+                    .connect(user)
+                    .delegateDeposit([
+                        web3.utils.toWei('100', 'ether'),
+                        web3.utils.toWei('100', 'mwei'),
+                        web3.utils.toWei('100', 'mwei'),
+                    ]);
                 let usdt_balance = await usdt.balanceOf(user.address);
                 let usdc_balance = await usdc.balanceOf(user.address);
                 let dai_balance = await dai.balanceOf(user.address);
-                await zunami.connect(user).delegateDeposit([dai_balance, usdc_balance, usdt_balance]);
+                await zunami
+                    .connect(user)
+                    .delegateDeposit([dai_balance, usdc_balance, usdt_balance]);
             }
         });
-
 
         it('one user withdraw from pending', async () => {
             await zunami.connect(carol).pendingDepositRemove();
@@ -539,7 +543,7 @@ describe('Zunami', function () {
     // --- START TEST STRATEGIES ---
 
     // --- MULTI-TEST ----
-    describe('MultiTest', function () {
+    describe('MultiTest - Zunami', function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
             let AaveCurveConvex: ContractFactory = await ethers.getContractFactory(

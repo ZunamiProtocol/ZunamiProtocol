@@ -256,12 +256,12 @@ contract BaseCurveConvex2 is Context, Ownable {
     function claimManagementFees() external virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
-        if(transferBalance > 0) {
+        if (transferBalance > 0) {
             IERC20Metadata(tokens[2]).safeTransfer(
                 owner(),
                 transferBalance * adminFeeShare / DENOMINATOR
             );
-            if(adminFeeShare < DENOMINATOR) {
+            if (adminFeeShare < DENOMINATOR) {
                 IERC20Metadata(tokens[2]).safeTransfer(
                     address(zunStaker),
                     transferBalance * (DENOMINATOR - adminFeeShare) / DENOMINATOR
