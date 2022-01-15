@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract veZUNtoken is Context, Ownable, ERC20 {
+contract veZUN is Context, Ownable, ERC20 {
 
     constructor() ERC20('veZUN', 'veZUN') {}
 

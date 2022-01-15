@@ -763,3 +763,79 @@ describe('Zunami', function () {
     //     testStrategy();
     // });
 });
+describe('ZunStaker', function () {
+    let owner: SignerWithAddress;
+    let alice: SignerWithAddress;
+    let bob: SignerWithAddress;
+    let carol: SignerWithAddress;
+    let rosa: SignerWithAddress;
+
+    let zunStaker: Contract;
+    let zun: Contract;
+    let vezun: Contract;
+
+    function printBalancesStaking() {
+        it('print balances', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                let zun_balance = await zun.balanceOf(user.address);
+                let vezun_balance = await vezun.balanceOf(user.address);
+                console.log('  ---PRINT BALANCES--- ');
+                console.log('  ZUN: ', ethers.utils.formatUnits(zun_balance, 18));
+                console.log('  veZun: ', ethers.utils.formatUnits(vezun_balance, 18));
+                console.log(
+                    '  SUMM : ',
+                    parseFloat(ethers.utils.formatUnits(zun_balance, 18)) +
+                        parseFloat(ethers.utils.formatUnits(vezun_balance, 18))
+                );
+            }
+        });
+    }
+
+    function testStaker() {
+        it('owner send ZUN balance to users', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                await zun.transfer(user.address, web3.utils.toWei('1000000', 'mwei'));
+            }
+        });
+
+        // it('only the owner can add a pool', async () => {
+        //     await expectRevert(
+        //         zunami.connect(alice).add(strategy.address),
+        //         'Ownable: caller is not the owner'
+        //     );
+        //     await zunami.add(strategy.address);
+        //
+        //     for (const user of [owner, alice, bob, carol, rosa]) {
+        //         await usdc
+        //             .connect(user)
+        //             .approve(zunami.address, web3.utils.toWei('1000000', 'mwei'));
+        //         await usdt
+        //             .connect(user)
+        //             .approve(zunami.address, web3.utils.toWei('1000000', 'mwei'));
+        //         await dai
+        //             .connect(user)
+        //             .approve(zunami.address, web3.utils.toWei('1000000', 'ether'));
+        //     }
+        // });
+
+        printBalancesStaking();
+    }
+
+    describe('ZunStaker - test 01', function () {
+        before(async function () {
+            let ZUN: ContractFactory = await ethers.getContractFactory('ZUN');
+            let VEZUN: ContractFactory = await ethers.getContractFactory('veZUN');
+            zun = await ZUN.deploy();
+            vezun = await VEZUN.deploy();
+            await zun.deployed();
+            await vezun.deployed();
+
+            let ZunStaker: ContractFactory = await ethers.getContractFactory('ZunStaker');
+            zunStaker = await ZunStaker.deploy(zun.address, vezun.address);
+            await zunStaker.deployed();
+
+            [owner, alice, bob, carol, rosa] = await ethers.getSigners();
+        });
+        testStaker();
+    });
+});

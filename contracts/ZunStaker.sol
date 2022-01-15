@@ -14,12 +14,12 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IVeZunToken.sol";
 
 
-contract StakingPool is Ownable {
+contract ZunStaker is Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public immutable maxBonus;
-    uint256 public immutable maxLockDuration;
+    uint256 public immutable maxBonus = 1e18; // change in prod
+    uint256 public immutable maxLockDuration = 31536000; // 1 year
     uint256 public constant MIN_LOCK_DURATION = 2 weeks;
 
     struct Deposit {
@@ -48,17 +48,10 @@ contract StakingPool is Ownable {
 
     constructor(
         IERC20 _Zun,
-        IVeZunToken _veZun,
-        uint256 _maxBonus,
-        uint256 _maxLockDuration
+        IVeZunToken _veZun
     ) {
         Zun = _Zun;
         veZun = _veZun;
-        require(_maxLockDuration >= MIN_LOCK_DURATION, "bad _maxLockDuration");
-        maxBonus = _maxBonus;
-        // x + 18zeros
-        maxLockDuration = _maxLockDuration;
-        // in seconds
     }
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver);
