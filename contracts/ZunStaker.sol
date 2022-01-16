@@ -20,7 +20,7 @@ contract ZunStaker is Ownable {
 
     uint256 public immutable maxBonus = 1e18; // change in prod
     uint256 public immutable maxLockDuration = 31536000; // 1 year
-    uint256 public constant MIN_LOCK_DURATION = 2 weeks;
+    uint256 public constant MIN_LOCK_DURATION = 2 weeks; // 1209600 sec
 
     struct Deposit {
         uint256 amount;
@@ -156,7 +156,8 @@ contract ZunStaker is Ownable {
         depositsOf[_msgSender()].pop();
 
         // burn pool shares
-        veZun.burn(_msgSender(), shareAmount);
+        IERC20(address(veZun)).safeTransferFrom(_msgSender(), address(this), shareAmount);
+        veZun.burn(shareAmount);
         lpSupply = lpSupply - shareAmount;
 
         // return tokens
@@ -221,7 +222,8 @@ contract ZunStaker is Ownable {
         isClaimLock = _isClaimLock;
     }
 
-    function Claim(uint256 _depositId) external isClaimLocked {
+    function claim(uint256 _depositId) external isClaimLocked {
+        updatePool();
         Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
         uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
         if (pending > 0) {
@@ -234,7 +236,8 @@ contract ZunStaker is Ownable {
         userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
     }
 
-    function ClaimAll() external isClaimLocked {
+    function claimAll() external isClaimLocked {
+        updatePool();
         uint256 length = depositsOf[_msgSender()].length;
 
         for (uint256 depId = 0; depId < length; ++depId) {
