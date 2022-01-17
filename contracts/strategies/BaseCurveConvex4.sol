@@ -307,7 +307,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
         uint256 usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees = zunami.calcManagementFee(
+        managementFees += zunami.calcManagementFee(
             usdtBalanceAfter - usdtBalanceBefore
         );
         emit SellRewards(cvxBalance, crvBalance, 0);
@@ -338,7 +338,7 @@ contract BaseCurveConvex4 is Context, Ownable {
                 block.timestamp + Constants.TRADE_DEADLINE
             );
             usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-            managementFees = zunami.calcManagementFee(
+            managementFees += zunami.calcManagementFee(
                 usdtBalanceAfter - usdtBalanceBefore
             );
             return;
