@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract veZUNtoken is Context, Ownable, ERC20 {
+contract veZUN is Context, Ownable, ERC20 {
 
     constructor() ERC20('veZUN', 'veZUN') {}
 
@@ -20,11 +20,9 @@ contract veZUNtoken is Context, Ownable, ERC20 {
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
-    // Copied and modified from YAM code:
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol
-    // Which is copied and modified from COMPOUND:
-    // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
+    function burn(uint256 _amount) public {
+        _burn(_msgSender(), _amount);
+    }
 
     /// @notice A record of each accounts delegate
     mapping(address => address) internal _delegates;

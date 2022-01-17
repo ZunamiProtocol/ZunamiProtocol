@@ -13,14 +13,13 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/IVeZunToken.sol";
 
-
-contract StakingPool is Ownable {
+contract ZunStaker is Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public immutable maxBonus;
-    uint256 public immutable maxLockDuration;
-    uint256 public constant MIN_LOCK_DURATION = 2 weeks;
+    uint256 public immutable maxBonus = 1e18; // change in prod
+    uint256 public immutable maxLockDuration = 31536000; // 1 year
+    uint256 public constant MIN_LOCK_DURATION = 2 weeks; // 1209600 sec
 
     struct Deposit {
         uint256 amount;
@@ -48,17 +47,10 @@ contract StakingPool is Ownable {
 
     constructor(
         IERC20 _Zun,
-        IVeZunToken _veZun,
-        uint256 _maxBonus,
-        uint256 _maxLockDuration
+        IVeZunToken _veZun
     ) {
         Zun = _Zun;
         veZun = _veZun;
-        require(_maxLockDuration >= MIN_LOCK_DURATION, "bad _maxLockDuration");
-        maxBonus = _maxBonus;
-        // x + 18zeros
-        maxLockDuration = _maxLockDuration;
-        // in seconds
     }
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver);
@@ -163,7 +155,8 @@ contract StakingPool is Ownable {
         depositsOf[_msgSender()].pop();
 
         // burn pool shares
-        veZun.burn(_msgSender(), shareAmount);
+        IERC20(address(veZun)).safeTransferFrom(_msgSender(), address(this), shareAmount);
+        veZun.burn(shareAmount);
         lpSupply = lpSupply - shareAmount;
 
         // return tokens
@@ -228,29 +221,31 @@ contract StakingPool is Ownable {
         isClaimLock = _isClaimLock;
     }
 
-    function Claim(uint256 _depositId) external isClaimLocked {
-        Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
+    function claim(uint256 _depositId) external isClaimLocked {
+        updatePool();
+        _claim(msg.sender, _depositId);
+    }
+
+    function claimAll() external isClaimLocked {
+        updatePool();
+        uint256 length = getDepositsOfLength(msg.sender);
+
+        for (uint256 depId = 0; depId < length; ++depId) {
+            _claim(msg.sender, depId);
+        }
+    }
+
+    function _claim(address user, uint256 _depositId) internal {
+        Deposit memory userDeposit = depositsOf[user][_depositId];
         uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
         if (pending > 0) {
-            safeZunTransfer(msg.sender, pending);
+            safeZunTransfer(user, pending);
         }
         uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
         if (usdtPending > 0) {
-            safeUsdtTransfer(msg.sender, usdtPending);
+            safeUsdtTransfer(user, usdtPending);
         }
         userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
-    }
-
-    function ClaimAll() external isClaimLocked {
-        uint256 length = depositsOf[_msgSender()].length;
-
-        for (uint256 depId = 0; depId < length; ++depId) {
-            uint256 pending = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18 - depositsOf[_msgSender()][depId].rewardDebt;
-            if (pending > 0) {
-                safeZunTransfer(msg.sender, pending);
-            }
-            depositsOf[_msgSender()][depId].rewardDebt = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18;
-        }
     }
 
     // update management fee rewards by Zunami
