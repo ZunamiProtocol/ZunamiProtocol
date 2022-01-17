@@ -13,7 +13,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/IVeZunToken.sol";
 
-
 contract ZunStaker is Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20;
@@ -224,29 +223,29 @@ contract ZunStaker is Ownable {
 
     function claim(uint256 _depositId) external isClaimLocked {
         updatePool();
-        Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
-        uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
-        if (pending > 0) {
-            safeZunTransfer(msg.sender, pending);
-        }
-        uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
-        if (usdtPending > 0) {
-            safeUsdtTransfer(msg.sender, usdtPending);
-        }
-        userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
+        _claim(msg.sender, _depositId);
     }
 
     function claimAll() external isClaimLocked {
         updatePool();
-        uint256 length = getDepositsOfLength(_msgSender());
+        uint256 length = getDepositsOfLength(msg.sender);
 
         for (uint256 depId = 0; depId < length; ++depId) {
-            uint256 pending = (depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18) - depositsOf[_msgSender()][depId].rewardDebt;
-            if (pending > 0) {
-                safeZunTransfer(msg.sender, pending);
-            }
-            depositsOf[_msgSender()][depId].rewardDebt = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18;
+            _claim(msg.sender, depId);
         }
+    }
+
+    function _claim(address user, uint256 _depositId) internal {
+        Deposit memory userDeposit = depositsOf[user][_depositId];
+        uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
+        if (pending > 0) {
+            safeZunTransfer(user, pending);
+        }
+        uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
+        if (usdtPending > 0) {
+            safeUsdtTransfer(user, usdtPending);
+        }
+        userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
     }
 
     // update management fee rewards by Zunami
