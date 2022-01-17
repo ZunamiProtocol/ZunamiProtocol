@@ -847,7 +847,24 @@ describe('ZunStaker', function () {
                 await zunStaker.connect(user).claim(0);
                 const zunBalAfter = await zun.balanceOf(user.address);
                 console.log(
-                    'claimed amount:',
+                    'claim amount:',
+                    ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
+                );
+            }
+        });
+
+        it('users try claimAll', async () => {
+            console.log('block number 0:', await provider.getBlockNumber());
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+            console.log('block number 1:', await provider.getBlockNumber());
+            for (const user of [alice, bob, carol, rosa]) {
+                const zunBalBefore = await zun.balanceOf(user.address);
+                await zunStaker.connect(user).claimAll;
+                const zunBalAfter = await zun.balanceOf(user.address);
+                console.log(
+                    'claimAll amount:',
                     ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
                 );
             }
@@ -856,7 +873,7 @@ describe('ZunStaker', function () {
         it('users try withdraw veZUN', async () => {
             await time.increaseTo((await time.latest()).add(time.duration.seconds(WEEKS_2 + 1)));
             for (const user of [alice, bob, carol, rosa]) {
-                vezun
+                await vezun
                     .connect(user)
                     .approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
                 await zunStaker.connect(user).withdraw(0);
