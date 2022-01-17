@@ -867,7 +867,7 @@ describe('ZunStaker', function () {
             }
             for (const user of [alice, bob, carol, rosa]) {
                 const zunBalBeforeClaimAll = await zun.balanceOf(user.address);
-                await zunStaker.connect(user).claimAll;
+                await zunStaker.connect(user).claimAll();
                 const zunBalAfterClaimAll = await zun.balanceOf(user.address);
                 console.log('zunBalBeforeClaimAll', zunBalBeforeClaimAll);
                 console.log('zunBalAfterClaimAll', zunBalAfterClaimAll);
