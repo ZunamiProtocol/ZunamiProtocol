@@ -336,7 +336,7 @@ contract BaseCurveConvex4 is Context, Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
         usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees = zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
+        managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
     }
 
     function sellToken() public virtual {
