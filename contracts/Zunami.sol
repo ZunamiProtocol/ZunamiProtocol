@@ -72,12 +72,12 @@ contract Zunami is Context, Ownable, ERC20 {
         managementFee = newManagementFee;
     }
 
-    function calcManagementFee(uint256 amount) public view virtual returns (uint256) {
+    function calcManagementFee(uint256 amount) public view returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
     // total holdings for all pools
-    function totalHoldings() public view virtual returns (uint256) {
+    function totalHoldings() public view returns (uint256) {
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -86,11 +86,11 @@ contract Zunami is Context, Ownable, ERC20 {
         return totalHold;
     }
 
-    function lpPrice() public view virtual returns (uint256) {
+    function lpPrice() public view returns (uint256) {
         return (totalHoldings() * 1e18) / totalSupply();
     }
 
-    function delegateDeposit(uint256[3] memory amounts) external virtual isNotLocked {
+    function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
         // user transfer funds to contract
         if (userExistence[_msgSender()] == false) {
             accDepositPending[_msgSender()] = [0, 0, 0];
@@ -106,7 +106,7 @@ contract Zunami is Context, Ownable, ERC20 {
         emit PendingDepositEvent(_msgSender(), amounts);
     }
 
-    function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts) external virtual {
+    function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts) external {
         PendingWithdrawal memory pendingWithdrawal;
         pendingWithdrawal.lpAmount = lpAmount;
         pendingWithdrawal.minAmounts = minAmounts;
@@ -114,7 +114,7 @@ contract Zunami is Context, Ownable, ERC20 {
         pendingWithdrawals.push(pendingWithdrawal);
     }
 
-    function completeDeposits(address[] memory userList, uint256 pid) external virtual onlyOwner {
+    function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
         // total sum deposit, contract => strategy
@@ -162,11 +162,7 @@ contract Zunami is Context, Ownable, ERC20 {
         require(sum > 0, 'too low amount!');
     }
 
-    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
-        external
-        virtual
-        onlyOwner
-    {
+    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
         uint256 maxWithdrawals = withdrawalsToComplete < pendingWithdrawals.length
             ? withdrawalsToComplete
             : pendingWithdrawals.length;
@@ -184,7 +180,6 @@ contract Zunami is Context, Ownable, ERC20 {
 
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
-        virtual
         isNotLocked
         returns (uint256)
     {
@@ -223,7 +218,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 lpShares,
         uint256[3] memory minAmounts,
         uint256 pid
-    ) external virtual {
+    ) external {
         IStrategy strategy = poolInfo[pid].strategy;
         require(balanceOf(_msgSender()) >= lpShares, 'Zunami: not enough LP balance');
         require(
@@ -245,7 +240,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 lpShares,
         uint256[3] memory minAmounts,
         uint256 pid
-    ) internal virtual {
+    ) internal {
         if ((balanceOf(withdrawer) >= lpShares) && lpShares > 0) {
             IStrategy strategy = poolInfo[pid].strategy;
             if (!(strategy.withdraw(withdrawer, lpShares, minAmounts))) {
@@ -263,22 +258,22 @@ contract Zunami is Context, Ownable, ERC20 {
         }
     }
 
-    function setLock(bool _lock) external virtual onlyOwner {
+    function setLock(bool _lock) external onlyOwner {
         isLock = _lock;
     }
 
-    function claimManagementFees(address strategyAddr) external virtual onlyOwner {
+    function claimManagementFees(address strategyAddr) external onlyOwner {
         IStrategy(strategyAddr).claimManagementFees();
     }
 
     // new functions
-    function add(address _strategy) external virtual onlyOwner {
+    function add(address _strategy) external onlyOwner {
         poolInfo.push(
             PoolInfo({ strategy: IStrategy(_strategy), startTime: block.timestamp + MIN_LOCK_TIME })
         );
     }
 
-    function moveFunds(uint256 _from, uint256 _to) external virtual onlyOwner {
+    function moveFunds(uint256 _from, uint256 _to) external onlyOwner {
         IStrategy fromStrat = poolInfo[_from].strategy;
         IStrategy toStrat = poolInfo[_to].strategy;
         fromStrat.withdrawAll();
@@ -295,7 +290,7 @@ contract Zunami is Context, Ownable, ERC20 {
         toStrat.updateZunamiLpInStrat(transferLpAmount, true);
     }
 
-    function moveFundsBatch(uint256[] memory _from, uint256 _to) external virtual onlyOwner {
+    function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyOwner {
         uint256 length = _from.length;
         uint256[3] memory amounts;
         uint256 zunamiLp = 0;
@@ -318,7 +313,7 @@ contract Zunami is Context, Ownable, ERC20 {
         require(poolInfo[_to].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
-    function emergencyWithdraw() external virtual onlyOwner {
+    function emergencyWithdraw() external onlyOwner {
         uint256 length = poolInfo.length;
         require(length > 1, 'Zunami: Nothing withdraw');
         uint256[3] memory amounts;
@@ -340,7 +335,7 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     // user withdraw funds from list
-    function pendingDepositRemove() external virtual {
+    function pendingDepositRemove() external {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             if (accDepositPending[_msgSender()][i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransfer(
