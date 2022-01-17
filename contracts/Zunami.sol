@@ -72,7 +72,7 @@ contract Zunami is Context, Ownable, ERC20 {
         managementFee = newManagementFee;
     }
 
-    function calcManagementFee(uint256 amount) public view returns (uint256) {
+    function calcManagementFee(uint256 amount) external view returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
@@ -86,7 +86,7 @@ contract Zunami is Context, Ownable, ERC20 {
         return totalHold;
     }
 
-    function lpPrice() public view returns (uint256) {
+    function lpPrice() external view returns (uint256) {
         return (totalHoldings() * 1e18) / totalSupply();
     }
 
