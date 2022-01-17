@@ -36,7 +36,7 @@ contract Zunami is Context, Ownable, ERC20 {
     PoolInfo[] public poolInfo;
     uint256 public totalDeposited;
 
-    uint256 public FEE_DENOMINATOR = 1000;
+    uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
     bool public isLock = false;
     uint256 public constant MIN_LOCK_TIME = 86400; // 1 day
