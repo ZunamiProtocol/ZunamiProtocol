@@ -24,12 +24,6 @@ contract veZUN is Context, Ownable, ERC20 {
         _burn(_msgSender(), _amount);
     }
 
-    // Copied and modified from YAM code:
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol
-    // Which is copied and modified from COMPOUND:
-    // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
-
     /// @notice A record of each accounts delegate
     mapping(address => address) internal _delegates;
 
