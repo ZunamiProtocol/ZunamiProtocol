@@ -837,34 +837,15 @@ describe('ZunStaker', function () {
         });
 
         it('users try claim', async () => {
-            console.log('block number 0:', await provider.getBlockNumber());
             for (var i = 0; i < SKIP_TIMES; i++) {
                 await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
             }
-            console.log('block number 1:', await provider.getBlockNumber());
             for (const user of [alice, bob, carol, rosa]) {
                 const zunBalBefore = await zun.balanceOf(user.address);
                 await zunStaker.connect(user).claim(0);
                 const zunBalAfter = await zun.balanceOf(user.address);
                 console.log(
                     'claim amount:',
-                    ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
-                );
-            }
-        });
-
-        it('users try claimAll', async () => {
-            console.log('block number 0:', await provider.getBlockNumber());
-            for (var i = 0; i < SKIP_TIMES; i++) {
-                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            }
-            console.log('block number 1:', await provider.getBlockNumber());
-            for (const user of [alice, bob, carol, rosa]) {
-                const zunBalBefore = await zun.balanceOf(user.address);
-                await zunStaker.connect(user).claimAll;
-                const zunBalAfter = await zun.balanceOf(user.address);
-                console.log(
-                    'claimAll amount:',
                     ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
                 );
             }
@@ -877,6 +858,23 @@ describe('ZunStaker', function () {
                     .connect(user)
                     .approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
                 await zunStaker.connect(user).withdraw(0);
+            }
+        });
+
+        it('users try claimAll', async () => {
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+            for (const user of [alice, bob, carol, rosa]) {
+                const zunBalBeforeClaimAll = await zun.balanceOf(user.address);
+                await zunStaker.connect(user).claimAll;
+                const zunBalAfterClaimAll = await zun.balanceOf(user.address);
+                console.log('zunBalBeforeClaimAll', zunBalBeforeClaimAll);
+                console.log('zunBalAfterClaimAll', zunBalAfterClaimAll);
+                console.log(
+                    'claimAll amount:',
+                    ethers.utils.formatUnits(zunBalAfterClaimAll.sub(zunBalBeforeClaimAll), 18)
+                );
             }
         });
 
