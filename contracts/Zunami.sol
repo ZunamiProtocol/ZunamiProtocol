@@ -8,8 +8,9 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
+import './interfaces/IZunami.sol';
 
-contract Zunami is Context, Ownable, ERC20 {
+contract Zunami is Context, Ownable, ERC20, IZunami {
     using SafeERC20 for IERC20Metadata;
 
     struct PendingDeposit {
@@ -31,10 +32,10 @@ contract Zunami is Context, Ownable, ERC20 {
     uint8 private constant POOL_ASSETS = 3;
 
     address[POOL_ASSETS] public tokens;
-    mapping(address => uint256) public deposited;
+    mapping(address => uint256) public override deposited;
     // Info of each pool
     PoolInfo[] public poolInfo;
-    uint256 public totalDeposited;
+    uint256 public override totalDeposited;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
@@ -68,12 +69,12 @@ contract Zunami is Context, Ownable, ERC20 {
         managementFee = newManagementFee;
     }
 
-    function calcManagementFee(uint256 amount) external view returns (uint256) {
+    function calcManagementFee(uint256 amount) external view override returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
     // total holdings for all pools
-    function totalHoldings() public view returns (uint256) {
+    function totalHoldings() public view override returns (uint256) {
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; ++pid) {
