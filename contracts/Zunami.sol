@@ -56,7 +56,7 @@ contract Zunami is Context, Ownable, ERC20 {
     event BadDeposit(address depositor, uint256[3] amounts, uint256 lpShares);
     event BadWithdraw(address withdrawer, uint256[3] amounts, uint256 lpShares);
 
-    modifier isLocked() {
+    modifier isNotLocked() {
         require(!isLock, 'Zunami: Deposit functions locked');
         _;
     }
@@ -90,7 +90,7 @@ contract Zunami is Context, Ownable, ERC20 {
         return (totalHoldings() * 1e18) / totalSupply();
     }
 
-    function delegateDeposit(uint256[3] memory amounts) external virtual isLocked {
+    function delegateDeposit(uint256[3] memory amounts) external virtual isNotLocked {
         // user transfer funds to contract
         if (userExistence[_msgSender()] == false) {
             accDepositPending[_msgSender()] = [0, 0, 0];
@@ -185,7 +185,7 @@ contract Zunami is Context, Ownable, ERC20 {
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
         virtual
-        isLocked
+        isNotLocked
         returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
