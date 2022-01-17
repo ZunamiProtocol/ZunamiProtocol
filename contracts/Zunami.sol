@@ -41,9 +41,6 @@ contract Zunami is Context, Ownable, ERC20 {
     bool public isLock = false;
     uint256 public constant MIN_LOCK_TIME = 86400; // 1 day
 
-    address public admin;
-    uint256 public completedDeposits;
-    uint256 public completedWithdrawals;
     PendingWithdrawal[] public pendingWithdrawals;
     mapping(address => uint256[]) public accDepositPending;
     mapping(address => bool) public userExistence;
