@@ -97,7 +97,7 @@ contract Zunami is Context, Ownable, ERC20 {
             userExistence[_msgSender()] = true;
         }
 
-        for (uint256 i = 0; i < amounts.length; ++i) {
+        for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
                 accDepositPending[_msgSender()][i] += amounts[i];
@@ -192,7 +192,7 @@ contract Zunami is Context, Ownable, ERC20 {
         require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
         uint256 holdings = totalHoldings();
 
-        for (uint256 i = 0; i < amounts.length; ++i) {
+        for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransferFrom(
                     _msgSender(),
@@ -283,7 +283,7 @@ contract Zunami is Context, Ownable, ERC20 {
         IStrategy toStrat = poolInfo[_to].strategy;
         fromStrat.withdrawAll();
         uint256[3] memory amounts;
-        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
@@ -299,7 +299,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 length = _from.length;
         uint256[3] memory amounts;
         uint256 zunamiLp = 0;
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < length; i++) {
             poolInfo[_from[i]].strategy.withdrawAll();
             uint256 thisPidLpAmount = poolInfo[_from[i]].strategy.getZunamiLpInStrat();
             zunamiLp += thisPidLpAmount;
@@ -323,7 +323,7 @@ contract Zunami is Context, Ownable, ERC20 {
         require(length > 1, 'Zunami: Nothing withdraw');
         uint256[3] memory amounts;
         uint256 zunamiLp = 0;
-        for (uint256 i = 1; i < length; ++i) {
+        for (uint256 i = 1; i < length; i++) {
             poolInfo[i].strategy.withdrawAll();
             uint256 thisPidLpAmount = poolInfo[i].strategy.getZunamiLpInStrat();
             zunamiLp += thisPidLpAmount;
@@ -341,7 +341,7 @@ contract Zunami is Context, Ownable, ERC20 {
 
     // user withdraw funds from list
     function pendingDepositRemove() external virtual {
-        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             if (accDepositPending[_msgSender()][i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransfer(
                     _msgSender(),

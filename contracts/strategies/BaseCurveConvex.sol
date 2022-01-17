@@ -104,7 +104,7 @@ contract BaseCurveConvex is Context, Ownable {
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint8 i = 0; i < 3; i++) {
             uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[i]).decimals());
@@ -127,7 +127,7 @@ contract BaseCurveConvex is Context, Ownable {
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256[3] memory _amounts;
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint8 i = 0; i < 3; i++) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 _amounts[i] = amounts[i] * 10**(18 - IERC20Metadata(tokens[i]).decimals());
             } else {
@@ -139,7 +139,7 @@ contract BaseCurveConvex is Context, Ownable {
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
         if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
-            for (uint8 i = 0; i < 3; ++i) {
+            for (uint8 i = 0; i < 3; i++) {
                 IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
             }
             uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
@@ -168,7 +168,7 @@ contract BaseCurveConvex is Context, Ownable {
 
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint8 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;
@@ -176,11 +176,11 @@ contract BaseCurveConvex is Context, Ownable {
 
         pool.remove_liquidity(depositedShare, minAmounts, true);
         uint256[3] memory liqAmounts;
-        for (uint256 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; i++) {
             liqAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - prevBalances[i];
         }
 
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint8 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
@@ -245,7 +245,7 @@ contract BaseCurveConvex is Context, Ownable {
         uint256[3] memory minAmounts;
         pool.remove_liquidity(lpBalance, minAmounts, true);
 
-        for (uint8 i = 0; i < 3; ++i) {
+        for (uint8 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
