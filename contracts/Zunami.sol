@@ -32,7 +32,6 @@ contract Zunami is Context, Ownable, ERC20 {
 
     address[POOL_ASSETS] public tokens;
     mapping(address => uint256) public deposited;
-    uint256[] userCompleteHoldings;
     // Info of each pool
     PoolInfo[] public poolInfo;
     uint256 public totalDeposited;
@@ -117,11 +116,12 @@ contract Zunami is Context, Ownable, ERC20 {
     function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
+        uint256[] memory userCompleteHoldings = new uint256[](userList.length);
+
         // total sum deposit, contract => strategy
         uint256 addHoldings = 0;
         uint256 holdings = totalHoldings();
         for (uint256 i = 0; i < userList.length; i++) {
-            userCompleteHoldings.push(0);
             for (uint256 x = 0; x < totalAmounts.length; ++x) {
                 uint256 decimalsMultiplier = 1;
                 if (IERC20Metadata(tokens[x]).decimals() < 18) {
@@ -158,7 +158,6 @@ contract Zunami is Context, Ownable, ERC20 {
             // remove deposit from list
             accDepositPending[userList[z]] = [0, 0, 0];
         }
-        delete userCompleteHoldings;
         require(sum > 0, 'too low amount!');
     }
 
