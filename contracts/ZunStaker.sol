@@ -238,10 +238,10 @@ contract ZunStaker is Ownable {
 
     function claimAll() external isClaimLocked {
         updatePool();
-        uint256 length = depositsOf[_msgSender()].length;
+        uint256 length = getDepositsOfLength(_msgSender());
 
         for (uint256 depId = 0; depId < length; ++depId) {
-            uint256 pending = depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18 - depositsOf[_msgSender()][depId].rewardDebt;
+            uint256 pending = (depositsOf[_msgSender()][depId].mintedAmount * accZunPerShare / 1e18) - depositsOf[_msgSender()][depId].rewardDebt;
             if (pending > 0) {
                 safeZunTransfer(msg.sender, pending);
             }
