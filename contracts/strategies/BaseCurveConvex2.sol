@@ -99,7 +99,7 @@ contract BaseCurveConvex2 is Context, Ownable {
         return zunamiLpInStrat;
     }
 
-    function totalHoldings() public view virtual returns (uint256) {
+    function totalHoldings() external view virtual returns (uint256) {
         uint256 lpBalance = crvRewards.balanceOf(address(this));
         uint256 lpPrice = pool.get_virtual_price();
         (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
