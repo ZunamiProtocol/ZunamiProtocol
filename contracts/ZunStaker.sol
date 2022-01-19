@@ -281,7 +281,7 @@ contract ZunStaker is Ownable {
         }
 
         for (uint256 i = 0; i < length; i++) {
-            totalPending += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].usdtRewardDebt;
+            totalPendingUsdt += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].usdtRewardDebt;
         }
         return totalPendingUsdt;
     }
