@@ -254,4 +254,20 @@ contract ZunStaker is Ownable {
         accUsdtPerShare += _amount * 1e18 / lpSupply;
     }
 
+
+    // frontend functions
+    function pendingZunTotal(address _user) external view returns (uint256) {
+        uint256 length = getDepositsOfLength(_user);
+        uint256 totalPending = 0;
+        uint256 localShare = accZunPerShare;
+        if (block.number > lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = block.number - lastRewardBlock;
+            uint256 ZunReward = multiplier * ZunPerBlock;
+            localShare = accZunPerShare + (ZunReward * 1e18 / lpSupply);
+        }
+        for (uint256 i = 0; i < length; i++) {
+            totalPending += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].rewardDebt;
+        }
+        return totalPending;
+    }
 }
