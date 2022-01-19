@@ -142,11 +142,11 @@ contract ZunStaker is Ownable {
         // get rewards
         uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
         if (pending > 0) {
-            safeZunTransfer(msg.sender, pending);
+            safeZunTransfer(_msgSender(), pending);
         }
         uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
         if (usdtPending > 0) {
-            safeUsdtTransfer(msg.sender, usdtPending);
+            safeUsdtTransfer(_msgSender(), usdtPending);
         }
         // remove Deposit
         totalDepositOf[_msgSender()] -= userDeposit.amount;
@@ -223,15 +223,15 @@ contract ZunStaker is Ownable {
 
     function claim(uint256 _depositId) external isClaimLocked {
         updatePool();
-        _claim(msg.sender, _depositId);
+        _claim(_msgSender(), _depositId);
     }
 
     function claimAll() external isClaimLocked {
         updatePool();
-        uint256 length = getDepositsOfLength(msg.sender);
+        uint256 length = getDepositsOfLength(_msgSender());
 
         for (uint256 depId = 0; depId < length; ++depId) {
-            _claim(msg.sender, depId);
+            _claim(_msgSender(), depId);
         }
     }
 
