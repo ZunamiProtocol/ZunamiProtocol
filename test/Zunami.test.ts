@@ -861,16 +861,23 @@ describe('ZunStaker', function () {
             }
         });
 
-        it('users try claimAll', async () => {
+        it(' skip blocks and read pendingZunTotal of user', async () => {
             for (var i = 0; i < SKIP_TIMES; i++) {
                 await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
             }
             for (const user of [alice, bob, carol, rosa]) {
+                const pendingZunTotal = await zunStaker.pendingZunTotal(user.address);
+                const pendingUsdtTotal = await zunStaker.pendingUsdtTotal(user.address);
+                console.log('pendingZunTotal:', ethers.utils.formatUnits(pendingZunTotal, 18));
+                console.log('pendingUsdtTotal:', ethers.utils.formatUnits(pendingUsdtTotal, 18));
+            }
+        });
+
+        it('users try claimAll', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
                 const zunBalBeforeClaimAll = await zun.balanceOf(user.address);
                 await zunStaker.connect(user).claimAll();
                 const zunBalAfterClaimAll = await zun.balanceOf(user.address);
-                console.log('zunBalBeforeClaimAll', zunBalBeforeClaimAll);
-                console.log('zunBalAfterClaimAll', zunBalAfterClaimAll);
                 console.log(
                     'claimAll amount:',
                     ethers.utils.formatUnits(zunBalAfterClaimAll.sub(zunBalBeforeClaimAll), 18)

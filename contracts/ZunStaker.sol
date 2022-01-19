@@ -142,11 +142,11 @@ contract ZunStaker is Ownable {
         // get rewards
         uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
         if (pending > 0) {
-            safeZunTransfer(msg.sender, pending);
+            safeZunTransfer(_msgSender(), pending);
         }
         uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
         if (usdtPending > 0) {
-            safeUsdtTransfer(msg.sender, usdtPending);
+            safeUsdtTransfer(_msgSender(), usdtPending);
         }
         // remove Deposit
         totalDepositOf[_msgSender()] -= userDeposit.amount;
@@ -223,15 +223,15 @@ contract ZunStaker is Ownable {
 
     function claim(uint256 _depositId) external isClaimLocked {
         updatePool();
-        _claim(msg.sender, _depositId);
+        _claim(_msgSender(), _depositId);
     }
 
     function claimAll() external isClaimLocked {
         updatePool();
-        uint256 length = getDepositsOfLength(msg.sender);
+        uint256 length = getDepositsOfLength(_msgSender());
 
         for (uint256 depId = 0; depId < length; ++depId) {
-            _claim(msg.sender, depId);
+            _claim(_msgSender(), depId);
         }
     }
 
@@ -254,4 +254,35 @@ contract ZunStaker is Ownable {
         accUsdtPerShare += _amount * 1e18 / lpSupply;
     }
 
+
+    // frontend function
+    function pendingZunTotal(address _user) external view returns (uint256) {
+        uint256 length = getDepositsOfLength(_user);
+        uint256 totalPending = 0;
+        uint256 localShare = accZunPerShare;
+        if (block.number > lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = block.number - lastRewardBlock;
+            uint256 ZunReward = multiplier * ZunPerBlock;
+            localShare = accZunPerShare + (ZunReward * 1e18 / lpSupply);
+        }
+        for (uint256 i = 0; i < length; i++) {
+            totalPending += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].rewardDebt;
+        }
+        return totalPending;
+    }
+
+    // frontend function
+    function pendingUsdtTotal(address _user) external view returns (uint256) {
+        uint256 length = getDepositsOfLength(_user);
+        uint256 totalPendingUsdt = 0;
+        uint256 localShare = accUsdtPerShare;
+        if (lpSupply != 0) {
+            localShare = accUsdtPerShare * 1e18 / lpSupply;
+        }
+
+        for (uint256 i = 0; i < length; i++) {
+            totalPendingUsdt += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].usdtRewardDebt;
+        }
+        return totalPendingUsdt;
+    }
 }
