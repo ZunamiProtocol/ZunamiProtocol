@@ -867,7 +867,9 @@ describe('ZunStaker', function () {
             }
             for (const user of [alice, bob, carol, rosa]) {
                 const pendingZunTotal = await zunStaker.pendingZunTotal(user.address);
+                const pendingUsdtTotal = await zunStaker.pendingUsdtTotal(user.address);
                 console.log('pendingZunTotal:', ethers.utils.formatUnits(pendingZunTotal, 18));
+                console.log('pendingUsdtTotal:', ethers.utils.formatUnits(pendingUsdtTotal, 18));
             }
         });
 
