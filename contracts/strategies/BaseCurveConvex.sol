@@ -199,4 +199,7 @@ contract BaseCurveConvex is Context, BaseStrat {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 
+    function renounceOwnership() public view override onlyOwner {
+        revert('The strategy must have an owner');
+    }
 }

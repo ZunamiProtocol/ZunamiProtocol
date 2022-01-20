@@ -343,4 +343,8 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         }
         accDepositPending[_msgSender()] = [0, 0, 0];
     }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert('Zunami must have an owner');
+    }
 }
