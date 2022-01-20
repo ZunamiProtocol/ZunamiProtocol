@@ -378,4 +378,8 @@ contract BaseCurveConvex2 is Context, Ownable {
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert('The strategy must have an owner');
+    }
 }
