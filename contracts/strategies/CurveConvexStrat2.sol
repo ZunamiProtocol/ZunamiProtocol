@@ -69,10 +69,6 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         tokens[2] = Constants.USDT_ADDRESS;
     }
 
-    function setZunami(address zunamiAddr) external onlyOwner {
-        zunami = IZunami(zunamiAddr);
-    }
-
     function getZunamiLpInStrat() external view virtual returns (uint256) {
         return zunamiLpInStrat;
     }
@@ -303,9 +299,5 @@ contract CurveConvexStrat2 is Context, BaseStrat {
 
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
-    }
-
-    function renounceOwnership() public view override onlyOwner {
-        revert('The strategy must have an owner');
     }
 }

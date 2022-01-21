@@ -134,4 +134,12 @@ contract BaseStrat is Ownable{
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
         minDepositAmount = _minDepositAmount;
     }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert('The strategy must have an owner');
+    }
+
+    function setZunami(address zunamiAddr) external onlyOwner {
+        zunami = IZunami(zunamiAddr);
+    }
 }
