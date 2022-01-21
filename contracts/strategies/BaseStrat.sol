@@ -24,6 +24,7 @@ contract BaseStrat is Ownable{
 
     address public usdt;
     uint256 public managementFees = 0;
+    uint256 public buybackFee = 0;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -88,6 +89,11 @@ contract BaseStrat is Ownable{
             managementFees > stratBalance ? stratBalance : managementFees
         );
         managementFees = 0;
+    }
+
+    function updateBuybackFee(uint256 _buybackFee) external onlyOwner {
+        require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
+        buybackFee = _buybackFee;
     }
 
 }
