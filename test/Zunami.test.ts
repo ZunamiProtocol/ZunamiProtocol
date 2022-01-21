@@ -39,6 +39,10 @@ describe('Zunami', function () {
     let usdc: Contract;
     let usdt: Contract;
 
+    let zunStaker: Contract;
+    let zun: Contract;
+    let vezun: Contract;
+
     const daiAccount: string = '0x6F6C07d80D0D433ca389D336e6D1feBEA2489264';
     const usdcAccount: string = '0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6';
     const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
@@ -181,6 +185,14 @@ describe('Zunami', function () {
         it('setLock test', async () => {
             await zunami.setLock(true);
             await zunami.setLock(false);
+        });
+
+        it('update info in zunStaker for claimManagementFees', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                await zun.transfer(user.address, web3.utils.toWei('1000000', 'ether'));
+                zun.connect(user).approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
+                zunStaker.connect(user).deposit(web3.utils.toWei('10000', 'ether'), WEEKS_2);
+            }
         });
 
         it('claim', async () => {
@@ -576,6 +588,23 @@ describe('Zunami', function () {
             strategy2.setZunami(zunami.address);
             strategy4.setZunami(zunami.address);
             strategy2b.setZunami(zunami.address);
+
+            // zunStaker
+            let ZUN: ContractFactory = await ethers.getContractFactory('ZUN');
+            let VEZUN: ContractFactory = await ethers.getContractFactory('veZUN');
+            zun = await ZUN.deploy();
+            vezun = await VEZUN.deploy();
+            await zun.deployed();
+            await vezun.deployed();
+            let ZunStaker: ContractFactory = await ethers.getContractFactory('ZunStaker');
+            zunStaker = await ZunStaker.deploy(zun.address, vezun.address);
+            await zunStaker.deployed();
+            vezun.connect(owner).transferOwnership(zunStaker.address);
+
+            strategy.setZunStaker(zunStaker.address);
+            strategy2.setZunStaker(zunStaker.address);
+            strategy4.setZunStaker(zunStaker.address);
+            strategy2b.setZunStaker(zunStaker.address);
         });
         testStrategy();
     });
