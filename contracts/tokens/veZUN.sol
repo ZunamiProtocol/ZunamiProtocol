@@ -20,8 +20,13 @@ contract veZUN is Context, Ownable, ERC20 {
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+        _moveDelegates(_delegates[from], _delegates[to], amount);
+    }
+
     function burn(uint256 _amount) public {
         _burn(_msgSender(), _amount);
+        _moveDelegates(_delegates[_msgSender()], address(0), _amount);
     }
 
     /// @notice A record of each accounts delegate
