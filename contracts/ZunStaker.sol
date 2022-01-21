@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import '@openzeppelin/contracts/utils/Context.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/utils/math/Math.sol';
 
-import "./interfaces/IVeZunToken.sol";
+import './interfaces/IVeZunToken.sol';
 
 contract ZunStaker is Ownable {
     using Math for uint256;
@@ -80,7 +80,7 @@ contract ZunStaker is Ownable {
         uint256 _amount,
         uint256 _duration
     ) external {
-        require(_amount > 0, "bad _amount");
+        require(_amount > 0, 'bad _amount');
         // Don't allow locking > maxLockDuration
         uint256 duration = _duration.min(maxLockDuration);
         // Enforce min lockup duration to prevent flash loan or MEV transaction ordering
@@ -131,9 +131,9 @@ contract ZunStaker is Ownable {
     }
 
     function withdraw(uint256 _depositId) external {
-        require(_depositId < depositsOf[_msgSender()].length, "!exist");
+        require(_depositId < depositsOf[_msgSender()].length, '!exist');
         Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
-        require(block.timestamp >= userDeposit.end, "too soon");
+        require(block.timestamp >= userDeposit.end, 'too soon');
         updatePool();
 
         // No risk of wrapping around on casting to uint256 since deposit end always > deposit start and types are 64 bits
@@ -195,7 +195,7 @@ contract ZunStaker is Ownable {
         } else {
             transferSuccess = Zun.transfer(_to, _amount);
         }
-        require(transferSuccess, "safeZunTransfer: Transfer failed");
+        require(transferSuccess, 'safeZunTransfer: Transfer failed');
     }
 
     function safeUsdtTransfer(address _to, uint256 _amount) internal {
@@ -206,7 +206,7 @@ contract ZunStaker is Ownable {
         } else {
             transferSuccess = USDT.transfer(_to, _amount);
         }
-        require(transferSuccess, "safeUsdtTransfer: Transfer failed");
+        require(transferSuccess, 'safeUsdtTransfer: Transfer failed');
     }
 
     // change rewards per block
