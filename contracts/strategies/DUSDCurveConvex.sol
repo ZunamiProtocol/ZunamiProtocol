@@ -2,9 +2,9 @@
 pragma solidity ^0.8.4;
 
 import '../utils/Constants.sol';
-import './BaseCurveConvex2.sol';
+import "./CurveConvexStrat2.sol";
 
-contract DUSDCurveConvex is BaseCurveConvex2 {
+contract DUSDCurveConvex is CurveConvexStrat2 {
     constructor()
         BaseCurveConvex2(
             Constants.CRV_DUSD_ADDRESS,

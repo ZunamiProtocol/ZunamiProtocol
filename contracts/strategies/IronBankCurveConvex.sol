@@ -2,9 +2,9 @@
 pragma solidity ^0.8.4;
 
 import '../utils/Constants.sol';
-import './BaseCurveConvex.sol';
+import "./CurveConvexStrat2.sol";
 
-contract IronBankCurveConvex is BaseCurveConvex {
+contract IronBankCurveConvex is CurveConvexStrat2 {
     constructor()
         BaseCurveConvex(
             Constants.CRV_IRONBANK_ADDRESS,
