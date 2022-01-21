@@ -21,10 +21,13 @@ contract BaseStrat is Ownable{
     IERC20Metadata public crv;
     IConvexMinter public cvx;
     IUniswapRouter public router;
+    address public zun;
 
     address public usdt;
     uint256 public managementFees = 0;
     uint256 public buybackFee = 0;
+    uint256 public constant DEPOSIT_DENOMINATOR = 10000;
+    address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -81,13 +84,36 @@ contract BaseStrat is Ownable{
         emit SellRewards(cvxBalance, crvBalance, 0);
     }
 
-
     function claimManagementFees() public virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
-        IERC20Metadata(usdt).safeTransfer(
-            owner(),
-            managementFees > stratBalance ? stratBalance : managementFees
-        );
+        uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
+        if (transferBalance > 0) {
+            uint256 adminFeeAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
+            uint256 zunBuybackAmount = transferBalance * (DEPOSIT_DENOMINATOR - buybackFee) / DEPOSIT_DENOMINATOR;
+            if (adminFeeAmount > 0) {
+                IERC20Metadata(usdt).safeTransfer(
+                    owner(),
+                    adminFeeAmount
+                );
+            }
+            if (zunBuybackAmount > 0 && zun != address(0)) {
+                IERC20Metadata(usdt).safeApprove(
+                    address(router),
+                    zunBuybackAmount
+                );
+                address[] memory path = new address[](3);
+                path[0] = usdt;
+                path[1] = Constants.WETH_ADDRESS;
+                path[2] = zun;
+                router.swapExactTokensForTokens(
+                    zunBuybackAmount,
+                    0,
+                    path,
+                    BUYBACK_ADDRESS,
+                    block.timestamp + Constants.TRADE_DEADLINE
+                );
+            }
+        }
         managementFees = 0;
     }
 
@@ -95,5 +121,10 @@ contract BaseStrat is Ownable{
         require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
         buybackFee = _buybackFee;
     }
+
+    function updateZunToken(address _zun) external onlyOwner {
+        zun = _zun;
+    }
+
 
 }
