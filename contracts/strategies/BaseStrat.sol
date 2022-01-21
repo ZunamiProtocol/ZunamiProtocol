@@ -126,7 +126,7 @@ contract BaseStrat is Ownable{
         buybackFee = _buybackFee;
     }
 
-    function updateZunToken(address _zun) public onlyOwner {
+    function setZunToken(address _zun) public onlyOwner {
         zun = _zun;
     }
 
