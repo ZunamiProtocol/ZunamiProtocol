@@ -23,11 +23,15 @@ contract BaseStrat is Ownable{
     IUniswapRouter public router;
     address public zun;
 
+    uint256 public constant DENOMINATOR = 1e18;
+    uint256 public constant USD_MULTIPLIER = 1e12;
+    uint256 public minDepositAmount = 9975; // 99.75%
+    uint256 public constant DEPOSIT_DENOMINATOR = 10000;
+    address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
     address public usdt;
     uint256 public managementFees = 0;
     uint256 public buybackFee = 0;
-    uint256 public constant DEPOSIT_DENOMINATOR = 10000;
-    address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -117,14 +121,17 @@ contract BaseStrat is Ownable{
         managementFees = 0;
     }
 
-    function updateBuybackFee(uint256 _buybackFee) external onlyOwner {
+    function updateBuybackFee(uint256 _buybackFee) public onlyOwner {
         require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
         buybackFee = _buybackFee;
     }
 
-    function updateZunToken(address _zun) external onlyOwner {
+    function updateZunToken(address _zun) public onlyOwner {
         zun = _zun;
     }
 
-
+    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
+        minDepositAmount = _minDepositAmount;
+    }
 }

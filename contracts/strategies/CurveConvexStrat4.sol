@@ -20,10 +20,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    uint256 private constant DENOMINATOR = 1e18;
-    uint256 private constant USD_MULTIPLIER = 1e12;
-    uint256 public minDepositAmount = 9975; // 99.75%
-
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public zunamiLpInStrat = 0;
@@ -300,11 +296,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee
             );
         }
-    }
-
-    function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
-        minDepositAmount = _minDepositAmount;
     }
 
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
