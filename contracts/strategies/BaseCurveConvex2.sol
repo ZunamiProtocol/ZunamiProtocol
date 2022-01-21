@@ -25,7 +25,7 @@ contract BaseCurveConvex2 is Context, Ownable {
     uint256 private constant USD_MULTIPLIER = 1e12;
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
     uint256 public minDepositAmount = 9975; // 100% = 10000
-    uint256 public adminFeeShare = 5000; // 50%
+    uint256 public buybackFee = 5000; // 50%
 
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
@@ -49,8 +49,9 @@ contract BaseCurveConvex2 is Context, Ownable {
     IUniswapV2Pair public extraPair;
     IConvexRewards public extraRewards;
     IZunami public zunami;
-    IZunStaker public zunStaker;
     uint256 public cvxPoolPID;
+    address  public zun;
+    address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -98,8 +99,8 @@ contract BaseCurveConvex2 is Context, Ownable {
         zunami = IZunami(zunamiAddr);
     }
 
-    function setZunStaker(address zunStakerAddr) external onlyOwner {
-        zunStaker = IZunStaker(zunStakerAddr);
+    function setZunToken(address _zun) external onlyOwner {
+        zun = _zun;
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {
@@ -257,20 +258,30 @@ contract BaseCurveConvex2 is Context, Ownable {
         uint256 stratBalance = IERC20Metadata(tokens[2]).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
-            uint256 adminFeeAmount = (transferBalance * adminFeeShare) / DEPOSIT_DENOMINATOR;
-            uint256 zunStakerAmount = transferBalance * (DEPOSIT_DENOMINATOR - adminFeeShare) / DEPOSIT_DENOMINATOR;
+            uint256 adminFeeAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
+            uint256 zunBuybackAmount = transferBalance * (DEPOSIT_DENOMINATOR - buybackFee) / DEPOSIT_DENOMINATOR;
             if (adminFeeAmount > 0) {
                 IERC20Metadata(tokens[2]).safeTransfer(
                     owner(),
                     adminFeeAmount
                 );
             }
-            if (zunStakerAmount > 0) {
+            if (zunBuybackAmount > 0 && zun != address(0)) {
                 IERC20Metadata(tokens[2]).safeApprove(
-                    address(zunStaker),
-                    zunStakerAmount
+                    address(router),
+                    zunBuybackAmount
                 );
-                zunStaker.updateUsdtPerShare(zunStakerAmount);
+                address[] memory path = new address[](3);
+                path[0] = Constants.USDT_ADDRESS;
+                path[1] = Constants.WETH_ADDRESS;
+                path[2] = zun;
+                router.swapExactTokensForTokens(
+                    zunBuybackAmount,
+                    0,
+                    path,
+                    BUYBACK_ADDRESS,
+                    block.timestamp + Constants.TRADE_DEADLINE
+                );
             }
         }
         managementFees = 0;
@@ -392,11 +403,16 @@ contract BaseCurveConvex2 is Context, Ownable {
     }
 
     function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
+        require(_minDepositAmount > 0 && _minDepositAmount <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
         minDepositAmount = _minDepositAmount;
     }
 
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
+    }
+
+    function updateBuybackFee(uint256 _buybackFee) external onlyOwner {
+        require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
+        buybackFee = _buybackFee;
     }
 }

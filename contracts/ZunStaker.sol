@@ -25,7 +25,6 @@ contract ZunStaker is Ownable {
         uint256 amount;
         uint256 mintedAmount;
         uint256 rewardDebt;
-        uint256 usdtRewardDebt;
         uint64 start;
         uint64 end;
     }
@@ -35,7 +34,6 @@ contract ZunStaker is Ownable {
 
     IERC20 public Zun; // main&reward token
     IVeZunToken public veZun; // governance token
-    IERC20 public constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7);
 
     uint256 public lpSupply; // total supply
     uint256 public accZunPerShare = 0;
@@ -94,7 +92,6 @@ contract ZunStaker is Ownable {
             Deposit({amount : _amount,
         mintedAmount : mintAmount,
         rewardDebt : mintAmount * accZunPerShare / 1e18,
-        usdtRewardDebt : mintAmount * accUsdtPerShare / 1e18,
         start : uint64(block.timestamp),
         end : uint64(block.timestamp) + uint64(duration)})
         );
@@ -144,10 +141,6 @@ contract ZunStaker is Ownable {
         if (pending > 0) {
             safeZunTransfer(_msgSender(), pending);
         }
-        uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
-        if (usdtPending > 0) {
-            safeUsdtTransfer(_msgSender(), usdtPending);
-        }
         // remove Deposit
         totalDepositOf[_msgSender()] -= userDeposit.amount;
         depositsOf[_msgSender()][_depositId] = depositsOf[_msgSender()][depositsOf[_msgSender()].length - 1];
@@ -178,15 +171,6 @@ contract ZunStaker is Ownable {
         return userDeposit.mintedAmount * localShare / 1e18 - userDeposit.rewardDebt;
     }
 
-    function pendingUsdt(uint256 _depositId, address _user) external view returns (uint256) {
-        Deposit memory userDeposit = depositsOf[_user][_depositId];
-        uint256 localShare = accUsdtPerShare;
-        if (lpSupply != 0) {
-            localShare = accUsdtPerShare * 1e18 / lpSupply;
-        }
-        return userDeposit.mintedAmount * localShare / 1e18 - userDeposit.usdtRewardDebt;
-    }
-
     function safeZunTransfer(address _to, uint256 _amount) internal {
         uint256 ZunBal = Zun.balanceOf(address(this));
         bool transferSuccess = false;
@@ -196,17 +180,6 @@ contract ZunStaker is Ownable {
             transferSuccess = Zun.transfer(_to, _amount);
         }
         require(transferSuccess, 'safeZunTransfer: Transfer failed');
-    }
-
-    function safeUsdtTransfer(address _to, uint256 _amount) internal {
-        uint256 usdtBal = USDT.balanceOf(address(this));
-        bool transferSuccess = false;
-        if (_amount > usdtBal) {
-            transferSuccess = USDT.transfer(_to, usdtBal);
-        } else {
-            transferSuccess = USDT.transfer(_to, _amount);
-        }
-        require(transferSuccess, 'safeUsdtTransfer: Transfer failed');
     }
 
     // change rewards per block
@@ -241,17 +214,7 @@ contract ZunStaker is Ownable {
         if (pending > 0) {
             safeZunTransfer(user, pending);
         }
-        uint256 usdtPending = userDeposit.mintedAmount * accUsdtPerShare / 1e18 - userDeposit.usdtRewardDebt;
-        if (usdtPending > 0) {
-            safeUsdtTransfer(user, usdtPending);
-        }
         userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
-    }
-
-    // update management fee rewards by Zunami
-    function updateUsdtPerShare(uint256 _amount) external {
-        USDT.safeTransferFrom(_msgSender(), address(this), _amount);
-        accUsdtPerShare += _amount * 1e18 / lpSupply;
     }
 
 
@@ -269,20 +232,5 @@ contract ZunStaker is Ownable {
             totalPending += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].rewardDebt;
         }
         return totalPending;
-    }
-
-    // frontend function
-    function pendingUsdtTotal(address _user) external view returns (uint256) {
-        uint256 length = getDepositsOfLength(_user);
-        uint256 totalPendingUsdt = 0;
-        uint256 localShare = accUsdtPerShare;
-        if (lpSupply != 0) {
-            localShare = accUsdtPerShare * 1e18 / lpSupply;
-        }
-
-        for (uint256 i = 0; i < length; i++) {
-            totalPendingUsdt += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].usdtRewardDebt;
-        }
-        return totalPendingUsdt;
     }
 }
