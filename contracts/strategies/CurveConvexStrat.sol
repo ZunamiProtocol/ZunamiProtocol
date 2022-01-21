@@ -7,8 +7,7 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
-import '../interfaces/ICurvePool.sol';
-import '../interfaces/ICurvePool2.sol';
+import '../interfaces/ICurvePoolUnderlying.sol';
 import '../interfaces/IUniswapV2Pair.sol';
 import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexBooster.sol';
@@ -17,24 +16,21 @@ import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
 import "./BaseStrat.sol";
 
-contract BaseCurveConvex2 is Context, BaseStrat {
+contract CurveConvexStrat is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
     uint256 private constant DENOMINATOR = 1e18;
     uint256 private constant USD_MULTIPLIER = 1e12;
     uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
-    uint256 public minDepositAmount = 9975; // 100% = 10000
+    uint256 public minDepositAmount = 9975; // 99.75%
 
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public zunamiLpInStrat = 0;
 
-    ICurvePool public pool3;
-    ICurvePool2 public pool;
-    IERC20Metadata public pool3LP;
+    ICurvePoolUnderlying public pool;
     IERC20Metadata public poolLP;
-    IERC20Metadata public token;
     IUniswapV2Pair public crvweth;
     IUniswapV2Pair public wethcvx;
     IUniswapV2Pair public wethusdt;
@@ -50,22 +46,18 @@ contract BaseCurveConvex2 is Context, BaseStrat {
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID,
-        address tokenAddr,
         address extraRewardsAddr,
         address extraTokenAddr,
         address extraTokenPairAddr
     ) {
-        pool = ICurvePool2(poolAddr);
-        pool3 = ICurvePool(Constants.CRV_3POOL_ADDRESS);
+        pool = ICurvePoolUnderlying(poolAddr);
         poolLP = IERC20Metadata(poolLPAddr);
-        pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
         crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
         wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
         wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
         booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
         crvRewards = IConvexRewards(rewardsAddr);
         cvxPoolPID = poolPID;
-        token = IERC20Metadata(tokenAddr);
         extraToken = IERC20Metadata(extraTokenAddr);
         extraPair = IUniswapV2Pair(extraTokenPairAddr);
         extraRewards = IConvexRewards(extraRewardsAddr);
@@ -74,6 +66,7 @@ contract BaseCurveConvex2 is Context, BaseStrat {
         tokens[2] = Constants.USDT_ADDRESS;
     }
 
+    // security centralization
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
     }
@@ -94,48 +87,8 @@ contract BaseCurveConvex2 is Context, BaseStrat {
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
-        if (address(extraPair) != address(0)) {
-            uint256 extraTokenPrice = 0;
-            (reserve0, reserve1, ) = extraPair.getReserves();
-            for (uint8 i = 0; i < 3; i++) {
-                if (extraPair.token0() == tokens[i]) {
-                    if (i > 0) {
-                        extraTokenPrice = (reserve0 * USD_MULTIPLIER * DENOMINATOR) / reserve1;
-                    } else {
-                        extraTokenPrice = (reserve0 * DENOMINATOR) / reserve1;
-                    }
-                }
-                if (extraPair.token1() == tokens[i]) {
-                    if (i > 0) {
-                        extraTokenPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
-                    } else {
-                        extraTokenPrice = (reserve1 * DENOMINATOR) / reserve0;
-                    }
-                }
-            }
-            if (extraTokenPrice == 0) {
-                if (extraPair.token0() == Constants.WETH_ADDRESS) {
-                    extraTokenPrice =
-                        (((reserve0 * DENOMINATOR) / reserve1) * ethPrice) /
-                        DENOMINATOR;
-                } else {
-                    extraTokenPrice =
-                        (((reserve1 * DENOMINATOR) / reserve0) * ethPrice) /
-                        DENOMINATOR;
-                }
-            }
-            sum +=
-                (extraTokenPrice *
-                    (extraRewards.earned(address(this)) + extraToken.balanceOf(address(this)))) /
-                DENOMINATOR;
-        }
-        uint256 decimalsMultiplier = 1;
-        if (token.decimals() < 18) {
-            decimalsMultiplier = 10**(18 - token.decimals());
-        }
-        sum += token.balanceOf(address(this)) * decimalsMultiplier;
         for (uint8 i = 0; i < 3; i++) {
-            decimalsMultiplier = 1;
+            uint256 decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[i]).decimals());
             }
@@ -166,17 +119,13 @@ contract BaseCurveConvex2 is Context, BaseStrat {
         }
         uint256 amountsMin = ((_amounts[0] + _amounts[1] + _amounts[2]) * minDepositAmount) /
             DEPOSIT_DENOMINATOR;
-        uint256 lpPrice = pool3.get_virtual_price();
-        uint256 depositedLp = pool3.calc_token_amount(amounts, true);
+        uint256 lpPrice = pool.get_virtual_price();
+        uint256 depositedLp = pool.calc_token_amount(amounts, true);
         if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
             for (uint8 i = 0; i < 3; i++) {
-                IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
+                IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
             }
-            pool3.add_liquidity(amounts, 0);
-            uint256[2] memory amounts2;
-            amounts2[1] = pool3LP.balanceOf(address(this));
-            pool3LP.safeIncreaseAllowance(address(pool), amounts2[1]);
-            uint256 poolLPs = pool.add_liquidity(amounts2, 0);
+            uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
             poolLP.safeApprove(address(booster), poolLPs);
             booster.depositAll(cvxPoolPID, true);
             return ((poolLPs * pool.get_virtual_price()) / DENOMINATOR);
@@ -190,19 +139,16 @@ contract BaseCurveConvex2 is Context, BaseStrat {
         uint256 lpShares,
         uint256[3] memory minAmounts
     ) external virtual onlyZunami returns (bool) {
-        uint256[2] memory minAmounts2;
-        minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
+        uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
         uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) / zunamiLpInStrat;
 
-        if (depositedShare < pool.calc_token_amount(minAmounts2, false)) {
+        if (depositedShare < crvRequiredLPs) {
             return false;
         }
 
         crvRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
-        if (address(extraToken) != address(0)) {
-            sellExtraToken();
-        }
+
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
         for (uint8 i = 0; i < 3; i++) {
@@ -210,15 +156,13 @@ contract BaseCurveConvex2 is Context, BaseStrat {
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;
         }
-        uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
-        pool.remove_liquidity(depositedShare, minAmounts2);
-        sellToken();
-        uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;
-        pool3.remove_liquidity(crv3LiqAmount, minAmounts);
+
+        pool.remove_liquidity(depositedShare, minAmounts, true);
         uint256[3] memory liqAmounts;
         for (uint256 i = 0; i < 3; i++) {
             liqAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - prevBalances[i];
         }
+
         for (uint8 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
@@ -229,73 +173,13 @@ contract BaseCurveConvex2 is Context, BaseStrat {
         return true;
     }
 
-    function sellToken() public virtual {
-        uint256 sellBal = token.balanceOf(address(this));
-        if (sellBal > 0) {
-            token.safeApprove(address(pool), sellBal);
-            pool.exchange_underlying(0, 3, sellBal, 0);
-        }
-    }
-
-    function sellExtraToken() public virtual {
-        uint256 extraBalance = extraToken.balanceOf(address(this));
-        uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        if (extraBalance == 0) {
-            return;
-        }
-        extraToken.safeApprove(address(router), extraToken.balanceOf(address(this)));
-        uint256 usdtBalanceAfter = 0;
-
-        if (
-            extraPair.token0() == Constants.WETH_ADDRESS ||
-            extraPair.token1() == Constants.WETH_ADDRESS
-        ) {
-            address[] memory path = new address[](3);
-            path[0] = address(extraToken);
-            path[1] = Constants.WETH_ADDRESS;
-            path[2] = Constants.USDT_ADDRESS;
-            router.swapExactTokensForTokens(
-                extraBalance,
-                0,
-                path,
-                address(this),
-                block.timestamp + Constants.TRADE_DEADLINE
-            );
-            usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-            managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
-            return;
-        }
-        address[] memory path2 = new address[](2);
-        path2[0] = address(extraToken);
-        for (uint8 i = 0; i < 3; i++) {
-            if (extraPair.token0() == tokens[i] || extraPair.token1() == tokens[i]) {
-                path2[1] = tokens[i];
-            }
-        }
-        router.swapExactTokensForTokens(
-            extraBalance,
-            0,
-            path2,
-            address(this),
-            block.timestamp + Constants.TRADE_DEADLINE
-        );
-        usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
-        emit SellRewards(0, 0, extraBalance);
-    }
-
     function withdrawAll() external virtual onlyZunami {
         crvRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
-        if (address(extraToken) != address(0)) {
-            sellExtraToken();
-        }
 
-        uint256[2] memory minAmounts2;
+        uint256 lpBalance = poolLP.balanceOf(address(this));
         uint256[3] memory minAmounts;
-        pool.remove_liquidity(poolLP.balanceOf(address(this)), minAmounts2);
-        sellToken();
-        pool3.remove_liquidity(pool3LP.balanceOf(address(this)), minAmounts);
+        pool.remove_liquidity(lpBalance, minAmounts, true);
 
         for (uint8 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
