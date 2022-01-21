@@ -6,7 +6,7 @@ import "./CurveConvexStrat2.sol";
 
 contract USDNCurveConvex is CurveConvexStrat2 {
     constructor()
-        BaseCurveConvex2(
+    CurveConvexStrat2(
             Constants.CRV_USDN_ADDRESS,
             Constants.CRV_USDN_LP_ADDRESS,
             Constants.CVX_USDN_REWARDS_ADDRESS,

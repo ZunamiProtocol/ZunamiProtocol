@@ -6,7 +6,7 @@ import "./CurveConvexStrat.sol";
 
 contract AaveCurveConvex is CurveConvexStrat {
     constructor()
-        BaseCurveConvex(
+    CurveConvexStrat(
             Constants.CRV_AAVE_ADDRESS,
             Constants.CRV_AAVE_LP_ADDRESS,
             Constants.CVX_AAVE_REWARDS_ADDRESS,

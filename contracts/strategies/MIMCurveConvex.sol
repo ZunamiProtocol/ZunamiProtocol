@@ -6,7 +6,7 @@ import "./CurveConvexStrat2.sol";
 
 contract MIMCurveConvex is CurveConvexStrat2 {
     constructor()
-        BaseCurveConvex2(
+    CurveConvexStrat2(
             Constants.CRV_MIM_ADDRESS,
             Constants.CRV_MIM_LP_ADDRESS,
             Constants.CVX_MIM_REWARDS_ADDRESS,

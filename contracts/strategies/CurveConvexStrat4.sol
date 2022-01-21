@@ -22,7 +22,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
 
     uint256 private constant DENOMINATOR = 1e18;
     uint256 private constant USD_MULTIPLIER = 1e12;
-    uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
     uint256 public minDepositAmount = 9975; // 99.75%
 
     address[3] public tokens;
