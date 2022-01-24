@@ -94,7 +94,7 @@ contract ZunStaker is Ownable {
         totalDepositOf[_msgSender()] += _amount;
 
         veZun.mint(_msgSender(), mintAmount);
-        lpSupply = lpSupply + mintAmount;
+        lpSupply += mintAmount;
         emit Deposited(_amount, duration, _msgSender());
     }
 
@@ -142,7 +142,7 @@ contract ZunStaker is Ownable {
             userDeposit.mintedAmount
         );
         veZun.burn(userDeposit.mintedAmount);
-        lpSupply = lpSupply - userDeposit.mintedAmount;
+        lpSupply -= userDeposit.mintedAmount;
 
         // return tokens
         safeZunTransfer(_msgSender(), userDeposit.amount + pending);
