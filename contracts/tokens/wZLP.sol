@@ -2,13 +2,12 @@
 pragma solidity ^0.8.4;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import '@openzeppelin/contracts/utils/Context.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/utils/Address.sol';
 
 contract xZLP is Context, Ownable, ERC20 {
-
     constructor() ERC20('wZLP', 'wZLP') {}
 
     using SafeMath for uint256;

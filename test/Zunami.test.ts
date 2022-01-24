@@ -39,6 +39,10 @@ describe('Zunami', function () {
     let usdc: Contract;
     let usdt: Contract;
 
+    let zunStaker: Contract;
+    let zun: Contract;
+    let vezun: Contract;
+
     const daiAccount: string = '0x6F6C07d80D0D433ca389D336e6D1feBEA2489264';
     const usdcAccount: string = '0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6';
     const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
@@ -181,6 +185,14 @@ describe('Zunami', function () {
         it('setLock test', async () => {
             await zunami.setLock(true);
             await zunami.setLock(false);
+        });
+
+        it('update info in zunStaker for claimManagementFees', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                await zun.transfer(user.address, web3.utils.toWei('1000000', 'ether'));
+                zun.connect(user).approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
+                zunStaker.connect(user).deposit(web3.utils.toWei('10000', 'ether'), WEEKS_2);
+            }
         });
 
         it('claim', async () => {
@@ -576,6 +588,24 @@ describe('Zunami', function () {
             strategy2.setZunami(zunami.address);
             strategy4.setZunami(zunami.address);
             strategy2b.setZunami(zunami.address);
+
+            // zunStaker
+            let ZUN: ContractFactory = await ethers.getContractFactory('ZUN');
+            let VEZUN: ContractFactory = await ethers.getContractFactory('veZUN');
+            zun = await ZUN.deploy();
+            vezun = await VEZUN.deploy();
+            await zun.deployed();
+            await vezun.deployed();
+            let ZunStaker: ContractFactory = await ethers.getContractFactory('ZunStaker');
+            zunStaker = await ZunStaker.deploy(zun.address, vezun.address);
+            await zunStaker.deployed();
+            vezun.connect(owner).transferOwnership(zunStaker.address);
+
+            // set mock address
+            strategy.setZunToken(usdc.address);
+            strategy2.setZunToken(usdc.address);
+            strategy4.setZunToken(usdc.address);
+            strategy2b.setZunToken(usdc.address);
         });
         testStrategy();
     });
@@ -861,15 +891,13 @@ describe('ZunStaker', function () {
             }
         });
 
-        it(' skip blocks and read pendingZunTotal of user', async () => {
+        it(' skip blocks and read pendings of user', async () => {
             for (var i = 0; i < SKIP_TIMES; i++) {
                 await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
             }
             for (const user of [alice, bob, carol, rosa]) {
                 const pendingZunTotal = await zunStaker.pendingZunTotal(user.address);
-                const pendingUsdtTotal = await zunStaker.pendingUsdtTotal(user.address);
                 console.log('pendingZunTotal:', ethers.utils.formatUnits(pendingZunTotal, 18));
-                console.log('pendingUsdtTotal:', ethers.utils.formatUnits(pendingUsdtTotal, 18));
             }
         });
 
