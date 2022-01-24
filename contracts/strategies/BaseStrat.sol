@@ -12,8 +12,7 @@ import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IZunami.sol';
 
-contract BaseStrat is Ownable{
-
+contract BaseStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
@@ -36,15 +35,11 @@ contract BaseStrat is Ownable{
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
     modifier onlyZunami() {
-        require(
-            _msgSender() == address(zunami),
-            'must be called by Zunami contract'
-        );
+        require(_msgSender() == address(zunami), 'must be called by Zunami contract');
         _;
     }
 
-    constructor(
-    ) {
+    constructor() {
         crv = IERC20Metadata(Constants.CRV_ADDRESS);
         cvx = IConvexMinter(Constants.CVX_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
@@ -93,18 +88,13 @@ contract BaseStrat is Ownable{
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
             uint256 adminFeeAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
-            uint256 zunBuybackAmount = transferBalance * (DEPOSIT_DENOMINATOR - buybackFee) / DEPOSIT_DENOMINATOR;
+            uint256 zunBuybackAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
+                DEPOSIT_DENOMINATOR;
             if (adminFeeAmount > 0) {
-                IERC20Metadata(usdt).safeTransfer(
-                    owner(),
-                    adminFeeAmount
-                );
+                IERC20Metadata(usdt).safeTransfer(owner(), adminFeeAmount);
             }
             if (zunBuybackAmount > 0 && zun != address(0)) {
-                IERC20Metadata(usdt).safeApprove(
-                    address(router),
-                    zunBuybackAmount
-                );
+                IERC20Metadata(usdt).safeApprove(address(router), zunBuybackAmount);
                 address[] memory path = new address[](3);
                 path[0] = usdt;
                 path[1] = Constants.WETH_ADDRESS;

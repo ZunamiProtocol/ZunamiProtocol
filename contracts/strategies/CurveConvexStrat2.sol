@@ -15,7 +15,7 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
-import "./BaseStrat.sol";
+import './BaseStrat.sol';
 
 contract CurveConvexStrat2 is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
