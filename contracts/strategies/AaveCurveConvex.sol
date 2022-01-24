@@ -2,11 +2,11 @@
 pragma solidity ^0.8.4;
 
 import '../utils/Constants.sol';
-import './BaseCurveConvex.sol';
+import './CurveConvexStrat.sol';
 
-contract AaveCurveConvex is BaseCurveConvex {
+contract AaveCurveConvex is CurveConvexStrat {
     constructor()
-        BaseCurveConvex(
+        CurveConvexStrat(
             Constants.CRV_AAVE_ADDRESS,
             Constants.CRV_AAVE_LP_ADDRESS,
             Constants.CVX_AAVE_REWARDS_ADDRESS,

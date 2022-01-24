@@ -14,16 +14,11 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
-import "./BaseStrat.sol";
+import './BaseStrat.sol';
 
 contract CurveConvexStrat4 is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
-
-    uint256 private constant DENOMINATOR = 1e18;
-    uint256 private constant USD_MULTIPLIER = 1e12;
-    uint256 private constant DEPOSIT_DENOMINATOR = 10000; // 100%
-    uint256 public minDepositAmount = 9975; // 99.75%
 
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
@@ -67,10 +62,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
-    }
-
-    function setZunami(address zunamiAddr) external onlyOwner {
-        zunami = IZunami(zunamiAddr);
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {
@@ -303,16 +294,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         }
     }
 
-    function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
-        minDepositAmount = _minDepositAmount;
-    }
-
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
-    }
-
-    function renounceOwnership() public view override onlyOwner {
-        revert('The strategy must have an owner');
     }
 }

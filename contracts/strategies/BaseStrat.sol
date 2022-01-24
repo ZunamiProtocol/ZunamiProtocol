@@ -12,8 +12,7 @@ import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IZunami.sol';
 
-contract BaseStrat is Ownable{
-
+contract BaseStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
@@ -21,22 +20,26 @@ contract BaseStrat is Ownable{
     IERC20Metadata public crv;
     IConvexMinter public cvx;
     IUniswapRouter public router;
+    address public zun;
+
+    uint256 public constant DENOMINATOR = 1e18;
+    uint256 public constant USD_MULTIPLIER = 1e12;
+    uint256 public minDepositAmount = 9975; // 99.75%
+    uint256 public constant DEPOSIT_DENOMINATOR = 10000;
+    address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     address public usdt;
     uint256 public managementFees = 0;
+    uint256 public buybackFee = 0;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
     modifier onlyZunami() {
-        require(
-            _msgSender() == address(zunami),
-            'must be called by Zunami contract'
-        );
+        require(_msgSender() == address(zunami), 'must be called by Zunami contract');
         _;
     }
 
-    constructor(
-    ) {
+    constructor() {
         crv = IERC20Metadata(Constants.CRV_ADDRESS);
         cvx = IConvexMinter(Constants.CVX_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
@@ -80,14 +83,53 @@ contract BaseStrat is Ownable{
         emit SellRewards(cvxBalance, crvBalance, 0);
     }
 
-
     function claimManagementFees() public virtual onlyZunami {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
-        IERC20Metadata(usdt).safeTransfer(
-            owner(),
-            managementFees > stratBalance ? stratBalance : managementFees
-        );
+        uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
+        if (transferBalance > 0) {
+            uint256 adminFeeAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
+            uint256 zunBuybackAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
+                DEPOSIT_DENOMINATOR;
+            if (adminFeeAmount > 0) {
+                IERC20Metadata(usdt).safeTransfer(owner(), adminFeeAmount);
+            }
+            if (zunBuybackAmount > 0 && zun != address(0)) {
+                IERC20Metadata(usdt).safeApprove(address(router), zunBuybackAmount);
+                address[] memory path = new address[](3);
+                path[0] = usdt;
+                path[1] = Constants.WETH_ADDRESS;
+                path[2] = zun;
+                router.swapExactTokensForTokens(
+                    zunBuybackAmount,
+                    0,
+                    path,
+                    BUYBACK_ADDRESS,
+                    block.timestamp + Constants.TRADE_DEADLINE
+                );
+            }
+        }
         managementFees = 0;
     }
 
+    function updateBuybackFee(uint256 _buybackFee) public onlyOwner {
+        require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
+        buybackFee = _buybackFee;
+    }
+
+    function setZunToken(address _zun) public onlyOwner {
+        zun = _zun;
+    }
+
+    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
+        minDepositAmount = _minDepositAmount;
+    }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert('The strategy must have an owner');
+    }
+
+    function setZunami(address zunamiAddr) external onlyOwner {
+        zunami = IZunami(zunamiAddr);
+    }
 }

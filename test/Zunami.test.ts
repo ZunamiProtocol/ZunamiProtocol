@@ -179,6 +179,13 @@ describe('Zunami', function () {
             await zunami.setLock(false);
         });
 
+        it('update buybackfee', async () => {
+            await strategy.updateBuybackFee(5000); // 50%
+            await strategy2.updateBuybackFee(5000); // 50%
+            await strategy2b.updateBuybackFee(5000); // 50%
+            await strategy4.updateBuybackFee(5000); // 50%
+        });
+
         it('claim', async () => {
             await zunami.claimManagementFees(strategy.address);
         });
@@ -554,6 +561,12 @@ describe('Zunami', function () {
             strategy2.setZunami(zunami.address);
             strategy4.setZunami(zunami.address);
             strategy2b.setZunami(zunami.address);
+
+            // set mock address for test buyback
+            strategy.setZunToken(usdc.address);
+            strategy2.setZunToken(usdc.address);
+            strategy4.setZunToken(usdc.address);
+            strategy2b.setZunToken(usdc.address);
         });
         testStrategy();
     });
