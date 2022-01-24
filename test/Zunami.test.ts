@@ -901,6 +901,18 @@ describe('ZunStaker', function () {
             }
         });
 
+        it('getMultiplier', async () => {
+            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_2), 18)).to.equal(
+                '1.038356164383561643'
+            );
+            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_26), 18)).to.equal(
+                '1.498630136986301369'
+            );
+            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_52), 18)).to.equal(
+                '1.997260273972602739'
+            );
+        });
+
         it('users try claimAll', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 const zunBalBeforeClaimAll = await zun.balanceOf(user.address);
