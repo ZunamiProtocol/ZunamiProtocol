@@ -26,7 +26,6 @@ contract BaseCurveConvex4 is Context, Ownable {
     uint256 public minDepositAmount = 9975; // 99.75%
     uint256 public buybackFee = 5000; // 50%
 
-
     address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public managementFees;
@@ -48,7 +47,7 @@ contract BaseCurveConvex4 is Context, Ownable {
     IConvexRewards public extraRewards;
     IZunami public zunami;
     uint256 public cvxPoolPID;
-    address  public zun;
+    address public zun;
     address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
@@ -106,18 +105,18 @@ contract BaseCurveConvex4 is Context, Ownable {
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = crvRewards.balanceOf(address(this));
         uint256 lpPrice = pool.get_virtual_price();
-        (uint112 reserve0, uint112 reserve1,) = wethcvx.getReserves();
+        (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
         uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
-        (reserve0, reserve1,) = crvweth.getReserves();
+        (reserve0, reserve1, ) = crvweth.getReserves();
         uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
-        (reserve0, reserve1,) = wethusdt.getReserves();
+        (reserve0, reserve1, ) = wethusdt.getReserves();
         uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
         if (address(extraPair) != address(0)) {
             uint256 extraTokenPrice = 0;
-            (reserve0, reserve1,) = extraPair.getReserves();
+            (reserve0, reserve1, ) = extraPair.getReserves();
             for (uint8 i = 0; i < 3; ++i) {
                 if (extraPair.token0() == tokens[i]) {
                     if (i > 0) {
@@ -137,43 +136,43 @@ contract BaseCurveConvex4 is Context, Ownable {
             if (extraTokenPrice == 0) {
                 if (extraPair.token0() == Constants.WETH_ADDRESS) {
                     extraTokenPrice =
-                    (((reserve0 * DENOMINATOR) / reserve1) * ethPrice) /
-                    DENOMINATOR;
+                        (((reserve0 * DENOMINATOR) / reserve1) * ethPrice) /
+                        DENOMINATOR;
                 } else {
                     extraTokenPrice =
-                    (((reserve1 * DENOMINATOR) / reserve0) * ethPrice) /
-                    DENOMINATOR;
+                        (((reserve1 * DENOMINATOR) / reserve0) * ethPrice) /
+                        DENOMINATOR;
                 }
             }
             sum +=
-            (extraTokenPrice *
-            (extraRewards.earned(address(this)) + extraToken.balanceOf(address(this)))) /
-            DENOMINATOR;
+                (extraTokenPrice *
+                    (extraRewards.earned(address(this)) + extraToken.balanceOf(address(this)))) /
+                DENOMINATOR;
         }
         uint256 decimalsMultiplier = 1;
         if (token.decimals() < 18) {
-            decimalsMultiplier = 10 ** (18 - token.decimals());
+            decimalsMultiplier = 10**(18 - token.decimals());
         }
         sum += token.balanceOf(address(this)) * decimalsMultiplier;
         for (uint8 i = 0; i < 3; ++i) {
             decimalsMultiplier = 1;
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplier = 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
+                decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[i]).decimals());
             }
             sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplier;
         }
         return
-        sum +
-        (lpBalance *
-        lpPrice +
-        crvPrice *
-        (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
-        cvxPrice *
-        ((crvRewards.earned(address(this)) *
-        (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
-        cvx.totalCliffs() +
-        cvx.balanceOf(address(this)))) /
-        DENOMINATOR;
+            sum +
+            (lpBalance *
+                lpPrice +
+                crvPrice *
+                (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
+                cvxPrice *
+                ((crvRewards.earned(address(this)) *
+                    (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
+                    cvx.totalCliffs() +
+                    cvx.balanceOf(address(this)))) /
+            DENOMINATOR;
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
@@ -181,7 +180,7 @@ contract BaseCurveConvex4 is Context, Ownable {
         uint256 decAmounts = 0;
         for (uint8 i = 0; i < 3; ++i) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decAmounts += amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
+                decAmounts += amounts[i] * 10**(18 - IERC20Metadata(tokens[i]).decimals());
             } else {
                 decAmounts += amounts[i];
             }
@@ -263,18 +262,13 @@ contract BaseCurveConvex4 is Context, Ownable {
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
             uint256 adminFeeAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
-            uint256 zunBuybackAmount = transferBalance * (DEPOSIT_DENOMINATOR - buybackFee) / DEPOSIT_DENOMINATOR;
+            uint256 zunBuybackAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
+                DEPOSIT_DENOMINATOR;
             if (adminFeeAmount > 0) {
-                IERC20Metadata(tokens[2]).safeTransfer(
-                    owner(),
-                    adminFeeAmount
-                );
+                IERC20Metadata(tokens[2]).safeTransfer(owner(), adminFeeAmount);
             }
             if (zunBuybackAmount > 0 && zun != address(0)) {
-                IERC20Metadata(tokens[2]).safeApprove(
-                    address(router),
-                    zunBuybackAmount
-                );
+                IERC20Metadata(tokens[2]).safeApprove(address(router), zunBuybackAmount);
                 address[] memory path = new address[](3);
                 path[0] = Constants.USDT_ADDRESS;
                 path[1] = Constants.WETH_ADDRESS;

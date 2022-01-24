@@ -43,10 +43,7 @@ contract ZunStaker is Ownable {
 
     bool public isClaimLock = false;
 
-    constructor(
-        IERC20 _Zun,
-        IVeZunToken _veZun
-    ) {
+    constructor(IERC20 _Zun, IVeZunToken _veZun) {
         Zun = _Zun;
         veZun = _veZun;
     }
@@ -70,14 +67,11 @@ contract ZunStaker is Ownable {
         }
         uint256 multiplier = block.number - lastRewardBlock;
         uint256 ZunReward = multiplier * ZunPerBlock;
-        accZunPerShare += ZunReward * 1e18 / lpSupply;
+        accZunPerShare += (ZunReward * 1e18) / lpSupply;
         lastRewardBlock = block.number;
     }
 
-    function deposit(
-        uint256 _amount,
-        uint256 _duration
-    ) external {
+    function deposit(uint256 _amount, uint256 _duration) external {
         require(_amount > 0, 'bad _amount');
         // Don't allow locking > maxLockDuration
         uint256 duration = _duration.min(maxLockDuration);
@@ -89,11 +83,13 @@ contract ZunStaker is Ownable {
         uint256 mintAmount = (_amount * getMultiplier(duration)) / 1e18;
 
         depositsOf[_msgSender()].push(
-            Deposit({amount : _amount,
-        mintedAmount : mintAmount,
-        rewardDebt : mintAmount * accZunPerShare / 1e18,
-        start : uint64(block.timestamp),
-        end : uint64(block.timestamp) + uint64(duration)})
+            Deposit({
+                amount: _amount,
+                mintedAmount: mintAmount,
+                rewardDebt: (mintAmount * accZunPerShare) / 1e18,
+                start: uint64(block.timestamp),
+                end: uint64(block.timestamp) + uint64(duration)
+            })
         );
         totalDepositOf[_msgSender()] += _amount;
 
@@ -137,14 +133,20 @@ contract ZunStaker is Ownable {
         uint256 shareAmount = userDeposit.mintedAmount;
 
         // get rewards
-        uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
+        uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
+            1e18 -
+            userDeposit.rewardDebt;
         if (pending > 0) {
             safeZunTransfer(_msgSender(), pending);
         }
         // remove Deposit
         totalDepositOf[_msgSender()] -= userDeposit.amount;
-        depositsOf[_msgSender()][_depositId] = depositsOf[_msgSender()][depositsOf[_msgSender()].length - 1];
-        depositsOf[_msgSender()][_depositId] = depositsOf[_msgSender()][depositsOf[_msgSender()].length - 1];
+        depositsOf[_msgSender()][_depositId] = depositsOf[_msgSender()][
+            depositsOf[_msgSender()].length - 1
+        ];
+        depositsOf[_msgSender()][_depositId] = depositsOf[_msgSender()][
+            depositsOf[_msgSender()].length - 1
+        ];
         depositsOf[_msgSender()].pop();
 
         // burn pool shares
@@ -157,8 +159,6 @@ contract ZunStaker is Ownable {
         emit Withdrawn(_depositId, _msgSender(), userDeposit.amount);
     }
 
-
-
     // View function to see pending Zunes on frontend.
     function pendingZun(uint256 _depositId, address _user) external view returns (uint256) {
         Deposit memory userDeposit = depositsOf[_user][_depositId];
@@ -166,9 +166,9 @@ contract ZunStaker is Ownable {
         if (block.number > lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = block.number - lastRewardBlock;
             uint256 ZunReward = multiplier * ZunPerBlock;
-            localShare = accZunPerShare + (ZunReward * 1e18 / lpSupply);
+            localShare = accZunPerShare + ((ZunReward * 1e18) / lpSupply);
         }
-        return userDeposit.mintedAmount * localShare / 1e18 - userDeposit.rewardDebt;
+        return (userDeposit.mintedAmount * localShare) / 1e18 - userDeposit.rewardDebt;
     }
 
     function safeZunTransfer(address _to, uint256 _amount) internal {
@@ -210,13 +210,14 @@ contract ZunStaker is Ownable {
 
     function _claim(address user, uint256 _depositId) internal {
         Deposit memory userDeposit = depositsOf[user][_depositId];
-        uint256 pending = userDeposit.mintedAmount * accZunPerShare / 1e18 - userDeposit.rewardDebt;
+        uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
+            1e18 -
+            userDeposit.rewardDebt;
         if (pending > 0) {
             safeZunTransfer(user, pending);
         }
-        userDeposit.rewardDebt = userDeposit.mintedAmount * accZunPerShare / 1e18;
+        userDeposit.rewardDebt = (userDeposit.mintedAmount * accZunPerShare) / 1e18;
     }
-
 
     // frontend function
     function pendingZunTotal(address _user) external view returns (uint256) {
@@ -226,10 +227,13 @@ contract ZunStaker is Ownable {
         if (block.number > lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = block.number - lastRewardBlock;
             uint256 ZunReward = multiplier * ZunPerBlock;
-            localShare = accZunPerShare + (ZunReward * 1e18 / lpSupply);
+            localShare = accZunPerShare + ((ZunReward * 1e18) / lpSupply);
         }
         for (uint256 i = 0; i < length; i++) {
-            totalPending += depositsOf[_user][i].mintedAmount * localShare / 1e18 - depositsOf[_user][i].rewardDebt;
+            totalPending +=
+                (depositsOf[_user][i].mintedAmount * localShare) /
+                1e18 -
+                depositsOf[_user][i].rewardDebt;
         }
         return totalPending;
     }

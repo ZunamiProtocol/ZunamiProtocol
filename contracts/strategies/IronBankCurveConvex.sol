@@ -6,14 +6,14 @@ import './BaseCurveConvex.sol';
 
 contract IronBankCurveConvex is BaseCurveConvex {
     constructor()
-    BaseCurveConvex(
-        Constants.CRV_IRONBANK_ADDRESS,
-        Constants.CRV_IRONBANK_LP_ADDRESS,
-        Constants.CVX_IRONBANK_REWARDS_ADDRESS,
-        Constants.CVX_IRONBANK_PID,
-        address(0),
-        address(0),
-        address(0)
-    )
+        BaseCurveConvex(
+            Constants.CRV_IRONBANK_ADDRESS,
+            Constants.CRV_IRONBANK_LP_ADDRESS,
+            Constants.CVX_IRONBANK_REWARDS_ADDRESS,
+            Constants.CVX_IRONBANK_PID,
+            address(0),
+            address(0),
+            address(0)
+        )
     {}
 }

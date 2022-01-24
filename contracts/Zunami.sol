@@ -125,7 +125,7 @@ contract Zunami is Context, Ownable, ERC20 {
             for (uint256 x = 0; x < totalAmounts.length; ++x) {
                 uint256 decimalsMultiplier = 1;
                 if (IERC20Metadata(tokens[x]).decimals() < 18) {
-                    decimalsMultiplier = 10 ** (18 - IERC20Metadata(tokens[x]).decimals());
+                    decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[x]).decimals());
                 }
                 totalAmounts[x] += accDepositPending[userList[i]][x];
                 addHoldings += accDepositPending[userList[i]][x] * decimalsMultiplier;
@@ -150,8 +150,8 @@ contract Zunami is Context, Ownable, ERC20 {
                 lpShares = currentUserAmount;
             } else {
                 lpShares =
-                (currentUserAmount * totalSupply()) /
-                (holdings + changedHoldings - currentUserAmount);
+                    (currentUserAmount * totalSupply()) /
+                    (holdings + changedHoldings - currentUserAmount);
             }
             _mint(userList[z], lpShares);
             strategy.updateZunamiLpInStrat(lpShares, true);
@@ -163,13 +163,13 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
-    external
-    virtual
-    onlyOwner
+        external
+        virtual
+        onlyOwner
     {
         uint256 maxWithdrawals = withdrawalsToComplete < pendingWithdrawals.length
-        ? withdrawalsToComplete
-        : pendingWithdrawals.length;
+            ? withdrawalsToComplete
+            : pendingWithdrawals.length;
         for (uint256 i = 0; i < maxWithdrawals && pendingWithdrawals.length > 0; i++) {
             delegatedWithdrawal(
                 pendingWithdrawals[0].withdrawer,
@@ -183,10 +183,10 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     function deposit(uint256[3] memory amounts, uint256 pid)
-    external
-    virtual
-    isLocked
-    returns (uint256)
+        external
+        virtual
+        isLocked
+        returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
         require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
@@ -234,8 +234,8 @@ contract Zunami is Context, Ownable, ERC20 {
         _burn(_msgSender(), lpShares);
         strategy.updateZunamiLpInStrat(lpShares, false);
         deposited[_msgSender()] -= userDeposit > deposited[_msgSender()]
-        ? deposited[_msgSender()]
-        : userDeposit;
+            ? deposited[_msgSender()]
+            : userDeposit;
         totalDeposited -= userDeposit > totalDeposited ? totalDeposited : userDeposit;
         emit Withdrawn(_msgSender(), minAmounts, lpShares);
     }
@@ -256,8 +256,8 @@ contract Zunami is Context, Ownable, ERC20 {
             _burn(withdrawer, lpShares);
             strategy.updateZunamiLpInStrat(lpShares, false);
             deposited[withdrawer] -= userDeposit > deposited[withdrawer]
-            ? deposited[withdrawer]
-            : userDeposit;
+                ? deposited[withdrawer]
+                : userDeposit;
             totalDeposited -= userDeposit;
             emit Withdrawn(withdrawer, minAmounts, lpShares);
         }
@@ -274,7 +274,7 @@ contract Zunami is Context, Ownable, ERC20 {
     // new functions
     function add(address _strategy) external virtual onlyOwner {
         poolInfo.push(
-            PoolInfo({strategy : IStrategy(_strategy), startTime : block.timestamp + MIN_LOCK_TIME})
+            PoolInfo({ strategy: IStrategy(_strategy), startTime: block.timestamp + MIN_LOCK_TIME })
         );
     }
 
