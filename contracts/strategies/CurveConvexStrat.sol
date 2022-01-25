@@ -56,12 +56,12 @@ contract CurveConvexStrat is Context, BaseStrat {
         extraToken = IERC20Metadata(extraTokenAddr);
         extraPair = IUniswapV2Pair(extraTokenPairAddr);
         extraRewards = IConvexRewards(extraRewardsAddr);
-        for(uint256 i;i<3;i++){
+        for (uint256 i; i < 3; i++) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
                 decimalsMultiplierS[i] =
                 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            }else{
-                decimalsMultiplierS[i]=1;
+            } else {
+                decimalsMultiplierS[i] = 1;
             }
         }
     }
@@ -102,26 +102,21 @@ contract CurveConvexStrat is Context, BaseStrat {
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
-        uint256[3] memory _amounts;
-        for (uint8 i = 0; i < 3; i++) {
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                _amounts[i] = amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            } else {
-                _amounts[i] = amounts[i];
-            }
+        uint256 _amountsTotal;
+        for (uint256 i = 0; i < 3; ++i) {
+            _amountsTotal += amounts[i] * decimalsMultiplierS[i];
         }
-        uint256 amountsMin = ((_amounts[0] + _amounts[1] + _amounts[2]) * minDepositAmount) /
-        DEPOSIT_DENOMINATOR;
+        uint256 amountsMin = _amountsTotal * minDepositAmount / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
-        if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
-            for (uint8 i = 0; i < 3; i++) {
+        if (depositedLp * lpPrice / 1e18 >= amountsMin) {
+            for (uint256 i = 0; i < 3; i++) {
                 IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
             }
             uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
             poolLP.safeApprove(address(booster), poolLPs);
             booster.depositAll(cvxPoolPID, true);
-            return ((poolLPs * pool.get_virtual_price()) / DENOMINATOR);
+            return (poolLPs * pool.get_virtual_price() / DENOMINATOR);
         } else {
             return (0);
         }
@@ -144,25 +139,25 @@ contract CurveConvexStrat is Context, BaseStrat {
 
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
-            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;
+            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(
+                address(this)
+            );
+            userBalances[i] =
+            ((prevBalances[i] - managementFee) * lpShares) /
+            zunamiLpInStrat;
         }
 
         pool.remove_liquidity(depositedShare, minAmounts, true);
-        uint256[3] memory liqAmounts;
-        for (uint256 i = 0; i < 3; i++) {
-            liqAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - prevBalances[i];
-        }
 
-        for (uint8 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
+        for (uint256 i = 0; i < 3; ++i) {
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
-                liqAmounts[i] + userBalances[i] - managementFee
+                IERC20Metadata(tokens[i]).balanceOf(address(this)) - prevBalances[i] + userBalances[i]
             );
         }
+
         return true;
     }
 
@@ -174,7 +169,7 @@ contract CurveConvexStrat is Context, BaseStrat {
         uint256[3] memory minAmounts;
         pool.remove_liquidity(lpBalance, minAmounts, true);
 
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),

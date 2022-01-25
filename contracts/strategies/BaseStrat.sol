@@ -12,7 +12,7 @@ import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IZunami.sol';
 
-contract BaseStrat is Ownable{
+contract BaseStrat is Ownable {
 
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
@@ -57,8 +57,8 @@ contract BaseStrat is Ownable{
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
-        crvToUsdtPath=[Constants.CRV_ADDRESS,Constants.WETH_ADDRESS,Constants.USDT_ADDRESS];
-        cvxToUsdtPath=[Constants.CVX_ADDRESS,Constants.WETH_ADDRESS,Constants.USDT_ADDRESS];
+        crvToUsdtPath = [Constants.CRV_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
+        cvxToUsdtPath = [Constants.CVX_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
     }
 
     function sellCrvCvx() public virtual {
@@ -71,25 +71,18 @@ contract BaseStrat is Ownable{
         crv.safeApprove(address(router), crvBalance);
 
         uint256 usdtBalanceBefore = IERC20Metadata(usdt).balanceOf(address(this));
-        address[] memory path = new address[](3);
-        path[0] = Constants.CVX_ADDRESS;
-        path[1] = Constants.WETH_ADDRESS;
-        path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
             cvxBalance,
             0,
-            path,
+            cvxToUsdtPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
-        path[0] = Constants.CRV_ADDRESS;
-        path[1] = Constants.WETH_ADDRESS;
-        path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
             crvBalance,
             0,
-            path,
+            crvToUsdtPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
