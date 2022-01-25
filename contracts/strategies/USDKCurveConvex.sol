@@ -13,7 +13,6 @@ contract USDKCurveConvex is CurveConvexStrat2 {
             Constants.CVX_USDK_PID,
             Constants.USDK_ADDRESS,
             address(0),
-            address(0),
             address(0)
         )
     {}

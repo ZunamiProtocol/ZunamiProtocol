@@ -13,8 +13,7 @@ contract MUSDCurveConvex is CurveConvexStrat2 {
             Constants.CVX_MUSD_PID,
             Constants.MUSD_ADDRESS,
             Constants.CVX_MUSD_EXTRA_ADDRESS,
-            Constants.MUSD_EXTRA_ADDRESS,
-            Constants.MUSD_EXTRA_PAIR_ADDRESS
+            Constants.MUSD_EXTRA_ADDRESS
         )
     {}
 }

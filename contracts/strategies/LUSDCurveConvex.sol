@@ -13,8 +13,7 @@ contract LUSDCurveConvex is CurveConvexStrat2 {
             Constants.CVX_LUSD_PID,
             Constants.LUSD_ADDRESS,
             Constants.CVX_LUSD_EXTRA_ADDRESS,
-            Constants.LUSD_EXTRA_ADDRESS,
-            Constants.LUSD_EXTRA_PAIR_ADDRESS
+            Constants.LUSD_EXTRA_ADDRESS
         )
     {}
 }

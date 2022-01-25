@@ -33,7 +33,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     IConvexBooster public booster;
     IConvexRewards public crvRewards;
     IERC20Metadata public extraToken;
-    IUniswapV2Pair public extraPair;
     IConvexRewards public extraRewards;
     uint256 public cvxPoolPID;
 
@@ -44,8 +43,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         uint256 poolPID,
         address tokenAddr,
         address extraRewardsAddr,
-        address extraTokenAddr,
-        address extraTokenPairAddr
+        address extraTokenAddr
     ) {
         pool = ICurvePool4(poolAddr);
         poolLP = IERC20Metadata(poolLPAddr);
@@ -57,7 +55,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         cvxPoolPID = poolPID;
         token = IERC20Metadata(tokenAddr);
         extraToken = IERC20Metadata(extraTokenAddr);
-        extraPair = IUniswapV2Pair(extraTokenPairAddr);
         extraRewards = IConvexRewards(extraRewardsAddr);
         if (extraTokenAddr != address(0)) {
             extraToken = IERC20Metadata(extraTokenAddr);

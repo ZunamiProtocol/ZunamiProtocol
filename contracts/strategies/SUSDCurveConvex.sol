@@ -13,8 +13,7 @@ contract SUSDCurveConvex is CurveConvexStrat4 {
             Constants.CVX_SUSD_PID,
             Constants.SUSD_ADDRESS,
             Constants.CVX_SUSD_EXTRA_ADDRESS,
-            Constants.SUSD_EXTRA_ADDRESS,
-            Constants.SUSD_EXTRA_PAIR_ADDRESS
+            Constants.SUSD_EXTRA_ADDRESS
         )
     {}
 }

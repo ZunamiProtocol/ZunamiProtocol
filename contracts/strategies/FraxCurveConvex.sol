@@ -13,8 +13,7 @@ contract FraxCurveConvex is CurveConvexStrat2 {
             Constants.CVX_FRAX_PID,
             Constants.FRAX_ADDRESS,
             Constants.CVX_FRAX_EXTRA_ADDRESS,
-            Constants.FRAX_EXTRA_ADDRESS,
-            Constants.FRAX_EXTRA_PAIR_ADDRESS
+            Constants.FRAX_EXTRA_ADDRESS
         )
     {}
 }
