@@ -8,12 +8,16 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
 contract xZLP is Context, Ownable, ERC20 {
-    constructor() ERC20('wZLP', 'wZLP') {}
+    constructor() ERC20('xZLP', 'xZLP') {}
 
     using SafeMath for uint256;
     using Address for address;
 
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
+    }
+
+    function burn(uint256 _amount) public {
+        _burn(_msgSender(), _amount);
     }
 }
