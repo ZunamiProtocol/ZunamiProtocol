@@ -2,11 +2,11 @@
 pragma solidity ^0.8.4;
 
 import '../utils/Constants.sol';
-import "./CurveConvexStrat4.sol";
+import './CurveConvexStrat4.sol';
 
 contract SUSDCurveConvex is CurveConvexStrat4 {
     constructor()
-    CurveConvexStrat4(
+        CurveConvexStrat4(
             Constants.CRV_SUSD_ADDRESS,
             Constants.CRV_SUSD_LP_ADDRESS,
             Constants.CVX_SUSD_REWARDS_ADDRESS,

@@ -65,8 +65,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         tokens[2] = Constants.USDT_ADDRESS;
         for (uint256 i; i < POOL_ASSETS; i++) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplierS[i] =
-                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
+                decimalsMultiplierS[i] = 10**(18 - IERC20Metadata(tokens[i]).decimals());
             } else {
                 decimalsMultiplierS[i] = 1;
             }
@@ -134,7 +133,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             for (uint256 x = 0; x < totalAmounts.length; x++) {
                 uint256 decimalsMultiplier = 1;
                 if (IERC20Metadata(tokens[x]).decimals() < 18) {
-                    decimalsMultiplier = 10 ** (18 - IERC20Metadata(tokens[x]).decimals());
+                    decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[x]).decimals());
                 }
                 totalAmounts[x] += accDepositPending[userList[i]][x];
                 completeAmount += accDepositPending[userList[i]][x] * decimalsMultiplierS[x];
@@ -148,13 +147,13 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             }
         }
         uint256 sum = strategy.deposit(totalAmounts);
-        require(sum > 0, "too low amount!");
+        require(sum > 0, 'too low amount!');
         uint256 lpShares = 0;
         uint256 changedHoldings = 0;
         uint256 currentUserAmount = 0;
 
         for (uint256 z = 0; z < userList.length; z++) {
-            currentUserAmount = sum * userCompleteHoldings[z] / addHoldings;
+            currentUserAmount = (sum * userCompleteHoldings[z]) / addHoldings;
             deposited[userList[z]] += currentUserAmount;
 
             changedHoldings += currentUserAmount;
@@ -162,8 +161,8 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
                 lpShares = currentUserAmount;
             } else {
                 lpShares =
-                (currentUserAmount * totalSupply()) /
-                (holdings + changedHoldings - currentUserAmount);
+                    (currentUserAmount * totalSupply()) /
+                    (holdings + changedHoldings - currentUserAmount);
             }
             _mint(userList[z], lpShares);
             strategy.updateZunamiLpInStrat(lpShares, true);
@@ -174,10 +173,11 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
     }
 
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
-        require(pendingWithdrawals.length > 0, "there are no pending withdrawals requests");
+        require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
 
         uint256 minWithdrawalsIndex = pendingWithdrawals.length > withdrawalsToComplete
-        ? pendingWithdrawals.length - withdrawalsToComplete : 0;
+            ? pendingWithdrawals.length - withdrawalsToComplete
+            : 0;
         uint256 i = pendingWithdrawals.length;
 
         do {
@@ -188,14 +188,13 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
                 pid
             );
             pendingWithdrawals.pop();
-        }
-        while (i > minWithdrawalsIndex);
+        } while (i > minWithdrawalsIndex);
     }
 
     function deposit(uint256[3] memory amounts, uint256 pid)
-    external
-    isNotLocked
-    returns (uint256)
+        external
+        isNotLocked
+        returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
         require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
@@ -211,7 +210,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             }
         }
         uint256 sum = strategy.deposit(amounts);
-        require(sum > 0, "too low amount!");
+        require(sum > 0, 'too low amount!');
 
         uint256 lpShares = 0;
         if (totalSupply() == 0) {
@@ -284,10 +283,9 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
 
     // new functions
     function add(address _strategy) external onlyOwner {
-        poolInfo.push(PoolInfo({
-        strategy : IStrategy(_strategy),
-        startTime : block.timestamp + MIN_LOCK_TIME
-        }));
+        poolInfo.push(
+            PoolInfo({ strategy: IStrategy(_strategy), startTime: block.timestamp + MIN_LOCK_TIME })
+        );
     }
 
     function moveFunds(uint256 _from, uint256 _to) external onlyOwner {
@@ -302,10 +300,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - amountsBefore[i];
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransfer(
-                    address(toStrat),
-                    amounts[i]
-                );
+                IERC20Metadata(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
             }
         }
         toStrat.deposit(amounts);
@@ -338,7 +333,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             }
         }
         poolInfo[_to].strategy.updateZunamiLpInStrat(zunamiLp, true);
-        require(poolInfo[_to].strategy.deposit(amounts) > 0, "too low amount!");
+        require(poolInfo[_to].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
     function emergencyWithdraw() external onlyOwner {
@@ -359,21 +354,21 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
             amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this)) - amountsBefore[_i];
             if (amounts[_i] > 0) {
-                IERC20Metadata(tokens[_i]).safeTransfer(
-                    address(poolInfo[0].strategy),
-                    amounts[_i]
-                );
+                IERC20Metadata(tokens[_i]).safeTransfer(address(poolInfo[0].strategy), amounts[_i]);
             }
         }
         poolInfo[0].strategy.updateZunamiLpInStrat(zunamiLp, true);
-        require(poolInfo[0].strategy.deposit(amounts) > 0, "too low amount!");
+        require(poolInfo[0].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
     // user withdraw funds from list
     function pendingDepositRemove() external {
         for (uint256 i = 0; i < POOL_ASSETS; ++i) {
             if (accDepositPending[_msgSender()][i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransfer(_msgSender(), accDepositPending[_msgSender()][i]);
+                IERC20Metadata(tokens[i]).safeTransfer(
+                    _msgSender(),
+                    accDepositPending[_msgSender()][i]
+                );
             }
         }
         delete accDepositPending[_msgSender()];

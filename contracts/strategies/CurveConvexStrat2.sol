@@ -15,7 +15,7 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
-import "./BaseStrat.sol";
+import './BaseStrat.sol';
 
 contract CurveConvexStrat2 is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
@@ -70,14 +70,13 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         }
         for (uint256 i; i < 3; i++) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplierS[i] =
-                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
+                decimalsMultiplierS[i] = 10**(18 - IERC20Metadata(tokens[i]).decimals());
             } else {
                 decimalsMultiplierS[i] = 1;
             }
         }
         if (token.decimals() < 18) {
-            decimalsMultiplierS[3] = 10 ** (18 - token.decimals());
+            decimalsMultiplierS[3] = 10**(18 - token.decimals());
         } else {
             decimalsMultiplierS[3] = 1;
         }
@@ -88,7 +87,8 @@ contract CurveConvexStrat2 is Context, BaseStrat {
     }
 
     function totalHoldings() public view virtual returns (uint256) {
-        uint256 lpBalance = crvRewards.balanceOf(address(this)) * pool.get_virtual_price() / DENOMINATOR;
+        uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
+            DENOMINATOR;
         uint256 cvxHoldings = 0;
         uint256 crvHoldings = 0;
         uint256 extraHoldings = 0;
@@ -96,8 +96,10 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         uint256 crvErned = crvRewards.earned(address(this));
         uint256 cvxTotalCliffs = cvx.totalCliffs();
 
-        uint256 amountIn = (crvErned * (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff()))
-        / cvxTotalCliffs + cvx.balanceOf(address(this));
+        uint256 amountIn = (crvErned *
+            (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff())) /
+            cvxTotalCliffs +
+            cvx.balanceOf(address(this));
         if (amountIn > 0) {
             amounts = router.getAmountsOut(amountIn, cvxToUsdtPath);
             cvxHoldings = amounts[amounts.length - 1];
@@ -120,28 +122,23 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         sum += token.balanceOf(address(this)) * decimalsMultiplierS[3];
 
         for (uint256 i = 0; i < 3; ++i) {
-            sum +=
-            IERC20Metadata(tokens[i]).balanceOf(address(this)) *
-            decimalsMultiplierS[i];
+            sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
         }
 
         return sum + lpBalance + cvxHoldings + crvHoldings + extraHoldings;
     }
 
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256){
+    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256 _amountsTotal;
         for (uint256 i = 0; i < 3; ++i) {
             _amountsTotal += amounts[i] * decimalsMultiplierS[i];
         }
-        uint256 amountsMin = _amountsTotal * minDepositAmount / DEPOSIT_DENOMINATOR;
+        uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool3.get_virtual_price();
         uint256 depositedLp = pool3.calc_token_amount(amounts, true);
-        if (depositedLp * lpPrice / 1e18 >= amountsMin) {
+        if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
             for (uint256 i = 0; i < 3; i++) {
-                IERC20Metadata(tokens[i]).safeIncreaseAllowance(
-                    address(pool3),
-                    amounts[i]
-                );
+                IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
             }
             pool3.add_liquidity(amounts, 0);
             uint256[2] memory amounts2;
@@ -150,7 +147,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
             uint256 poolLPs = pool.add_liquidity(amounts2, 0);
             poolLP.safeApprove(address(booster), poolLPs);
             booster.depositAll(cvxPoolPID, true);
-            return (poolLPs * pool.get_virtual_price() / DENOMINATOR);
+            return ((poolLPs * pool.get_virtual_price()) / DENOMINATOR);
         } else {
             return (0);
         }
@@ -160,11 +157,10 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         address depositor,
         uint256 lpShares,
         uint256[3] memory minAmounts
-    ) external virtual onlyZunami returns (bool){
+    ) external virtual onlyZunami returns (bool) {
         uint256[2] memory minAmounts2;
         minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = (crvRewards.balanceOf(address(this)) *
-        lpShares) / zunamiLpInStrat;
+        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) / zunamiLpInStrat;
 
         if (depositedShare < pool.calc_token_amount(minAmounts2, false)) {
             return false;
@@ -179,25 +175,22 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         uint256[] memory prevBalances = new uint256[](3);
         for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
-            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(
-                address(this)
-            );
-            userBalances[i] =
-            ((prevBalances[i] - managementFee) * lpShares) /
-            zunamiLpInStrat;
+            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
+            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;
         }
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
         pool.remove_liquidity(depositedShare, minAmounts2);
         sellToken();
-        uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) -
-        prevCrv3Balance;
+        uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;
         pool3.remove_liquidity(crv3LiqAmount, minAmounts);
 
         for (uint256 i = 0; i < 3; i++) {
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
-                IERC20Metadata(tokens[i]).balanceOf(address(this))
-                - prevBalances[i] + userBalances[i]);
+                IERC20Metadata(tokens[i]).balanceOf(address(this)) -
+                    prevBalances[i] +
+                    userBalances[i]
+            );
         }
 
         return true;
@@ -213,11 +206,10 @@ contract CurveConvexStrat2 is Context, BaseStrat {
 
     function sellExtraToken() public virtual {
         uint256 extraBalance = extraToken.balanceOf(address(this));
-        if (extraBalance == 0) {return;}
-        extraToken.safeApprove(
-            address(router),
-            extraToken.balanceOf(address(this))
-        );
+        if (extraBalance == 0) {
+            return;
+        }
+        extraToken.safeApprove(address(router), extraToken.balanceOf(address(this)));
         uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
 
         router.swapExactTokensForTokens(
