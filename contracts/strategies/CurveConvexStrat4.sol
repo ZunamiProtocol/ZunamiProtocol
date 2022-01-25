@@ -14,7 +14,7 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
-import "./BaseStrat.sol";
+import './BaseStrat.sol';
 
 contract CurveConvexStrat4 is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
@@ -61,19 +61,18 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         extraRewards = IConvexRewards(extraRewardsAddr);
         if (extraTokenAddr != address(0)) {
             extraToken = IERC20Metadata(extraTokenAddr);
-            extraTokenSwapPath=[extraTokenAddr,Constants.WETH_ADDRESS,Constants.USDT_ADDRESS];
+            extraTokenSwapPath = [extraTokenAddr, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
         }
-        for(uint256 i;i<3;i++){
+        for (uint256 i; i < 3; i++) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplierS[i] =
-                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            }else{
-                decimalsMultiplierS[i]=1;
+                decimalsMultiplierS[i] = 10**(18 - IERC20Metadata(tokens[i]).decimals());
+            } else {
+                decimalsMultiplierS[i] = 1;
             }
         }
         if (token.decimals() < 18) {
-            decimalsMultiplierS[3] = 10 ** (18 - token.decimals());
-        }else{
+            decimalsMultiplierS[3] = 10**(18 - token.decimals());
+        } else {
             decimalsMultiplierS[3] = 1;
         }
     }
@@ -83,7 +82,8 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     }
 
     function totalHoldings() public view virtual returns (uint256) {
-        uint256 lpBalance = crvRewards.balanceOf(address(this)) * pool.get_virtual_price() / DENOMINATOR;
+        uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
+            DENOMINATOR;
         uint256 cvxHoldings = 0;
         uint256 crvHoldings = 0;
         uint256 extraHoldings = 0;
@@ -91,8 +91,10 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         uint256 crvErned = crvRewards.earned(address(this));
         uint256 cvxTotalCliffs = cvx.totalCliffs();
 
-        uint256 amountIn = (crvErned * (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff()))
-        / cvxTotalCliffs + cvx.balanceOf(address(this));
+        uint256 amountIn = (crvErned *
+            (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff())) /
+            cvxTotalCliffs +
+            cvx.balanceOf(address(this));
         if (amountIn > 0) {
             amounts = router.getAmountsOut(amountIn, cvxToUsdtPath);
             cvxHoldings = amounts[amounts.length - 1];
@@ -115,9 +117,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         sum += token.balanceOf(address(this)) * decimalsMultiplierS[3];
 
         for (uint256 i = 0; i < 3; ++i) {
-            sum +=
-            IERC20Metadata(tokens[i]).balanceOf(address(this)) *
-            decimalsMultiplierS[i];
+            sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
         }
 
         return sum + lpBalance + cvxHoldings + crvHoldings + extraHoldings;
@@ -126,16 +126,9 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         // check decimal amounts
         uint256 decAmounts = 0;
-        for (uint8 i = 0; i < 3; i++) {
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decAmounts += amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            } else {
-                decAmounts += amounts[i];
-            }
-        }
-
         uint256[4] memory amounts4;
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; ++i) {
+            decAmounts += amounts[i] * decimalsMultiplierS[i];
             amounts4[i] = amounts[i];
         }
 
@@ -144,7 +137,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         uint256 depositedLp = pool.calc_token_amount(amounts4, true);
 
         if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
-            for (uint8 i = 0; i < 3; i++) {
+            for (uint256 i = 0; i < 3; ++i) {
                 IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
             }
             uint256 depositedAmount = pool.calc_token_amount(amounts4, true);
@@ -163,7 +156,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         uint256[3] memory minAmounts
     ) external virtual onlyZunami returns (bool) {
         uint256[4] memory minAmounts4;
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; ++i) {
             minAmounts4[i] = minAmounts[i];
         }
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
@@ -182,7 +175,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
 
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; ++i) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;
@@ -190,16 +183,12 @@ contract CurveConvexStrat4 is Context, BaseStrat {
 
         pool.remove_liquidity(depositedShare, minAmounts4);
         sellToken();
-        uint256[3] memory liqAmounts;
-        for (uint256 i = 0; i < 3; i++) {
-            liqAmounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - prevBalances[i];
-        }
-
-        for (uint8 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
+        for (uint256 i = 0; i < 3; ++i) {
             IERC20Metadata(tokens[i]).safeTransfer(
                 depositor,
-                liqAmounts[i] + userBalances[i] - managementFee
+                IERC20Metadata(tokens[i]).balanceOf(address(this)) -
+                    prevBalances[i] +
+                    userBalances[i]
             );
         }
         return true;
@@ -212,42 +201,19 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         }
         extraToken.safeApprove(address(router), extraToken.balanceOf(address(this)));
         uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        uint256 usdtBalanceAfter;
-        if (
-            extraPair.token0() == Constants.WETH_ADDRESS ||
-            extraPair.token1() == Constants.WETH_ADDRESS
-        ) {
-            address[] memory path = new address[](3);
-            path[0] = address(extraToken);
-            path[1] = Constants.WETH_ADDRESS;
-            path[2] = Constants.USDT_ADDRESS;
-            router.swapExactTokensForTokens(
-                extraBalance,
-                0,
-                path,
-                address(this),
-                block.timestamp + Constants.TRADE_DEADLINE
-            );
-            usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-            managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
-            return;
-        }
-        address[] memory path2 = new address[](2);
-        path2[0] = address(extraToken);
-        for (uint8 i = 0; i < 3; i++) {
-            if (extraPair.token0() == tokens[i] || extraPair.token1() == tokens[i]) {
-                path2[1] = tokens[i];
-            }
-        }
         router.swapExactTokensForTokens(
             extraBalance,
             0,
-            path2,
+            extraTokenSwapPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-        usdtBalanceAfter = IERC20Metadata(tokens[2]).balanceOf(address(this));
-        managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
+
+        managementFees += zunami.calcManagementFee(
+            IERC20Metadata(tokens[2]).balanceOf(address(this)) - usdtBalanceBefore
+        );
+
+        emit SellRewards(0, 0, extraBalance);
     }
 
     function sellToken() public virtual {
@@ -267,7 +233,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         pool.remove_liquidity(lpBalance, minAmounts);
         sellToken();
 
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
