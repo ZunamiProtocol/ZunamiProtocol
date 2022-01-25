@@ -119,27 +119,25 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         pendingWithdrawals.push(pendingWithdrawal);
     }
 
-    function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
+    function completeDeposits(address[] memory userList, uint256 pid) external virtual onlyOwner {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
-        uint256[] memory userCompleteHoldings = new uint256[](userList.length);
-
         // total sum deposit, contract => strategy
         uint256 addHoldings = 0;
         uint256 completeAmount = 0;
         uint256 holdings = totalHoldings();
+        uint256[] memory userCompleteHoldings = new uint256[](userList.length);
+
         for (uint256 i = 0; i < userList.length; i++) {
             completeAmount = 0;
-            for (uint256 x = 0; x < totalAmounts.length; x++) {
-                uint256 decimalsMultiplier = 1;
-                if (IERC20Metadata(tokens[x]).decimals() < 18) {
-                    decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[x]).decimals());
-                }
+
+            for (uint256 x = 0; x < totalAmounts.length; ++x) {
                 totalAmounts[x] += accDepositPending[userList[i]][x];
                 completeAmount += accDepositPending[userList[i]][x] * decimalsMultiplierS[x];
             }
             userCompleteHoldings[i] = completeAmount;
         }
+
         for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
             if (totalAmounts[_i] > 0) {
                 addHoldings += totalAmounts[_i] * decimalsMultiplierS[_i];
@@ -155,7 +153,6 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         for (uint256 z = 0; z < userList.length; z++) {
             currentUserAmount = (sum * userCompleteHoldings[z]) / addHoldings;
             deposited[userList[z]] += currentUserAmount;
-
             changedHoldings += currentUserAmount;
             if (totalSupply() == 0) {
                 lpShares = currentUserAmount;
@@ -168,11 +165,16 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             strategy.updateZunamiLpInStrat(lpShares, true);
             // remove deposit from list
             delete accDepositPending[userList[z]];
+            // = [0, 0, 0];
         }
         totalDeposited += changedHoldings;
     }
 
-    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
+    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
+        external
+        virtual
+        onlyOwner
+    {
         require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
 
         uint256 minWithdrawalsIndex = pendingWithdrawals.length > withdrawalsToComplete
@@ -181,6 +183,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         uint256 i = pendingWithdrawals.length;
 
         do {
+            i--;
             delegatedWithdrawal(
                 pendingWithdrawals[i].withdrawer,
                 pendingWithdrawals[i].lpAmount,
