@@ -21,7 +21,6 @@ contract CurveConvexStrat2 is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public zunamiLpInStrat = 0;
 
@@ -64,9 +63,6 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         extraToken = IERC20Metadata(extraTokenAddr);
         extraPair = IUniswapV2Pair(extraTokenPairAddr);
         extraRewards = IConvexRewards(extraRewardsAddr);
-        tokens[0] = Constants.DAI_ADDRESS;
-        tokens[1] = Constants.USDC_ADDRESS;
-        tokens[2] = Constants.USDT_ADDRESS;
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {

@@ -20,7 +20,6 @@ contract CurveConvexStrat is Context, BaseStrat {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    address[3] public tokens;
     uint256 public usdtPoolId = 2;
     uint256 public zunamiLpInStrat = 0;
 
@@ -56,9 +55,6 @@ contract CurveConvexStrat is Context, BaseStrat {
         extraToken = IERC20Metadata(extraTokenAddr);
         extraPair = IUniswapV2Pair(extraTokenPairAddr);
         extraRewards = IConvexRewards(extraRewardsAddr);
-        tokens[0] = Constants.DAI_ADDRESS;
-        tokens[1] = Constants.USDC_ADDRESS;
-        tokens[2] = Constants.USDT_ADDRESS;
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {
@@ -77,38 +73,26 @@ contract CurveConvexStrat is Context, BaseStrat {
         crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
         cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
         uint256 sum = 0;
-        for (uint8 i = 0; i < 3; i++) {
-            uint256 decimalsMultiplier = 1;
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[i]).decimals());
-            }
-            sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplier;
+        for (uint256 i = 0; i < 3; ++i) {
+            sum +=
+            IERC20Metadata(tokens[i]).balanceOf(address(this)) *
+            decimalsMultiplierS[i];
         }
-        return
-            sum +
-            (lpBalance *
-                lpPrice +
-                crvPrice *
-                (crvRewards.earned(address(this)) + crv.balanceOf(address(this))) +
-                cvxPrice *
-                ((crvRewards.earned(address(this)) *
-                    (cvx.totalCliffs() - cvx.totalSupply() / cvx.reductionPerCliff())) /
-                    cvx.totalCliffs() +
-                    cvx.balanceOf(address(this)))) /
-            DENOMINATOR;
+
+        return sum + lpBalance + cvxHoldings + crvHoldings;
     }
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256[3] memory _amounts;
         for (uint8 i = 0; i < 3; i++) {
             if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                _amounts[i] = amounts[i] * 10**(18 - IERC20Metadata(tokens[i]).decimals());
+                _amounts[i] = amounts[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals());
             } else {
                 _amounts[i] = amounts[i];
             }
         }
         uint256 amountsMin = ((_amounts[0] + _amounts[1] + _amounts[2]) * minDepositAmount) /
-            DEPOSIT_DENOMINATOR;
+        DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
         if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
