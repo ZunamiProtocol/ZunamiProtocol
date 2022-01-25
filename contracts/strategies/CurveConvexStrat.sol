@@ -22,6 +22,7 @@ contract CurveConvexStrat is Context, BaseStrat {
 
     uint256 public usdtPoolId = 2;
     uint256 public zunamiLpInStrat = 0;
+    uint256[3] public decimalsMultiplierS;
 
     ICurvePoolUnderlying public pool;
     IERC20Metadata public poolLP;
@@ -55,23 +56,41 @@ contract CurveConvexStrat is Context, BaseStrat {
         extraToken = IERC20Metadata(extraTokenAddr);
         extraPair = IUniswapV2Pair(extraTokenPairAddr);
         extraRewards = IConvexRewards(extraRewardsAddr);
+        for(uint256 i;i<3;i++){
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                decimalsMultiplierS[i] =
+                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
+            }else{
+                decimalsMultiplierS[i]=1;
+            }
+        }
     }
 
     function getZunamiLpInStrat() external view virtual returns (uint256) {
         return zunamiLpInStrat;
     }
 
-    function totalHoldings() external view virtual returns (uint256) {
-        uint256 lpBalance = crvRewards.balanceOf(address(this));
-        uint256 lpPrice = pool.get_virtual_price();
-        (uint112 reserve0, uint112 reserve1, ) = wethcvx.getReserves();
-        uint256 cvxPrice = (reserve1 * DENOMINATOR) / reserve0;
-        (reserve0, reserve1, ) = crvweth.getReserves();
-        uint256 crvPrice = (reserve0 * DENOMINATOR) / reserve1;
-        (reserve0, reserve1, ) = wethusdt.getReserves();
-        uint256 ethPrice = (reserve1 * USD_MULTIPLIER * DENOMINATOR) / reserve0;
-        crvPrice = (crvPrice * ethPrice) / DENOMINATOR;
-        cvxPrice = (cvxPrice * ethPrice) / DENOMINATOR;
+    function totalHoldings() public view virtual returns (uint256) {
+        uint256 lpBalance = crvRewards.balanceOf(address(this)) * pool.get_virtual_price() / DENOMINATOR;
+        uint256 cvxHoldings = 0;
+        uint256 crvHoldings = 0;
+        uint256[] memory amounts;
+        uint256 crvErned = crvRewards.earned(address(this));
+        uint256 cvxTotalCliffs = cvx.totalCliffs();
+
+        uint256 amountIn = (crvErned * (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff()))
+        / cvxTotalCliffs + cvx.balanceOf(address(this));
+        if (amountIn > 0) {
+            amounts = router.getAmountsOut(amountIn, cvxToUsdtPath);
+            cvxHoldings = amounts[amounts.length - 1];
+        }
+
+        amountIn = crvErned + crv.balanceOf(address(this));
+        if (amountIn > 0) {
+            amounts = router.getAmountsOut(amountIn, crvToUsdtPath);
+            crvHoldings = amounts[amounts.length - 1];
+        }
+
         uint256 sum = 0;
         for (uint256 i = 0; i < 3; ++i) {
             sum +=

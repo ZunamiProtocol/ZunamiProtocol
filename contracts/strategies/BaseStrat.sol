@@ -32,11 +32,11 @@ contract BaseStrat is Ownable{
     address public usdt;
     uint256 public managementFees = 0;
     uint256 public buybackFee = 0;
-    uint256[3] public decimalsMultiplierS;
 
     address[] cvxToUsdtPath;
     address[] crvToUsdtPath;
     address[3] public tokens;
+    address[] extraTokenSwapPath;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -57,14 +57,6 @@ contract BaseStrat is Ownable{
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
-        for(uint256 i;i<3;i++){
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplierS[i] =
-                10 ** (18 - IERC20Metadata(tokens[i]).decimals());
-            }else{
-                decimalsMultiplierS[i]=1;
-            }
-        }
         crvToUsdtPath=[Constants.CRV_ADDRESS,Constants.WETH_ADDRESS,Constants.USDT_ADDRESS];
         cvxToUsdtPath=[Constants.CVX_ADDRESS,Constants.WETH_ADDRESS,Constants.USDT_ADDRESS];
     }
