@@ -137,10 +137,10 @@ contract Zunami is Context, Ownable, ERC20 {
             userCompleteHoldings[i] = completeAmount;
         }
 
-        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
-            if (totalAmounts[_i] > 0) {
-                addHoldings += totalAmounts[_i] * decimalsMultiplierS[_i];
-                IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            if (totalAmounts[y] > 0) {
+                addHoldings += totalAmounts[y] * decimalsMultiplierS[y];
+                IERC20Metadata(tokens[y]).safeTransfer(address(strategy), totalAmounts[y]);
             }
         }
         uint256 sum = strategy.deposit(totalAmounts);
@@ -290,8 +290,8 @@ contract Zunami is Context, Ownable, ERC20 {
         IStrategy fromStrat = poolInfo[_from].strategy;
         IStrategy toStrat = poolInfo[_to].strategy;
         uint256[3] memory amountsBefore;
-        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
-            amountsBefore[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
         fromStrat.withdrawAll();
         uint256[3] memory amounts;
@@ -312,8 +312,8 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory amounts;
         uint256[3] memory amountsBefore;
         uint256 zunamiLp = 0;
-        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
-            amountsBefore[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
         for (uint256 i = 0; i < length; i++) {
             poolInfo[_from[i]].strategy.withdrawAll();
@@ -321,12 +321,12 @@ contract Zunami is Context, Ownable, ERC20 {
             zunamiLp += thisPidLpAmount;
             poolInfo[_from[i]].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
-        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
-            amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this)) - amountsBefore[_i];
-            if (amounts[_i] > 0) {
-                IERC20Metadata(tokens[_i]).safeTransfer(
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
+            if (amounts[y] > 0) {
+                IERC20Metadata(tokens[y]).safeTransfer(
                     address(poolInfo[_to].strategy),
-                    amounts[_i]
+                    amounts[y]
                 );
             }
         }
@@ -340,8 +340,8 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory amounts;
         uint256[3] memory amountsBefore;
         uint256 zunamiLp = 0;
-        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
-            amountsBefore[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
         for (uint256 i = 1; i < length; i++) {
             poolInfo[i].strategy.withdrawAll();
@@ -349,10 +349,10 @@ contract Zunami is Context, Ownable, ERC20 {
             zunamiLp += thisPidLpAmount;
             poolInfo[i].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this)) - amountsBefore[_i];
-            if (amounts[_i] > 0) {
-                IERC20Metadata(tokens[_i]).safeTransfer(address(poolInfo[0].strategy), amounts[_i]);
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
+            if (amounts[y] > 0) {
+                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[0].strategy), amounts[y]);
             }
         }
         poolInfo[0].strategy.updateZunamiLpInStrat(zunamiLp, true);
