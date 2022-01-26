@@ -169,10 +169,7 @@ contract Zunami is Context, Ownable, ERC20 {
         totalDeposited += changedHoldings;
     }
 
-    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
-        external
-        onlyOwner
-    {
+    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
         require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
 
         uint256 minWithdrawalsIndex = pendingWithdrawals.length > withdrawalsToComplete
