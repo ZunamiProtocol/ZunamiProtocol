@@ -118,7 +118,7 @@ contract Zunami is Context, Ownable, ERC20 {
         pendingWithdrawals.push(pendingWithdrawal);
     }
 
-    function completeDeposits(address[] memory userList, uint256 pid) external virtual onlyOwner {
+    function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
         // total sum deposit, contract => strategy
@@ -171,7 +171,6 @@ contract Zunami is Context, Ownable, ERC20 {
 
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid)
         external
-        virtual
         onlyOwner
     {
         require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
