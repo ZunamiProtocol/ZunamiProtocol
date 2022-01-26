@@ -13,8 +13,7 @@ contract OUSDCurveConvex is CurveConvexStrat2 {
             Constants.CVX_OUSD_PID,
             Constants.OUSD_ADDRESS,
             Constants.CRV_OUSD_EXTRA_ADDRESS,
-            Constants.OUSD_EXTRA_ADDRESS,
-            Constants.OUSD_EXTRA_PAIR_ADDRESS
+            Constants.OUSD_EXTRA_ADDRESS
         )
     {}
 }

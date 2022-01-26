@@ -13,8 +13,7 @@ contract DUSDCurveConvex is CurveConvexStrat2 {
             Constants.CVX_DUSD_PID,
             Constants.DUSD_ADDRESS,
             Constants.CVX_DUSD_EXTRA_ADDRESS,
-            Constants.DUSD_EXTRA_ADDRESS,
-            Constants.DUSD_EXTRA_PAIR_ADDRESS
+            Constants.DUSD_EXTRA_ADDRESS
         )
     {}
 }

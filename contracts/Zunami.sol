@@ -8,9 +8,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
-import './interfaces/IZunami.sol';
 
-contract Zunami is Context, Ownable, ERC20, IZunami {
+contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
 
     struct PendingDeposit {
@@ -32,18 +31,19 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
     uint8 private constant POOL_ASSETS = 3;
 
     address[POOL_ASSETS] public tokens;
-    mapping(address => uint256) public override deposited;
+    uint256[POOL_ASSETS] public decimalsMultiplierS;
+    mapping(address => uint256) public deposited;
     // Info of each pool
     PoolInfo[] public poolInfo;
-    uint256 public override totalDeposited;
+    uint256 public totalDeposited;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
     bool public isLock = false;
-    uint256 public constant MIN_LOCK_TIME = 86400; // 1 day
+    uint256 public constant MIN_LOCK_TIME = 1 days;
 
     PendingWithdrawal[] public pendingWithdrawals;
-    mapping(address => uint256[]) public accDepositPending;
+    mapping(address => uint256[3]) public accDepositPending;
     mapping(address => bool) public userExistence;
 
     event PendingDepositEvent(address depositor, uint256[3] amounts);
@@ -62,6 +62,13 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
+        for (uint256 i; i < POOL_ASSETS; i++) {
+            if (IERC20Metadata(tokens[i]).decimals() < 18) {
+                decimalsMultiplierS[i] = 10**(18 - IERC20Metadata(tokens[i]).decimals());
+            } else {
+                decimalsMultiplierS[i] = 1;
+            }
+        }
     }
 
     function setManagementFee(uint256 newManagementFee) external onlyOwner {
@@ -69,15 +76,15 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         managementFee = newManagementFee;
     }
 
-    function calcManagementFee(uint256 amount) external view override returns (uint256) {
+    function calcManagementFee(uint256 amount) external view returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
     // total holdings for all pools
-    function totalHoldings() public view override returns (uint256) {
+    function totalHoldings() public view returns (uint256) {
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
-        for (uint256 pid = 0; pid < length; ++pid) {
+        for (uint256 pid = 0; pid < length; pid++) {
             totalHold += poolInfo[pid].strategy.totalHoldings();
         }
         return totalHold;
@@ -114,35 +121,37 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
     function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
-        uint256[] memory userCompleteHoldings = new uint256[](userList.length);
-
         // total sum deposit, contract => strategy
         uint256 addHoldings = 0;
+        uint256 completeAmount = 0;
         uint256 holdings = totalHoldings();
+        uint256[] memory userCompleteHoldings = new uint256[](userList.length);
+
         for (uint256 i = 0; i < userList.length; i++) {
-            for (uint256 x = 0; x < totalAmounts.length; ++x) {
-                uint256 decimalsMultiplier = 1;
-                if (IERC20Metadata(tokens[x]).decimals() < 18) {
-                    decimalsMultiplier = 10**(18 - IERC20Metadata(tokens[x]).decimals());
-                }
+            completeAmount = 0;
+
+            for (uint256 x = 0; x < totalAmounts.length; x++) {
                 totalAmounts[x] += accDepositPending[userList[i]][x];
-                addHoldings += accDepositPending[userList[i]][x] * decimalsMultiplier;
-                userCompleteHoldings[i] += accDepositPending[userList[i]][x] * decimalsMultiplier;
+                completeAmount += accDepositPending[userList[i]][x] * decimalsMultiplierS[x];
             }
+            userCompleteHoldings[i] = completeAmount;
         }
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            if (totalAmounts[_i] > 0) {
-                IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
+
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            if (totalAmounts[y] > 0) {
+                addHoldings += totalAmounts[y] * decimalsMultiplierS[y];
+                IERC20Metadata(tokens[y]).safeTransfer(address(strategy), totalAmounts[y]);
             }
         }
         uint256 sum = strategy.deposit(totalAmounts);
+        require(sum > 0, 'too low amount!');
         uint256 lpShares = 0;
         uint256 changedHoldings = 0;
         uint256 currentUserAmount = 0;
+
         for (uint256 z = 0; z < userList.length; z++) {
             currentUserAmount = (sum * userCompleteHoldings[z]) / addHoldings;
             deposited[userList[z]] += currentUserAmount;
-            totalDeposited += currentUserAmount;
             changedHoldings += currentUserAmount;
             if (totalSupply() == 0) {
                 lpShares = currentUserAmount;
@@ -154,25 +163,30 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             _mint(userList[z], lpShares);
             strategy.updateZunamiLpInStrat(lpShares, true);
             // remove deposit from list
-            accDepositPending[userList[z]] = [0, 0, 0];
+            delete accDepositPending[userList[z]];
+            // = [0, 0, 0];
         }
-        require(sum > 0, 'too low amount!');
+        totalDeposited += changedHoldings;
     }
 
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
-        uint256 maxWithdrawals = withdrawalsToComplete < pendingWithdrawals.length
-            ? withdrawalsToComplete
-            : pendingWithdrawals.length;
-        for (uint256 i = 0; i < maxWithdrawals && pendingWithdrawals.length > 0; i++) {
+        require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
+
+        uint256 minWithdrawalsIndex = pendingWithdrawals.length > withdrawalsToComplete
+            ? pendingWithdrawals.length - withdrawalsToComplete
+            : 0;
+        uint256 i = pendingWithdrawals.length;
+
+        do {
+            i--;
             delegatedWithdrawal(
-                pendingWithdrawals[0].withdrawer,
-                pendingWithdrawals[0].lpAmount,
-                pendingWithdrawals[0].minAmounts,
+                pendingWithdrawals[i].withdrawer,
+                pendingWithdrawals[i].lpAmount,
+                pendingWithdrawals[i].minAmounts,
                 pid
             );
-            pendingWithdrawals[0] = pendingWithdrawals[pendingWithdrawals.length - 1];
             pendingWithdrawals.pop();
-        }
+        } while (i > minWithdrawalsIndex);
     }
 
     function deposit(uint256[3] memory amounts, uint256 pid)
@@ -194,6 +208,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             }
         }
         uint256 sum = strategy.deposit(amounts);
+        require(sum > 0, 'too low amount!');
 
         uint256 lpShares = 0;
         if (totalSupply() == 0) {
@@ -206,7 +221,6 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         deposited[_msgSender()] += sum;
         totalDeposited += sum;
 
-        require(sum > 0, 'too low amount!');
         emit Deposited(_msgSender(), amounts, lpShares);
         return lpShares;
     }
@@ -225,10 +239,11 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
         _burn(_msgSender(), lpShares);
         strategy.updateZunamiLpInStrat(lpShares, false);
-        deposited[_msgSender()] -= userDeposit > deposited[_msgSender()]
-            ? deposited[_msgSender()]
-            : userDeposit;
-        totalDeposited -= userDeposit > totalDeposited ? totalDeposited : userDeposit;
+        if (userDeposit > deposited[_msgSender()]) {
+            userDeposit = deposited[_msgSender()];
+        }
+        deposited[_msgSender()] -= userDeposit;
+        totalDeposited -= userDeposit;
         emit Withdrawn(_msgSender(), minAmounts, lpShares);
     }
 
@@ -247,9 +262,10 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
             _burn(withdrawer, lpShares);
             strategy.updateZunamiLpInStrat(lpShares, false);
-            deposited[withdrawer] -= userDeposit > deposited[withdrawer]
-                ? deposited[withdrawer]
-                : userDeposit;
+            if (userDeposit > deposited[withdrawer]) {
+                userDeposit = deposited[withdrawer];
+            }
+            deposited[withdrawer] -= userDeposit;
             totalDeposited -= userDeposit;
             emit Withdrawn(withdrawer, minAmounts, lpShares);
         }
@@ -273,10 +289,14 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
     function moveFunds(uint256 _from, uint256 _to) external onlyOwner {
         IStrategy fromStrat = poolInfo[_from].strategy;
         IStrategy toStrat = poolInfo[_to].strategy;
+        uint256[3] memory amountsBefore;
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+        }
         fromStrat.withdrawAll();
         uint256[3] memory amounts;
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
+            amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - amountsBefore[i];
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
             }
@@ -290,19 +310,23 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
     function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyOwner {
         uint256 length = _from.length;
         uint256[3] memory amounts;
+        uint256[3] memory amountsBefore;
         uint256 zunamiLp = 0;
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+        }
         for (uint256 i = 0; i < length; i++) {
             poolInfo[_from[i]].strategy.withdrawAll();
             uint256 thisPidLpAmount = poolInfo[_from[i]].strategy.getZunamiLpInStrat();
             zunamiLp += thisPidLpAmount;
             poolInfo[_from[i]].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
-            if (amounts[_i] > 0) {
-                IERC20Metadata(tokens[_i]).safeTransfer(
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
+            if (amounts[y] > 0) {
+                IERC20Metadata(tokens[y]).safeTransfer(
                     address(poolInfo[_to].strategy),
-                    amounts[_i]
+                    amounts[y]
                 );
             }
         }
@@ -314,17 +338,21 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         uint256 length = poolInfo.length;
         require(length > 1, 'Zunami: Nothing withdraw');
         uint256[3] memory amounts;
+        uint256[3] memory amountsBefore;
         uint256 zunamiLp = 0;
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+        }
         for (uint256 i = 1; i < length; i++) {
             poolInfo[i].strategy.withdrawAll();
             uint256 thisPidLpAmount = poolInfo[i].strategy.getZunamiLpInStrat();
             zunamiLp += thisPidLpAmount;
             poolInfo[i].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
-            amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
-            if (amounts[_i] > 0) {
-                IERC20Metadata(tokens[_i]).safeTransfer(address(poolInfo[0].strategy), amounts[_i]);
+        for (uint256 y = 0; y < POOL_ASSETS; y++) {
+            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
+            if (amounts[y] > 0) {
+                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[0].strategy), amounts[y]);
             }
         }
         poolInfo[0].strategy.updateZunamiLpInStrat(zunamiLp, true);
@@ -341,7 +369,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
                 );
             }
         }
-        accDepositPending[_msgSender()] = [0, 0, 0];
+        delete accDepositPending[_msgSender()];
     }
 
     function renounceOwnership() public view override onlyOwner {

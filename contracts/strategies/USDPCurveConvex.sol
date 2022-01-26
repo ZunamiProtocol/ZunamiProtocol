@@ -13,8 +13,7 @@ contract USDPCurveConvex is CurveConvexStrat2 {
             Constants.CVX_USDP_PID,
             Constants.USDP_ADDRESS,
             Constants.CVX_USDP_EXTRA_ADDRESS,
-            Constants.USDP_EXTRA_ADDRESS,
-            Constants.USDP_EXTRA_PAIR_ADDRESS
+            Constants.USDP_EXTRA_ADDRESS
         )
     {}
 }

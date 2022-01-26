@@ -32,6 +32,11 @@ contract BaseStrat is Ownable {
     uint256 public managementFees = 0;
     uint256 public buybackFee = 0;
 
+    address[] cvxToUsdtPath;
+    address[] crvToUsdtPath;
+    address[3] public tokens;
+    address[] extraTokenSwapPath;
+
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
     modifier onlyZunami() {
@@ -44,6 +49,11 @@ contract BaseStrat is Ownable {
         cvx = IConvexMinter(Constants.CVX_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
         usdt = Constants.USDT_ADDRESS;
+        tokens[0] = Constants.DAI_ADDRESS;
+        tokens[1] = Constants.USDC_ADDRESS;
+        tokens[2] = Constants.USDT_ADDRESS;
+        crvToUsdtPath = [Constants.CRV_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
+        cvxToUsdtPath = [Constants.CVX_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
     }
 
     function sellCrvCvx() public virtual {
@@ -56,25 +66,18 @@ contract BaseStrat is Ownable {
         crv.safeApprove(address(router), crvBalance);
 
         uint256 usdtBalanceBefore = IERC20Metadata(usdt).balanceOf(address(this));
-        address[] memory path = new address[](3);
-        path[0] = Constants.CVX_ADDRESS;
-        path[1] = Constants.WETH_ADDRESS;
-        path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
             cvxBalance,
             0,
-            path,
+            cvxToUsdtPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
-        path[0] = Constants.CRV_ADDRESS;
-        path[1] = Constants.WETH_ADDRESS;
-        path[2] = Constants.USDT_ADDRESS;
         router.swapExactTokensForTokens(
             crvBalance,
             0,
-            path,
+            crvToUsdtPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
@@ -87,8 +90,8 @@ contract BaseStrat is Ownable {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
-            uint256 adminFeeAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
-            uint256 zunBuybackAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
+            uint256 zunBuybackAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
+            uint256 adminFeeAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
                 DEPOSIT_DENOMINATOR;
             if (adminFeeAmount > 0) {
                 IERC20Metadata(usdt).safeTransfer(owner(), adminFeeAmount);

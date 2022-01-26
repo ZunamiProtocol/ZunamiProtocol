@@ -12,8 +12,7 @@ contract AaveCurveConvex is CurveConvexStrat {
             Constants.CVX_AAVE_REWARDS_ADDRESS,
             Constants.CVX_AAVE_PID,
             Constants.CVX_AAVE_EXTRA_ADDRESS,
-            Constants.AAVE_EXTRA_ADDRESS,
-            Constants.AAVE_EXTRA_PAIR_ADDRESS
+            Constants.AAVE_EXTRA_ADDRESS
         )
     {}
 }

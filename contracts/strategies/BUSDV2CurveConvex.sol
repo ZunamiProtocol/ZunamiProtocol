@@ -13,7 +13,6 @@ contract BUSDV2CurveConvex is CurveConvexStrat2 {
             Constants.CVX_BUSDV2_PID,
             Constants.BUSD_ADDRESS,
             address(0),
-            address(0),
             address(0)
         )
     {}

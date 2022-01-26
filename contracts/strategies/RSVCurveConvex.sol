@@ -13,8 +13,7 @@ contract RSVCurveConvex is CurveConvexStrat2 {
             Constants.CVX_RSV_PID,
             Constants.RSV_ADDRESS,
             Constants.CVX_RSV_EXTRA_ADDRESS,
-            Constants.RSV_EXTRA_ADDRESS,
-            Constants.RSV_EXTRA_PAIR_ADDRESS
+            Constants.RSV_EXTRA_ADDRESS
         )
     {}
 }

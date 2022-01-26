@@ -13,8 +13,7 @@ contract MIMCurveConvex is CurveConvexStrat2 {
             Constants.CVX_MIM_PID,
             Constants.MIM_ADDRESS,
             Constants.CVX_MIM_EXTRA_ADDRESS,
-            Constants.MIM_EXTRA_ADDRESS,
-            Constants.MIM_EXTRA_PAIR_ADDRESS
+            Constants.MIM_EXTRA_ADDRESS
         )
     {}
 }

@@ -13,7 +13,6 @@ contract USDNCurveConvex is CurveConvexStrat2 {
             Constants.CVX_USDN_PID,
             Constants.USDN_ADDRESS,
             address(0),
-            address(0),
             address(0)
         )
     {}
