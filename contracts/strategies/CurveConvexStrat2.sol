@@ -118,7 +118,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
 
         sum += token.balanceOf(address(this)) * decimalsMultiplierS[3];
 
-        for (uint256 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; i++) {
             sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
         }
 
@@ -127,7 +127,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
 
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256 _amountsTotal;
-        for (uint256 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; i++) {
             _amountsTotal += amounts[i] * decimalsMultiplierS[i];
         }
         uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
@@ -170,7 +170,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         }
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
-        for (uint256 i = 0; i < 3; ++i) {
+        for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;

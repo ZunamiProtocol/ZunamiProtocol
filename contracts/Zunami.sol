@@ -8,9 +8,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
-import './interfaces/IZunami.sol';
 
-contract Zunami is Context, Ownable, ERC20, IZunami {
+contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
 
     struct PendingDeposit {
@@ -33,10 +32,10 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
 
     address[POOL_ASSETS] public tokens;
     uint256[POOL_ASSETS] public decimalsMultiplierS;
-    mapping(address => uint256) public override deposited;
+    mapping(address => uint256) public deposited;
     // Info of each pool
     PoolInfo[] public poolInfo;
-    uint256 public override totalDeposited;
+    uint256 public totalDeposited;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
@@ -77,15 +76,15 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         managementFee = newManagementFee;
     }
 
-    function calcManagementFee(uint256 amount) external view override returns (uint256) {
+    function calcManagementFee(uint256 amount) external view returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
     // total holdings for all pools
-    function totalHoldings() public view override returns (uint256) {
+    function totalHoldings() public view returns (uint256) {
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
-        for (uint256 pid = 0; pid < length; ++pid) {
+        for (uint256 pid = 0; pid < length; pid++) {
             totalHold += poolInfo[pid].strategy.totalHoldings();
         }
         return totalHold;
@@ -131,14 +130,14 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         for (uint256 i = 0; i < userList.length; i++) {
             completeAmount = 0;
 
-            for (uint256 x = 0; x < totalAmounts.length; ++x) {
+            for (uint256 x = 0; x < totalAmounts.length; x++) {
                 totalAmounts[x] += accDepositPending[userList[i]][x];
                 completeAmount += accDepositPending[userList[i]][x] * decimalsMultiplierS[x];
             }
             userCompleteHoldings[i] = completeAmount;
         }
 
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
+        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
             if (totalAmounts[_i] > 0) {
                 addHoldings += totalAmounts[_i] * decimalsMultiplierS[_i];
                 IERC20Metadata(tokens[_i]).safeTransfer(address(strategy), totalAmounts[_i]);
@@ -295,12 +294,12 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
         IStrategy fromStrat = poolInfo[_from].strategy;
         IStrategy toStrat = poolInfo[_to].strategy;
         uint256[3] memory amountsBefore;
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
+        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
             amountsBefore[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this));
         }
         fromStrat.withdrawAll();
         uint256[3] memory amounts;
-        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - amountsBefore[i];
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
@@ -326,7 +325,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
             zunamiLp += thisPidLpAmount;
             poolInfo[_from[i]].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
-        for (uint256 _i = 0; _i < POOL_ASSETS; ++_i) {
+        for (uint256 _i = 0; _i < POOL_ASSETS; _i++) {
             amounts[_i] = IERC20Metadata(tokens[_i]).balanceOf(address(this)) - amountsBefore[_i];
             if (amounts[_i] > 0) {
                 IERC20Metadata(tokens[_i]).safeTransfer(
@@ -366,7 +365,7 @@ contract Zunami is Context, Ownable, ERC20, IZunami {
 
     // user withdraw funds from list
     function pendingDepositRemove() external {
-        for (uint256 i = 0; i < POOL_ASSETS; ++i) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             if (accDepositPending[_msgSender()][i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransfer(
                     _msgSender(),
