@@ -3,8 +3,6 @@
     "version": "1.0.2",
     "description": "",
     "scripts": {
-        "commitMajor": "git cz && standard-version --release-as major && node gitPush.js",
-        "commit": "git cz && standard-version && node gitPush.js",
         "lint": "npx prettier --write 'contracts/**/*.sol' && npx prettier --write 'scripts/**/*.js' && npx prettier --write 'test/**/*.ts'",
         "lint:contracts": "npx prettier --write 'contracts/**/*.sol'",
         "compile": "npx hardhat compile",
@@ -17,14 +15,6 @@
         "deploy:matic": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
         "deploy:polygon": "npx hardhat deploy --network polygon --tags Zunami --gasprice 1000000000"
     },
-    "config": {
-        "commitizen": {
-            "path": "node_modules/cz-customizable"
-        },
-        "cz-customizable": {
-            "config": "config/git/commitizen.js"
-        }
-    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/ZunamiLab/ZunamiProtocol.git"
@@ -35,20 +25,19 @@
     "bugs": {
         "url": "https://github.com/ZunamiLab/ZunamiProtocol/issues"
     },
-    "homepage": "https://github.com/ZunamiLab/ZunamiProtocol#readme",
+    "homepage": "https://zunami.io",
     "devDependencies": {
-        "@commitlint/config-conventional": "^12.1.1",
         "@nomiclabs/buidler": "^1.4.8",
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
         "@nomiclabs/hardhat-web3": "^2.0.0",
+        "@nomiclabs/hardhat-etherscan": "^2.1.6",
+        "@nomiclabs/hardhat-truffle5": "^2.0.0",
+        "@nomiclabs/hardhat-ganache": "^2.0.1",
         "@openzeppelin/contracts": "^4.3.2",
         "@openzeppelin/test-helpers": "^0.5.15",
         "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
-        "colors": "^1.4.0",
-        "commitlint": "^12.1.1",
-        "cz-customizable": "^6.3.0",
         "ethereum-waffle": "^3.3.0",
         "ethers": "^5.4.5",
         "hardhat": "^2.6.8",
@@ -58,20 +47,12 @@
         "husky": "^6.0.0",
         "solhint": "^3.3.6",
         "solidity-coverage": "^0.7.16",
-        "standard-version": "^9.3.0"
-    },
-    "dependencies": {
-        "@nomiclabs/hardhat-etherscan": "^2.1.6",
-        "@nomiclabs/hardhat-ganache": "^2.0.1",
-        "@nomiclabs/hardhat-truffle5": "^2.0.0",
         "@types/mocha": "^9.0.0",
         "dotenv": "^10.0.0",
-        "hardhat-gas-reporter": "^1.0.4",
         "prettier": "^2.3.2",
         "prettier-plugin-solidity": "^1.0.0-beta.17",
         "ts-node": "^10.2.1",
         "typescript": "^4.4.2",
-        "waffle": "^0.0.4",
-        "yargs": "^17.1.1"
+        "waffle": "^0.0.4"
     }
 }

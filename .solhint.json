@@ -1,6 +1,6 @@
 {
-  "extends": "solhint:default",
-  "rules": {
-    "compiler-version": [ "error", "0.8.0" ]
-  }
+    "extends": "solhint:default",
+    "rules": {
+        "compiler-version": ["error", "0.8.4"]
+    }
 }
