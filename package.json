@@ -1,6 +1,6 @@
 {
     "name": "zunami-protocol",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "",
     "scripts": {
         "lint": "npx prettier --write 'contracts/**/*.sol' && npx prettier --write 'scripts/**/*.js' && npx prettier --write 'test/**/*.ts'",
