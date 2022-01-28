@@ -176,4 +176,18 @@ contract CurveConvexStrat is Context, BaseStrat {
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
+
+    function emergency() external onlyOwner {
+        crvRewards.withdrawAllAndUnwrap(true);
+        uint256 lpBalance = poolLP.balanceOf(address(this));
+        uint256[3] memory minAmounts;
+        pool.remove_liquidity(lpBalance, minAmounts, true);
+
+        for (uint256 i = 0; i < 3; i++) {
+            IERC20Metadata(tokens[i]).safeTransfer(
+                _msgSender(),
+                IERC20Metadata(tokens[i]).balanceOf(address(this))
+            );
+        }
+    }
 }
