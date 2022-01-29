@@ -1,5 +1,4 @@
 import { ethers, network } from 'hardhat';
-import { waffle } from 'hardhat';
 import { expect } from 'chai';
 import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -10,15 +9,19 @@ const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-import { TestConstants } from '../constants/TestConstants';
-
-const provider = waffle.provider;
-const MIN_LOCK_TIME = TestConstants.MIN_LOCK_TIME;
-const BLOCKS = TestConstants.BLOCKS;
-const SKIP_TIMES = TestConstants.SKIP_TIMES;
-const daiAddress = TestConstants.daiAddress;
-const usdcAddress = TestConstants.usdcAddress;
-const usdtAddress = TestConstants.usdtAddress;
+import {
+    BLOCKS,
+    daiAccount,
+    daiAddress,
+    MIN_LOCK_TIME,
+    provider,
+    SKIP_TIMES,
+    usdcAccount,
+    usdcAddress,
+    usdtAccount,
+    usdtAddress,
+    testCheckSumm,
+} from '../constants/TestConstants';
 
 describe('DUSDCurveConvex', function () {
     let owner: SignerWithAddress;

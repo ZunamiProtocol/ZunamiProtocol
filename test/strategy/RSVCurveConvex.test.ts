@@ -1,5 +1,4 @@
 import { ethers, network } from 'hardhat';
-import { waffle } from 'hardhat';
 import { expect } from 'chai';
 import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -10,15 +9,19 @@ const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-import { TestConstants } from '../constants/TestConstants';
-
-const provider = waffle.provider;
-const MIN_LOCK_TIME = TestConstants.MIN_LOCK_TIME;
-const BLOCKS = TestConstants.BLOCKS;
-const SKIP_TIMES = TestConstants.SKIP_TIMES;
-const daiAddress = TestConstants.daiAddress;
-const usdcAddress = TestConstants.usdcAddress;
-const usdtAddress = TestConstants.usdtAddress;
+import {
+    BLOCKS,
+    daiAccount,
+    daiAddress,
+    MIN_LOCK_TIME,
+    provider,
+    SKIP_TIMES,
+    usdcAccount,
+    usdcAddress,
+    usdtAccount,
+    usdtAddress,
+    testCheckSumm,
+} from '../constants/TestConstants';
 
 describe('RSVCurveConvex', function () {
     let owner: SignerWithAddress;
@@ -32,12 +35,6 @@ describe('RSVCurveConvex', function () {
     let dai: Contract;
     let usdc: Contract;
     let usdt: Contract;
-
-    const daiAccount: string = '0x6F6C07d80D0D433ca389D336e6D1feBEA2489264';
-    const usdcAccount: string = '0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6';
-    const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
-
-    const testCheckSumm = 2950; // 3000 base
 
     function printBalances() {
         it('print balances', async () => {
