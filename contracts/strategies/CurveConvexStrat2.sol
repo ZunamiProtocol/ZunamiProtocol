@@ -250,7 +250,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 
-    function emergency() external onlyOwner {
+    function inCaseFundsStuck() external onlyOwner {
         crvRewards.withdrawAllAndUnwrap(true);
         uint256[2] memory minAmounts2;
         uint256[3] memory minAmounts;

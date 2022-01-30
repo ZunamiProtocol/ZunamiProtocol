@@ -243,7 +243,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 
-    function emergency() external onlyOwner {
+    function inCaseFundsStuck() external onlyOwner {
         crvRewards.withdrawAllAndUnwrap(true);
         uint256 lpBalance = poolLP.balanceOf(address(this));
         uint256[4] memory minAmounts;
