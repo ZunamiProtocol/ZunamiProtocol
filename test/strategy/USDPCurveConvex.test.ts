@@ -23,7 +23,9 @@ import {
     testCheckSumm,
 } from '../constants/TestConstants';
 
-describe('USDPCurveConvex', function () {
+const STRATEGY_NAME = 'USDPCurveConvex';
+
+describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
@@ -67,7 +69,6 @@ describe('USDPCurveConvex', function () {
                 'Ownable: caller is not the owner'
             );
             await zunami.add(strategy.address); // 0 pool
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc
                     .connect(user)
@@ -371,10 +372,10 @@ describe('USDPCurveConvex', function () {
     });
 
     // ---  STRATEGY ----
-    describe('USDPCurveConvex', function () {
+    describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let deployedStrat: ContractFactory = await ethers.getContractFactory('USDPCurveConvex');
+            let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();

@@ -1,5 +1,4 @@
 import { ethers, network } from 'hardhat';
-import { waffle } from 'hardhat';
 import { expect } from 'chai';
 import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -24,7 +23,9 @@ import {
     testCheckSumm,
 } from '../constants/TestConstants';
 
-describe('OUSDCurveConvex', function () {
+const STRATEGY_NAME = 'OUSDCurveConvex';
+
+describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
@@ -68,7 +69,6 @@ describe('OUSDCurveConvex', function () {
                 'Ownable: caller is not the owner'
             );
             await zunami.add(strategy.address); // 0 pool
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc
                     .connect(user)
@@ -372,10 +372,10 @@ describe('OUSDCurveConvex', function () {
     });
 
     // ---  STRATEGY ----
-    describe('OUSDCurveConvex', function () {
+    describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let deployedStrat: ContractFactory = await ethers.getContractFactory('OUSDCurveConvex');
+            let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();

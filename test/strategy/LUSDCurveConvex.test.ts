@@ -1,5 +1,4 @@
 import { ethers, network } from 'hardhat';
-import { waffle } from 'hardhat';
 import { expect } from 'chai';
 import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -10,7 +9,6 @@ const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
-
 import {
     BLOCKS,
     daiAccount,
@@ -25,7 +23,9 @@ import {
     testCheckSumm,
 } from '../constants/TestConstants';
 
-describe('LUSDCurveConvex', function () {
+const STRATEGY_NAME = 'LUSDCurveConvex';
+
+describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
@@ -69,7 +69,6 @@ describe('LUSDCurveConvex', function () {
                 'Ownable: caller is not the owner'
             );
             await zunami.add(strategy.address); // 0 pool
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc
                     .connect(user)
@@ -373,10 +372,10 @@ describe('LUSDCurveConvex', function () {
     });
 
     // ---  STRATEGY ----
-    describe('LUSDCurveConvex', function () {
+    describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let deployedStrat: ContractFactory = await ethers.getContractFactory('LUSDCurveConvex');
+            let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();

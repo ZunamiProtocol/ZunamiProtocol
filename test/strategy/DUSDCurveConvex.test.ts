@@ -23,7 +23,9 @@ import {
     testCheckSumm,
 } from '../constants/TestConstants';
 
-describe('DUSDCurveConvex', function () {
+const STRATEGY_NAME = 'DUSDCurveConvex';
+
+describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
@@ -35,12 +37,6 @@ describe('DUSDCurveConvex', function () {
     let dai: Contract;
     let usdc: Contract;
     let usdt: Contract;
-
-    const daiAccount: string = '0x6F6C07d80D0D433ca389D336e6D1feBEA2489264';
-    const usdcAccount: string = '0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6';
-    const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
-
-    const testCheckSumm = 2950; // 3000 base
 
     function printBalances() {
         it('print balances', async () => {
@@ -73,7 +69,6 @@ describe('DUSDCurveConvex', function () {
                 'Ownable: caller is not the owner'
             );
             await zunami.add(strategy.address); // 0 pool
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc
                     .connect(user)
@@ -377,10 +372,10 @@ describe('DUSDCurveConvex', function () {
     });
 
     // ---  STRATEGY ----
-    describe('DUSDCurveConvex', function () {
+    describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let deployedStrat: ContractFactory = await ethers.getContractFactory('DUSDCurveConvex');
+            let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();

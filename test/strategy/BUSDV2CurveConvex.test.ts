@@ -23,7 +23,9 @@ import {
     testCheckSumm,
 } from '../constants/TestConstants';
 
-describe('BUSDV2CurveConvex', function () {
+const STRATEGY_NAME = 'BUSDV2CurveConvex';
+
+describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
@@ -67,7 +69,6 @@ describe('BUSDV2CurveConvex', function () {
                 'Ownable: caller is not the owner'
             );
             await zunami.add(strategy.address); // 0 pool
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc
                     .connect(user)
@@ -371,12 +372,10 @@ describe('BUSDV2CurveConvex', function () {
     });
 
     // ---  STRATEGY ----
-    describe('BUSDV2CurveConvex', function () {
+    describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
-            let deployedStrat: ContractFactory = await ethers.getContractFactory(
-                'BUSDV2CurveConvex'
-            );
+            let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy();
