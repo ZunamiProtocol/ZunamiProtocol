@@ -23,7 +23,8 @@ import {
     testCheckSumm,
 } from '../constants/TestConstants';
 
-const STRATEGY_NAME = 'OUSDCurveConvex';
+const STRAT = 'OUSD';
+const STRATEGY_NAME = `${STRAT}CurveConvex`;
 
 describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
@@ -62,12 +63,32 @@ describe(STRATEGY_NAME, function () {
         });
     }
 
+    function checkUserBalances() {
+        it('user balances after withdraw should be more than testCheckSumm', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                expect(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)).to.equal(
+                    '0.0'
+                );
+                let usdt_balance = await usdt.balanceOf(user.address);
+                let usdc_balance = await usdc.balanceOf(user.address);
+                let dai_balance = await dai.balanceOf(user.address);
+                let SUMM =
+                    parseFloat(ethers.utils.formatUnits(dai_balance, 18)) +
+                    parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
+                    parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
+                expect(SUMM).to.gt(testCheckSumm);
+            }
+        });
+    }
+
     function testStrategy() {
-        it('only the owner can add a pool', async () => {
+        it('Add pool from not owner should be revert', async () => {
             await expectRevert(
                 zunami.connect(alice).add(strategy.address),
                 'Ownable: caller is not the owner'
             );
+        });
+        it('Add pool from owner should be successful', async () => {
             await zunami.add(strategy.address); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc
@@ -82,7 +103,7 @@ describe(STRATEGY_NAME, function () {
             }
         });
 
-        it('function updateMinDepositAmount change', async () => {
+        it('updateMinDepositAmount should be successful', async () => {
             await strategy.updateMinDepositAmount(9974);
         });
 
@@ -118,7 +139,7 @@ describe(STRATEGY_NAME, function () {
 
         printBalances();
 
-        it('check balances after deposit', async () => {
+        it('balances after deposit should be 0', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 expect(
                     parseFloat(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18))
@@ -141,39 +162,39 @@ describe(STRATEGY_NAME, function () {
             }
         });
 
-        it('check totalSupply()', async () => {
+        it('totalSupply() should be more than 1190', async () => {
             let totalSupply = await zunami.totalSupply();
             expect(parseFloat(ethers.utils.formatUnits(totalSupply, 18))).to.gt(1190);
         });
 
-        it('check calcManagementFee(1000)', async () => {
+        it('calcManagementFee(1000) should be 10', async () => {
             let calcManagementFee = await zunami.calcManagementFee(1000);
-            console.log('calcManagementFee:', calcManagementFee);
+            expect(parseFloat(calcManagementFee)).equal(10);
         });
 
-        it('check lpPrice()', async () => {
+        it('lpPrice() should be more than 0.99', async () => {
             let lpPrice = await zunami.lpPrice();
-            console.log('lpPrice:', lpPrice);
+            expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
         });
 
-        it('new managmentFee', async () => {
+        it('setManagementFee should be successful', async () => {
             await zunami.setManagementFee(20); //2%
         });
 
-        it('setLock test', async () => {
+        it('setLock should be successful', async () => {
             await zunami.setLock(true);
             await zunami.setLock(false);
         });
 
-        it('update buybackfee', async () => {
+        it('updateBuybackFee should be successful', async () => {
             await strategy.updateBuybackFee(5000); // 50%
         });
 
-        it('claim', async () => {
+        it('claimManagementFees should be successful', async () => {
             await zunami.claimManagementFees(strategy.address);
         });
 
-        it('withdraw', async () => {
+        it('users withdraw from zunami should be successful', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
@@ -182,24 +203,9 @@ describe(STRATEGY_NAME, function () {
         });
 
         printBalances();
+        checkUserBalances();
 
-        it('check balances after withdraw', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                expect(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)).to.equal(
-                    '0.0'
-                );
-                let usdt_balance = await usdt.balanceOf(user.address);
-                let usdc_balance = await usdc.balanceOf(user.address);
-                let dai_balance = await dai.balanceOf(user.address);
-                let SUMM =
-                    parseFloat(ethers.utils.formatUnits(dai_balance, 18)) +
-                    parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
-                    parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
-                expect(SUMM).to.gt(testCheckSumm);
-            }
-        });
-
-        it('delegateDeposit', async () => {
+        it('delegateDeposit should be successful', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 let usdt_balance = await usdt.balanceOf(user.address);
                 let usdc_balance = await usdc.balanceOf(user.address);
@@ -210,43 +216,29 @@ describe(STRATEGY_NAME, function () {
             }
         });
 
-        it('one user withdraw from pending', async () => {
+        it('one user withdraw from pending should be successful', async () => {
             await zunami.connect(carol).pendingDepositRemove();
         });
 
-        it('complete delegateDeposits to it', async () => {
+        it('complete delegateDeposits to 0 pool should be successful', async () => {
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
             await zunami.completeDeposits([alice.address, bob.address, rosa.address], 0);
         });
 
-        it('delegateWithdrawal', async () => {
+        it('users send delegateWithdrawal should be successful', async () => {
             for (const user of [alice, bob, rosa]) {
                 let zunami_balance = await zunami.balanceOf(user.address);
                 await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0]);
             }
         });
 
-        it('completeWithdrawals', async () => {
+        it('completeWithdrawals from 0 pool should be successful', async () => {
             await zunami.completeWithdrawals(10, 0);
         });
 
-        it('check balances after withdraw', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                expect(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)).to.equal(
-                    '0.0'
-                );
-                let usdt_balance = await usdt.balanceOf(user.address);
-                let usdc_balance = await usdc.balanceOf(user.address);
-                let dai_balance = await dai.balanceOf(user.address);
-                let SUMM =
-                    parseFloat(ethers.utils.formatUnits(dai_balance, 18)) +
-                    parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
-                    parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
-                expect(SUMM).to.gt(testCheckSumm); //99.5%
-            }
-        });
+        checkUserBalances();
 
-        it('Users double delegateDeposit & deposit & withdraw', async () => {
+        it('Users double delegateDeposit, deposit, withdraw should be successful', async () => {
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
@@ -275,22 +267,7 @@ describe(STRATEGY_NAME, function () {
             }
         });
 
-        it('check balances after withdraw', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                expect(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)).to.equal(
-                    '0.0'
-                );
-                let usdt_balance = await usdt.balanceOf(user.address);
-                let usdc_balance = await usdc.balanceOf(user.address);
-                let dai_balance = await dai.balanceOf(user.address);
-                let SUMM =
-                    parseFloat(ethers.utils.formatUnits(dai_balance, 18)) +
-                    parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
-                    parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
-                expect(SUMM).to.gt(testCheckSumm); //99.5%
-            }
-        });
-
+        checkUserBalances();
         printBalances();
     }
 
