@@ -88,6 +88,7 @@ describe(STRATEGY_NAME, function () {
                 'Ownable: caller is not the owner'
             );
         });
+
         it('Add pool from owner should be successful', async () => {
             await zunami.add(strategy.address); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
