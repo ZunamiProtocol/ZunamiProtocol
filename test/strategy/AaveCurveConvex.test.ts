@@ -1,12 +1,10 @@
 import { ethers, network } from 'hardhat';
 import { expect } from 'chai';
-import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ContractFactory, Signer } from 'ethers';
 
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 
-const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import {
@@ -22,6 +20,7 @@ import {
     usdtAddress,
     testCheckSumm,
 } from '../constants/TestConstants';
+import { parseUnits } from 'ethers/lib/utils';
 
 const STRAT = 'Aave';
 const STRATEGY_NAME = `${STRAT}CurveConvex`;
@@ -92,15 +91,9 @@ describe(STRATEGY_NAME, function () {
         it('Add pool from owner should be successful', async () => {
             await zunami.add(strategy.address); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
-                await usdc
-                    .connect(user)
-                    .approve(zunami.address, web3.utils.toWei('1000000', 'mwei'));
-                await usdt
-                    .connect(user)
-                    .approve(zunami.address, web3.utils.toWei('1000000', 'mwei'));
-                await dai
-                    .connect(user)
-                    .approve(zunami.address, web3.utils.toWei('1000000', 'ether'));
+                await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
+                await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
+                await dai.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
             }
         });
 
@@ -112,9 +105,9 @@ describe(STRATEGY_NAME, function () {
             await expectRevert(
                 zunami.deposit(
                     [
-                        web3.utils.toWei('1000', 'ether'),
-                        web3.utils.toWei('1000', 'mwei'),
-                        web3.utils.toWei('1000', 'mwei'),
+                        parseUnits('1000', 'ether'),
+                        parseUnits('1000', 'mwei'),
+                        parseUnits('1000', 'mwei'),
                     ],
                     0
                 ),
@@ -129,16 +122,14 @@ describe(STRATEGY_NAME, function () {
                     .connect(user)
                     .deposit(
                         [
-                            web3.utils.toWei('1000', 'ether'),
-                            web3.utils.toWei('1000', 'mwei'),
-                            web3.utils.toWei('1000', 'mwei'),
+                            parseUnits('1000', 'ether'),
+                            parseUnits('1000', 'mwei'),
+                            parseUnits('1000', 'mwei'),
                         ],
                         0
                     );
             }
         });
-
-        printBalances();
 
         it('balances after deposit should be 0', async () => {
             for (const user of [alice, bob, carol, rosa]) {
@@ -203,7 +194,6 @@ describe(STRATEGY_NAME, function () {
             }
         });
 
-        printBalances();
         checkUserBalances();
 
         it('delegateDeposit should be successful', async () => {
@@ -244,9 +234,9 @@ describe(STRATEGY_NAME, function () {
                 await zunami
                     .connect(user)
                     .delegateDeposit([
-                        web3.utils.toWei('15', 'ether'),
-                        web3.utils.toWei('15', 'mwei'),
-                        web3.utils.toWei('15', 'mwei'),
+                        parseUnits('15', 'ether'),
+                        parseUnits('15', 'mwei'),
+                        parseUnits('15', 'mwei'),
                     ]);
             }
             for (const user of [alice, bob, carol, rosa]) {
@@ -299,7 +289,7 @@ describe(STRATEGY_NAME, function () {
             const daiAccountSigner: Signer = ethers.provider.getSigner(daiAccount);
             await dai
                 .connect(daiAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'ether'));
+                .transfer(owner.address, parseUnits('1000000', 'ether'));
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [daiAccount],
@@ -312,7 +302,7 @@ describe(STRATEGY_NAME, function () {
             const usdcAccountSigner: Signer = ethers.provider.getSigner(usdcAccount);
             await usdc
                 .connect(usdcAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'mwei'));
+                .transfer(owner.address, parseUnits('1000000', 'mwei'));
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [usdcAccount],
@@ -325,7 +315,7 @@ describe(STRATEGY_NAME, function () {
             const usdtAccountSigner: Signer = ethers.provider.getSigner(usdtAccount);
             await usdt
                 .connect(usdtAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'mwei'));
+                .transfer(owner.address, parseUnits('1000000', 'mwei'));
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [usdtAccount],
@@ -342,9 +332,9 @@ describe(STRATEGY_NAME, function () {
             }
 
             for (const user of [alice, bob, carol, rosa]) {
-                await usdt.connect(owner).transfer(user.address, web3.utils.toWei('1000', 'mwei'));
-                await usdc.connect(owner).transfer(user.address, web3.utils.toWei('1000', 'mwei'));
-                await dai.connect(owner).transfer(user.address, web3.utils.toWei('1000', 'ether'));
+                await usdt.connect(owner).transfer(user.address, parseUnits('1000', 'mwei'));
+                await usdc.connect(owner).transfer(user.address, parseUnits('1000', 'mwei'));
+                await dai.connect(owner).transfer(user.address, parseUnits('1000', 'ether'));
             }
         }
     });

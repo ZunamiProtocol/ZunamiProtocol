@@ -1,12 +1,10 @@
 import { ethers, network } from 'hardhat';
 import { expect } from 'chai';
-import '@nomiclabs/hardhat-web3';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ContractFactory, Signer } from 'ethers';
 
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 
-const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import {
@@ -22,6 +20,7 @@ import {
     usdtAddress,
     testCheckSumm,
 } from './constants/TestConstants';
+import { parseUnits } from 'ethers/lib/utils';
 
 describe('Zunami', function () {
     let owner: SignerWithAddress;
@@ -92,15 +91,9 @@ describe('Zunami', function () {
         it('Add pool from owner should be successful', async () => {
             await zunami.add(strategy.address); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
-                await usdc
-                    .connect(user)
-                    .approve(zunami.address, web3.utils.toWei('1000000', 'mwei'));
-                await usdt
-                    .connect(user)
-                    .approve(zunami.address, web3.utils.toWei('1000000', 'mwei'));
-                await dai
-                    .connect(user)
-                    .approve(zunami.address, web3.utils.toWei('1000000', 'ether'));
+                await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
+                await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
+                await dai.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
             }
         });
 
@@ -112,9 +105,9 @@ describe('Zunami', function () {
             await expectRevert(
                 zunami.deposit(
                     [
-                        web3.utils.toWei('1000', 'ether'),
-                        web3.utils.toWei('1000', 'mwei'),
-                        web3.utils.toWei('1000', 'mwei'),
+                        parseUnits('1000', 'ether'),
+                        parseUnits('1000', 'mwei'),
+                        parseUnits('1000', 'mwei'),
                     ],
                     0
                 ),
@@ -129,9 +122,9 @@ describe('Zunami', function () {
                     .connect(user)
                     .deposit(
                         [
-                            web3.utils.toWei('1000', 'ether'),
-                            web3.utils.toWei('1000', 'mwei'),
-                            web3.utils.toWei('1000', 'mwei'),
+                            parseUnits('1000', 'ether'),
+                            parseUnits('1000', 'mwei'),
+                            parseUnits('1000', 'mwei'),
                         ],
                         0
                     );
@@ -169,7 +162,6 @@ describe('Zunami', function () {
             }
         });
 
-        printBalances();
         // strategy2
         checkUserBalances();
 
@@ -215,9 +207,9 @@ describe('Zunami', function () {
             console.log('totalSupply:', totalSupply);
         });
 
-        it('calcManagementFee(1000) should be 10', async () => {
+        it('calcManagementFee(1000) should be 20', async () => {
             let calcManagementFee = await zunami.calcManagementFee(1000);
-            expect(parseFloat(calcManagementFee)).equal(10);
+            expect(parseFloat(calcManagementFee)).equal(20);
         });
 
         it('lpPrice() should be more than 0.99', async () => {
@@ -237,7 +229,6 @@ describe('Zunami', function () {
             }
         });
 
-        printBalances();
         checkUserBalances();
 
         it('delegateDeposit should be success', async () => {
@@ -306,8 +297,6 @@ describe('Zunami', function () {
         it('completeWithdrawals | Strategy 4 should be success', async () => {
             await zunami.completeWithdrawals(5, 3);
         });
-
-        printBalances();
 
         it('function updateMinDepositAmount for all strats should be success', async () => {
             await strategy.updateMinDepositAmount(9970);
@@ -382,8 +371,6 @@ describe('Zunami', function () {
             }
         });
 
-        printBalances();
-
         it('2 users deposit in diff blocks&pools, skip blocks, withdraw, should be success', async () => {
             let usdt_balance = await usdt.balanceOf(alice.address);
             let usdc_balance = await usdc.balanceOf(alice.address);
@@ -450,7 +437,7 @@ describe('Zunami', function () {
             const daiAccountSigner: Signer = ethers.provider.getSigner(daiAccount);
             await dai
                 .connect(daiAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'ether'));
+                .transfer(owner.address, parseUnits('1000000', 'ether'));
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [daiAccount],
@@ -463,7 +450,7 @@ describe('Zunami', function () {
             const usdcAccountSigner: Signer = ethers.provider.getSigner(usdcAccount);
             await usdc
                 .connect(usdcAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'mwei'));
+                .transfer(owner.address, parseUnits('1000000', 'mwei'));
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [usdcAccount],
@@ -476,7 +463,7 @@ describe('Zunami', function () {
             const usdtAccountSigner: Signer = ethers.provider.getSigner(usdtAccount);
             await usdt
                 .connect(usdtAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'mwei'));
+                .transfer(owner.address, parseUnits('1000000', 'mwei'));
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [usdtAccount],
@@ -493,16 +480,16 @@ describe('Zunami', function () {
             }
 
             for (const user of [alice, bob, carol, rosa]) {
-                await usdt.connect(owner).transfer(user.address, web3.utils.toWei('1000', 'mwei'));
-                await usdc.connect(owner).transfer(user.address, web3.utils.toWei('1000', 'mwei'));
-                await dai.connect(owner).transfer(user.address, web3.utils.toWei('1000', 'ether'));
+                await usdt.connect(owner).transfer(user.address, parseUnits('1000', 'mwei'));
+                await usdc.connect(owner).transfer(user.address, parseUnits('1000', 'mwei'));
+                await dai.connect(owner).transfer(user.address, parseUnits('1000', 'ether'));
             }
         }
     });
 
     // --- START TEST STRATEGIES ---
     // --- MULTI-TEST ----
-    describe('Zunami - MultiTest', function () {
+    describe('Test 4 strategys (Aave, OUSD, USDP, SUSD)', function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
             let AaveCurveConvex: ContractFactory = await ethers.getContractFactory(
