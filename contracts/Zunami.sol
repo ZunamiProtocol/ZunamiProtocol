@@ -9,14 +9,16 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
-/// @title Contract for Convex&Curve protocols optimize
-/// @notice Users can use this contract for optimize yield and gas
+/// @title Zunami Protocol
 
 /**
- * @dev Zunami is main contract
- *
+ * @notice Contract for Convex&Curve protocols optimize.
+ * Users can use this contract for optimize yield and gas.
+ */
+
+/**
+ * @dev Zunami is main contract.
  * Contract does not store user funds.
- *
  * All user funds goes to Convex&Curve pools.
  */
 
