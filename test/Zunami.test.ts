@@ -116,7 +116,7 @@ describe('Zunami', function () {
     });
 
     // --- MULTI-TEST ----
-    describe('Test 4 strategys (Aave, OUSD, USDP, SUSD)', function () {
+    describe('Test 4 strategys (Aave, OUSD, USDP, SUSD)', async function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
             let AaveCurveConvex: ContractFactory = await ethers.getContractFactory(
@@ -167,6 +167,7 @@ describe('Zunami', function () {
 
                 await expect(await zunami.add(strategy.address));
             });
+
             it('should deposit after MIN_LOCK_TIME successful complete', async () => {
                 await expectRevert(
                     zunami.deposit(
@@ -212,6 +213,7 @@ describe('Zunami', function () {
                     ).to.equal('0.0');
                 }
             });
+
             it('should users withdraw from pool successful complete', async () => {
                 for (var i = 0; i < SKIP_TIMES; i++) {
                     await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
@@ -269,7 +271,7 @@ describe('Zunami', function () {
                 );
 
                 const newMinDepositAmount = 9970;
-                const minDepositAmountEqual = '0.000000000000005';
+                const minDepositAmountEqual = '0.00000000000000997';
                 await strategy.updateMinDepositAmount(newMinDepositAmount);
                 await strategy2.updateMinDepositAmount(newMinDepositAmount);
                 await strategy2b.updateMinDepositAmount(newMinDepositAmount);
@@ -287,6 +289,7 @@ describe('Zunami', function () {
                     minDepositAmountEqual
                 );
             });
+
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
                 expect(await zunami.claimManagementFees(strategy.address));
                 expect(await zunami.add(strategy2.address));
@@ -302,6 +305,7 @@ describe('Zunami', function () {
                     );
                 }
             });
+
             it('should totalHoldings, totalSupply more than 1190, lpPrice more than 0.99', async () => {
                 let totalHoldings = await zunami.totalHoldings();
                 expect(parseFloat(ethers.utils.formatUnits(totalHoldings, 18))).to.gt(1190);
@@ -312,7 +316,10 @@ describe('Zunami', function () {
                 let lpPrice = await zunami.lpPrice();
                 expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
             });
+
             it('should withdraw after moveFunds successful complete', async () => {
+                expect(await zunami.moveFunds(1, 0));
+
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
                         await zunami
@@ -357,6 +364,7 @@ describe('Zunami', function () {
                     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2)
                 );
             });
+
             it('should completeWithdrawals successful complete', async () => {
                 for (const user of [alice, bob, rosa]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
