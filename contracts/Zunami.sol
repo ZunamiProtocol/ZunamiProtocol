@@ -324,10 +324,7 @@ contract Zunami is Context, Ownable, ERC20 {
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
             if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(
-                    address(poolInfo[_to].strategy),
-                    amounts[y]
-                );
+                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
             }
         }
         poolInfo[_to].strategy.updateZunamiLpInStrat(zunamiLp, true);
