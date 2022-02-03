@@ -13,3 +13,5 @@ export const daiAccount: string = '0x6F6C07d80D0D433ca389D336e6D1feBEA2489264';
 export const usdcAccount: string = '0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6';
 export const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
 export const testCheckSumm = 2950; // 3000 base
+
+export const DEBUG_MODE = false;

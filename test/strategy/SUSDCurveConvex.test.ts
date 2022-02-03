@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ContractFactory, Signer } from 'ethers';
 
-const { expectRevert, time } = require('@openzeppelin/test-helpers');
+const { time } = require('@openzeppelin/test-helpers');
 
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
@@ -19,6 +19,7 @@ import {
     usdtAccount,
     usdtAddress,
     testCheckSumm,
+    DEBUG_MODE,
 } from '../constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
@@ -114,6 +115,29 @@ describe(STRATEGY_NAME, function () {
             }
         }
     });
+    after(async function () {
+        if (DEBUG_MODE) {
+            for (const user of [alice, bob, carol, rosa]) {
+                let usdt_balance = await usdt.balanceOf(user.address);
+                let usdc_balance = await usdc.balanceOf(user.address);
+                let dai_balance = await dai.balanceOf(user.address);
+                console.log('  ---PRINT BALANCES--- ');
+                console.log(
+                    '  zunami LP: ',
+                    ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)
+                );
+                console.log('  usdt: ', ethers.utils.formatUnits(usdt_balance, 6));
+                console.log('  usdc: ', ethers.utils.formatUnits(usdc_balance, 6));
+                console.log('  dai: ', ethers.utils.formatUnits(dai_balance, 18));
+                console.log(
+                    '  SUMM : ',
+                    parseFloat(ethers.utils.formatUnits(dai_balance, 18)) +
+                        parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
+                        parseFloat(ethers.utils.formatUnits(usdt_balance, 6))
+                );
+            }
+        }
+    });
 
     // ---  STRATEGY ----
     describe(`Test solo ${STRATEGY_NAME} in Zunami`, function () {
@@ -129,10 +153,10 @@ describe(STRATEGY_NAME, function () {
         });
 
         it('Add pool from owner should be successful', async () => {
-            await expectRevert(
+            await expect(
                 zunami.connect(alice).add(strategy.address),
                 'Ownable: caller is not the owner'
-            );
+            ).to.be.reverted;
             expect(await zunami.add(strategy.address)); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
@@ -151,7 +175,7 @@ describe(STRATEGY_NAME, function () {
         });
 
         it('deposit after MIN_LOCK_TIME should be successful', async () => {
-            await expectRevert(
+            await expect(
                 zunami.deposit(
                     [
                         parseUnits('1000', 'ether'),
@@ -161,7 +185,7 @@ describe(STRATEGY_NAME, function () {
                     0
                 ),
                 'Zunami: strategy not started yet!'
-            );
+            ).to.be.reverted;
 
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
             for (const user of [alice, bob, carol, rosa]) {
@@ -315,28 +339,6 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
-            }
-        });
-
-        it('print balances', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                let usdt_balance = await usdt.balanceOf(user.address);
-                let usdc_balance = await usdc.balanceOf(user.address);
-                let dai_balance = await dai.balanceOf(user.address);
-                console.log('  ---PRINT BALANCES--- ');
-                console.log(
-                    '  zunami LP: ',
-                    ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)
-                );
-                console.log('  usdt: ', ethers.utils.formatUnits(usdt_balance, 6));
-                console.log('  usdc: ', ethers.utils.formatUnits(usdc_balance, 6));
-                console.log('  dai: ', ethers.utils.formatUnits(dai_balance, 18));
-                console.log(
-                    '  SUMM : ',
-                    parseFloat(ethers.utils.formatUnits(dai_balance, 18)) +
-                        parseFloat(ethers.utils.formatUnits(usdc_balance, 6)) +
-                        parseFloat(ethers.utils.formatUnits(usdt_balance, 6))
-                );
             }
         });
     });
