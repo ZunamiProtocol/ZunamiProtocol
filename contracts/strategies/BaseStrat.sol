@@ -31,6 +31,7 @@ contract BaseStrat is Ownable {
     address public usdt;
     uint256 public managementFees = 0;
     uint256 public buybackFee = 0;
+    uint256 public zunamiLpInStrat = 0;
 
     address[] cvxToUsdtPath;
     address[] crvToUsdtPath;
@@ -153,5 +154,13 @@ contract BaseStrat is Ownable {
     /// @dev dev set Zunami (main contract) address
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    /**
+     * @dev function used in zunami contract and can be called only by zunami.
+     * If user deposit funds in strategy zunamiLpInStrat grow if withdraw goes down.
+     */
+    function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
+        _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 }
