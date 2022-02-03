@@ -18,7 +18,6 @@ import './interfaces/IStrategy.sol';
  * Contract does not store user funds.
  *
  * All user funds goes to Convex&Curve pools.
- *
  */
 
 contract Zunami is Context, Ownable, ERC20 {
@@ -65,6 +64,7 @@ contract Zunami is Context, Ownable, ERC20 {
     event BadDeposit(address depositor, uint256[3] amounts, uint256 lpShares);
     event BadWithdraw(address withdrawer, uint256[3] amounts, uint256 lpShares);
 
+    /// @dev Throws if called by any account other than the owner.
     modifier isNotLocked() {
         require(!isLock, 'Zunami: Deposit functions locked');
         _;
@@ -89,12 +89,14 @@ contract Zunami is Context, Ownable, ERC20 {
         managementFee = newManagementFee;
     }
 
-    /// @dev Returns commission on the amount of profit in the transaction
+    /// @dev Returns managementFee for strategy's when contract sell rewards
+    /// @return Returns commission on the amount of profit in the transaction
     function calcManagementFee(uint256 amount) external view returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
     /// @dev Returns commission total holdings for all pools (strategy's)
+    /// @return Returns sum holdings (USD) for all pools
     function totalHoldings() public view returns (uint256) {
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
@@ -104,12 +106,13 @@ contract Zunami is Context, Ownable, ERC20 {
         return totalHold;
     }
 
-    /// @dev Returns currently price of ZLP (1e18 = 1$), price depends on the income of users
+    /// @dev Returns price depends on the income of users
+    /// @return Returns currently price of ZLP (1e18 = 1$)
     function lpPrice() external view returns (uint256) {
         return (totalHoldings() * 1e18) / totalSupply();
     }
 
-    /// @notice in this func user sends funds to the contract and then waits for the completion of the transaction for all users
+    /// @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
     function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
         // user transfer funds to contract
         if (userExistence[_msgSender()] == false) {
@@ -126,7 +129,7 @@ contract Zunami is Context, Ownable, ERC20 {
         emit PendingDepositEvent(_msgSender(), amounts);
     }
 
-    /// @notice in this func user sends pending withdraw to the contract and then waits for the completion of the transaction for all users
+    /// @dev in this func user sends pending withdraw to the contract and then waits for the completion of the transaction for all users
     function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts) external {
         PendingWithdrawal memory pendingWithdrawal;
         pendingWithdrawal.lpAmount = lpAmount;
@@ -135,7 +138,7 @@ contract Zunami is Context, Ownable, ERC20 {
         pendingWithdrawals.push(pendingWithdrawal);
     }
 
-    /// @notice Zunami protocol owner complete all active pending deposits of users
+    /// @dev Zunami protocol owner complete all active pending deposits of users
     function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
@@ -187,7 +190,7 @@ contract Zunami is Context, Ownable, ERC20 {
         totalDeposited += changedHoldings;
     }
 
-    /// @notice Zunami protocol owner complete all active pending withdrawals of users
+    /// @dev Zunami protocol owner complete all active pending withdrawals of users
     function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
         require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
 
@@ -208,7 +211,8 @@ contract Zunami is Context, Ownable, ERC20 {
         } while (i > minWithdrawalsIndex);
     }
 
-    /// @notice deposit in one tx, without waiting complete by dev
+    /// @dev deposit in one tx, without waiting complete by dev
+    /// @return Returns amount of lpShares minted for user
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
         isNotLocked
@@ -245,7 +249,7 @@ contract Zunami is Context, Ownable, ERC20 {
         return lpShares;
     }
 
-    /// @notice withdraw in one tx, without waiting complete by dev
+    /// @dev withdraw in one tx, without waiting complete by dev
     function withdraw(
         uint256 lpShares,
         uint256[3] memory minAmounts,
@@ -383,7 +387,7 @@ contract Zunami is Context, Ownable, ERC20 {
         require(poolInfo[0].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
-    /// @notice user remove his active pending deposit
+    /// @dev user remove his active pending deposit
     function pendingDepositRemove() external {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             if (accDepositPending[_msgSender()][i] > 0) {
