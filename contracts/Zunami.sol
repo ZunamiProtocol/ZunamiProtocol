@@ -11,9 +11,15 @@ import './interfaces/IStrategy.sol';
 
 /// @title Contract for Convex&Curve protocols optimize
 /// @notice Users can use this contract for optimize yield and gas
-/// @dev Zunami is main contract
-/// Contract does not store user funds
-/// All user funds goes to Convex&Curve pools
+
+/**
+ * @dev Zunami is main contract
+ *
+ * Contract does not store user funds.
+ *
+ * All user funds goes to Convex&Curve pools.
+ *
+ */
 
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
