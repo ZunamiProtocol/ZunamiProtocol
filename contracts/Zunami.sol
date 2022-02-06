@@ -114,6 +114,12 @@ contract Zunami is Context, Ownable, ERC20 {
         return (totalHoldings() * 1e18) / totalSupply();
     }
 
+    /// @dev Returns number (length of poolInfo)
+    /// @return Returns number (length of poolInfo)
+    function poolInfoLength() external view returns (uint256) {
+        return poolInfo.length;
+    }
+
     /// @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
     function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
         // user transfer funds to contract

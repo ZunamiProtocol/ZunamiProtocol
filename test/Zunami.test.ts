@@ -293,6 +293,8 @@ describe('Zunami', function () {
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
                 expect(await zunami.claimManagementFees(strategy.address));
                 expect(await zunami.add(strategy2.address));
+                expect(parseInt(await zunami.poolInfoLength())).equal(2);
+                // expect().equal(2);
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 for (const user of [alice, bob, carol, rosa]) {
                     let usdt_balance = await usdt.balanceOf(user.address);
@@ -312,6 +314,7 @@ describe('Zunami', function () {
 
                 let totalSupply = await zunami.totalSupply();
                 expect(parseFloat(ethers.utils.formatUnits(totalSupply, 18))).to.gt(1190);
+                console.log('totalSupply', totalSupply);
 
                 let lpPrice = await zunami.lpPrice();
                 expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
