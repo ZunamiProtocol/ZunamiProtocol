@@ -9,7 +9,7 @@ const { expectRevert, time } = require('@openzeppelin/test-helpers');
 
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 import { Contract } from '@ethersproject/contracts';
-import { abi as erc20ABI } from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 
 const MIN_LOCK_TIME = time.duration.seconds(86405);
 const provider = waffle.provider;
@@ -135,7 +135,7 @@ describe('ZunStaker', function () {
                 console.log(
                     '  SUMM : ',
                     parseFloat(ethers.utils.formatUnits(zun_balance, 18)) +
-                    parseFloat(ethers.utils.formatUnits(zun_staked, 18))
+                        parseFloat(ethers.utils.formatUnits(zun_staked, 18))
                 );
             }
         });
