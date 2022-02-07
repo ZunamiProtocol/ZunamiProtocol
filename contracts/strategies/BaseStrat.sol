@@ -135,4 +135,9 @@ contract BaseStrat is Ownable {
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
     }
+
+    function inCaseTokenStuck(IERC20Metadata _token) external onlyOwner {
+        uint256 tokenBalance = _token.balanceOf(address(this));
+        _token.safeTransfer(_msgSender(), tokenBalance);
+    }
 }
