@@ -127,14 +127,14 @@ contract BaseStrat is Ownable {
      * @dev dev can update buybackFee but it can't be higher than DEPOSIT_DENOMINATOR (100%)
      * if buybackFee > 0 activate ZUN token buyback in claimManagementFees
      */
-    /// @param {uint256} _buybackFee - number min amount 0, max amount DEPOSIT_DENOMINATOR
+    /// @param _buybackFee - number min amount 0, max amount DEPOSIT_DENOMINATOR
     function updateBuybackFee(uint256 _buybackFee) public onlyOwner {
         require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
         buybackFee = _buybackFee;
     }
 
     /// @dev dev set ZUN token for buyback
-    /// @param {address} _zun - address of Zun token (for buyback)
+    /// @param  _zun - address of Zun token (for buyback)
     function setZunToken(address _zun) public onlyOwner {
         zun = _zun;
     }
@@ -143,7 +143,7 @@ contract BaseStrat is Ownable {
      * @dev dev can update minDepositAmount but it can't be higher than 10000 (100%)
      * If user send deposit tx and get deposit amount lower than minDepositAmount than deposit tx failed
      */
-    /// @param {uint256} _minDepositAmount - amount which must be the minimum (%) after the deposit, min amount 1, max amount 10000
+    /// @param _minDepositAmount - amount which must be the minimum (%) after the deposit, min amount 1, max amount 10000
     function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
         minDepositAmount = _minDepositAmount;
@@ -154,8 +154,10 @@ contract BaseStrat is Ownable {
         revert('The strategy must have an owner');
     }
 
-    /// @dev dev set Zunami (main contract) address
-    /// @param {address} zunamiAddr - address of main contract (Zunami)
+    /**
+     * @dev dev set Zunami (main contract) address
+     * @param zunamiAddr - address of main contract (Zunami)
+     */
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
     }
@@ -163,10 +165,8 @@ contract BaseStrat is Ownable {
     /**
      * @dev function used in zunami contract and can be called only by zunami.
      * If user deposit funds in strategy zunamiLpInStrat grow if withdraw goes down.
-     */
-    /**
-     * @param {uint256} _amount - amount of minted/burned lpShares
-     * @param {bool} _isMint - withdraw = false, deposit = true
+     * @param _amount - amount of minted/burned lpShares
+     *  _isMint - withdraw = false, deposit = true
      */
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
