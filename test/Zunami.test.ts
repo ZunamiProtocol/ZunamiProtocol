@@ -373,7 +373,9 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.completeWithdrawals(10, 2));
+                expect(
+                    await zunami.completeWithdrawals([alice.address, bob.address, rosa.address], 2)
+                );
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
@@ -418,7 +420,7 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.completeWithdrawals(5, 3));
+                expect(await zunami.completeWithdrawals([alice.address, bob.address], 3));
 
                 expect(await zunami.emergencyWithdraw());
             });
@@ -426,7 +428,7 @@ describe('Zunami', function () {
             it('should delegate & completeWithdrawals successful complete', async () => {
                 let zunami_balance = await zunami.balanceOf(rosa.address);
                 expect(await zunami.connect(rosa).delegateWithdrawal(zunami_balance, [0, 0, 0]));
-                expect(await zunami.completeWithdrawals(5, 0));
+                expect(await zunami.completeWithdrawals([rosa.address], 0));
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
@@ -473,7 +475,12 @@ describe('Zunami', function () {
                     );
                 }
                 // complete
-                expect(await zunami.completeWithdrawals(10, 0));
+                expect(
+                    await zunami.completeWithdrawals(
+                        [alice.address, bob.address, rosa.address, carol.address],
+                        0
+                    )
+                );
             });
 
             it('should claim all strats successful complete', async () => {
