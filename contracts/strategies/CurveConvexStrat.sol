@@ -112,6 +112,7 @@ contract CurveConvexStrat is Context, BaseStrat {
      * If deposit failed return zero
      */
     /// @return Returns deposited amount in USD.
+    /// @param {uint256[3]} amounts - amounts in stablecoins that user deposit
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256 _amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
@@ -138,6 +139,11 @@ contract CurveConvexStrat is Context, BaseStrat {
      * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
      */
     /// @return Returns true if withdraw success and false if fail.
+    /**
+     * @param  * {address} depositor - address of user that deposit funds
+     * {uint256} lpShares - amount of ZLP for withdraw
+     * {address[3]} minAmounts -  array of amounts stablecoins that user want minimum receive
+     */
     function withdraw(
         address depositor,
         uint256 lpShares,
