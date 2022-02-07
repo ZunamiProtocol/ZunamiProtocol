@@ -14,16 +14,22 @@ import '@openzeppelin/contracts/utils/math/Math.sol';
 import './interfaces/IVeZunToken.sol';
 import "./staking/BaseStaking.sol";
 
-contract ZunStaker is BaseStaking {
+contract ZLPStaker is BaseStaking {
 
     using Math for uint256;
     using SafeERC20 for IERC20;
 
-    IVeZunToken public veZun; // governance token
+    IVeZunToken public xZLP;
+    IERC20 public ZLP;
 
-    constructor(IERC20 _Zun, IVeZunToken _veZun) {
+    constructor(
+        IERC20 _Zun,
+        IVeZunToken _xZLP,
+        IERC20 _ZLP
+    ) {
         Zun = _Zun;
-        veZun = _veZun;
+        xZLP = _xZLP;
+        ZLP = _ZLP;
     }
 
     function deposit(uint256 _amount, uint256 _duration) external {
@@ -34,25 +40,24 @@ contract ZunStaker is BaseStaking {
         duration = duration.max(MIN_LOCK_DURATION);
         updatePool();
 
-        Zun.safeTransferFrom(_msgSender(), address(this), _amount);
+        ZLP.safeTransferFrom(_msgSender(), address(this), _amount);
         uint256 mintAmount = (_amount * getMultiplier(duration)) / 1e18;
 
         depositsOf[_msgSender()].push(
             Deposit({
-                amount: _amount,
-                mintedAmount: mintAmount,
-                rewardDebt: (mintAmount * accZunPerShare) / 1e18,
-                start: uint64(block.timestamp),
-                end: uint64(block.timestamp) + uint64(duration)
-            })
+        amount : _amount,
+        mintedAmount : mintAmount,
+        rewardDebt : (mintAmount * accZunPerShare) / 1e18,
+        start : uint64(block.timestamp),
+        end : uint64(block.timestamp) + uint64(duration)
+        })
         );
         totalDepositOf[_msgSender()] += _amount;
 
-        veZun.mint(_msgSender(), mintAmount);
+        xZLP.mint(_msgSender(), mintAmount);
         lpSupply += mintAmount;
         emit Deposited(_amount, duration, _msgSender());
     }
-
     function withdraw(uint256 _depositId) external {
         require(_depositId < depositsOf[_msgSender()].length, '!exist');
         Deposit storage userDeposit = depositsOf[_msgSender()][_depositId];
@@ -61,21 +66,22 @@ contract ZunStaker is BaseStaking {
 
         // get rewards
         uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
-            1e18 -
-            userDeposit.rewardDebt;
+        1e18 -
+        userDeposit.rewardDebt;
 
         totalDepositOf[_msgSender()] -= userDeposit.amount;
         // burn pool shares
-        IERC20(address(veZun)).safeTransferFrom(
+        IERC20(address(xZLP)).safeTransferFrom(
             _msgSender(),
             address(this),
             userDeposit.mintedAmount
         );
-        veZun.burn(userDeposit.mintedAmount);
+        xZLP.burn(userDeposit.mintedAmount);
         lpSupply -= userDeposit.mintedAmount;
 
         // return tokens
-        safeZunTransfer(_msgSender(), userDeposit.amount + pending);
+        safeZunTransfer(_msgSender(), pending);
+        ZLP.safeTransfer(_msgSender(), userDeposit.amount);
         emit Withdrawn(_depositId, _msgSender(), userDeposit.amount);
 
         // remove Deposit

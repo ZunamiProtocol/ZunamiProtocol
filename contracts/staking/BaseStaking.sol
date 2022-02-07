@@ -17,9 +17,11 @@ contract BaseStaking is Ownable {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public maxBonus; // 1e18 change in prod
-    uint256 public maxLockDuration; // 31536000 1 year
+    uint256 public maxBonus = 1e18;
+    uint256 public maxLockDuration = 31536000; // 1 year
     uint256 public constant MIN_LOCK_DURATION = 2 weeks; // 1209600 sec
+
+    IERC20 public Zun;
 
     struct Deposit {
         uint256 amount;
@@ -32,7 +34,6 @@ contract BaseStaking is Ownable {
     mapping(address => Deposit[]) public depositsOf;
     mapping(address => uint256) public totalDepositOf;
 
-    IERC20 public Zun; // reward token
 
     uint256 public lpSupply; // total supply
     uint256 public accZunPerShare = 0;
@@ -41,11 +42,7 @@ contract BaseStaking is Ownable {
 
     bool public isClaimLock = false;
 
-    constructor(IERC20 _Zun, uint256 _maxBonus, uint256 _maxLockDuration) {
-        Zun = _Zun;
-        maxBonus = _maxBonus;
-        maxLockDuration = _maxLockDuration;
-    }
+    constructor() {}
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver);
     event Withdrawn(uint256 indexed depositId, address indexed receiver, uint256 amount);
@@ -108,17 +105,6 @@ contract BaseStaking is Ownable {
         return (userDeposit.mintedAmount * localShare) / 1e18 - userDeposit.rewardDebt;
     }
 
-    function safeZunTransfer(address _to, uint256 _amount) internal {
-        uint256 ZunBal = Zun.balanceOf(address(this));
-        bool transferSuccess = false;
-        if (_amount > ZunBal) {
-            transferSuccess = Zun.transfer(_to, ZunBal);
-        } else {
-            transferSuccess = Zun.transfer(_to, _amount);
-        }
-        require(transferSuccess, 'safeZunTransfer: Transfer failed');
-    }
-
     // change rewards per block
     function updateZunPerBlock(uint256 _ZunPerBlock) public onlyOwner {
         updatePool();
@@ -145,17 +131,6 @@ contract BaseStaking is Ownable {
         }
     }
 
-    function _claim(address user, uint256 _depositId) internal {
-        Deposit storage userDeposit = depositsOf[user][_depositId];
-        uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
-        1e18 -
-        userDeposit.rewardDebt;
-        if (pending > 0) {
-            safeZunTransfer(user, pending);
-        }
-        userDeposit.rewardDebt = (userDeposit.mintedAmount * accZunPerShare) / 1e18;
-    }
-
     // frontend function
     function pendingZunTotal(address _user) public view returns (uint256) {
         uint256 length = getDepositsOfLength(_user);
@@ -173,5 +148,27 @@ contract BaseStaking is Ownable {
             depositsOf[_user][i].rewardDebt;
         }
         return totalPending;
+    }
+
+    function _claim(address user, uint256 _depositId) internal {
+        Deposit storage userDeposit = depositsOf[user][_depositId];
+        uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
+        1e18 -
+        userDeposit.rewardDebt;
+        if (pending > 0) {
+            safeZunTransfer(user, pending);
+        }
+        userDeposit.rewardDebt = (userDeposit.mintedAmount * accZunPerShare) / 1e18;
+    }
+
+    function safeZunTransfer(address _to, uint256 _amount) internal {
+        uint256 ZunBal = Zun.balanceOf(address(this));
+        bool transferSuccess = false;
+        if (_amount > ZunBal) {
+            transferSuccess = Zun.transfer(_to, ZunBal);
+        } else {
+            transferSuccess = Zun.transfer(_to, _amount);
+        }
+        require(transferSuccess, 'safeZunTransfer: Transfer failed');
     }
 }
