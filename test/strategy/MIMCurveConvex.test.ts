@@ -283,7 +283,7 @@ describe(STRATEGY_NAME, function () {
                 let zunami_balance = await zunami.balanceOf(user.address);
                 expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0]));
             }
-            expect(await zunami.completeWithdrawals(10, 0));
+            expect(await zunami.completeWithdrawals([alice.address, bob.address, rosa.address], 0));
             for (const user of [alice, bob, carol, rosa]) {
                 expect(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)).to.equal(
                     '0.0'
