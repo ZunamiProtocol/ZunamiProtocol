@@ -158,7 +158,6 @@ contract Zunami is Context, Ownable, ERC20 {
         emit PendingWithdrawEvent(userAddr, minAmounts);
     }
 
-
     /// @dev Zunami protocol owner complete all active pending deposits of users
     /**
      * @param userList - dev send array of users from pending to complete
@@ -220,10 +219,10 @@ contract Zunami is Context, Ownable, ERC20 {
         totalDeposited += changedHoldings;
     }
 
-    /// @dev Zunami protocol owner complete all active pending withdrawals of users
     /**
-     * @param  withdrawalsToComplete - amount of pending withdrawals to complete in this tx
-     *  pid - number of the pool from which the funds are withdrawn
+     * @dev Zunami protocol owner complete all active pending withdrawals of users
+     * @param userList - array of users from pending withdraw to complete
+     * @param pid - number of the pool from which the funds are withdrawn
      */
     function completeWithdrawals(address[] memory userList, uint256 pid)
         external
@@ -264,11 +263,11 @@ contract Zunami is Context, Ownable, ERC20 {
         }
     }
 
-    /// @dev deposit in one tx, without waiting complete by dev
-    /// @return Returns amount of lpShares minted for user
     /**
+    * @dev deposit in one tx, without waiting complete by dev
+    * @return Returns amount of lpShares minted for user
      * @param amounts - user send amounts of stablecoins to deposit
-     *  pid - number of the pool to which the deposit goes
+     * @param pid - number of the pool to which the deposit goes
      */
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
@@ -306,11 +305,11 @@ contract Zunami is Context, Ownable, ERC20 {
         return lpShares;
     }
 
-    /// @dev withdraw in one tx, without waiting complete by dev
     /**
-     * @param  lpShares - amount of ZLP for withdraw
-     * minAmounts -  array of amounts stablecoins that user want minimum receive
-     *  pid - number of the pool from which the funds are withdrawn
+    * @dev withdraw in one tx, without waiting complete by dev
+     * @param lpShares - amount of ZLP for withdraw
+     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
+     * @param pid - number of the pool from which the funds are withdrawn
      */
     function withdraw(
         uint256 lpShares,
@@ -338,7 +337,7 @@ contract Zunami is Context, Ownable, ERC20 {
         totalDeposited -= userDeposit;
 
         totalDeposited -= userDeposit;
-        
+
         emit Withdrawn(userAddr, minAmounts, lpShares);
     }
 
@@ -354,7 +353,6 @@ contract Zunami is Context, Ownable, ERC20 {
         IStrategy(strategyAddr).claimManagementFees();
     }
 
-
     /// @dev add new strategy in strategy list, deposits in the new strategy are blocked for one day for safety
     /// @param _strategy - add new address strategy in poolInfo Array
     function add(address _strategy) external onlyOwner {
@@ -363,10 +361,10 @@ contract Zunami is Context, Ownable, ERC20 {
         );
     }
 
-    /// @dev dev can transfer funds between strategy's for better APY
     /**
+     * @dev dev can transfer funds between strategy's for better APY
      * @param  _from - number strategy, from which funds are withdrawn
-     *  _to - number strategy, to which funds are deposited
+     * @param _to - number strategy, to which funds are deposited
      */
     function moveFunds(uint256 _from, uint256 _to) external onlyOwner {
         IStrategy fromStrat = poolInfo[_from].strategy;
@@ -389,10 +387,10 @@ contract Zunami is Context, Ownable, ERC20 {
         toStrat.updateZunamiLpInStrat(transferLpAmount, true);
     }
 
-    /// @dev dev can transfer funds from few strategy's to one strategy for better APY
     /**
+     * @dev dev can transfer funds from few strategy's to one strategy for better APY
      * @param _from - array of strategy's, from which funds are withdrawn
-     *  _to - number strategy, to which funds are deposited
+     * @param _to - number strategy, to which funds are deposited
      */
     function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyOwner {
         uint256 length = _from.length;
