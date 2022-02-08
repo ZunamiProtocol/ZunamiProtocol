@@ -336,8 +336,6 @@ contract Zunami is Context, Ownable, ERC20 {
         deposited[userAddr] -= userDeposit;
         totalDeposited -= userDeposit;
 
-        totalDeposited -= userDeposit;
-
         emit Withdrawn(userAddr, minAmounts, lpShares);
     }
 
