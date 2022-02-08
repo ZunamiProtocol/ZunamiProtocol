@@ -21,7 +21,6 @@ contract CurveConvexStrat is Context, BaseStrat {
     using SafeERC20 for IConvexMinter;
 
     uint256 public usdtPoolId = 2;
-    uint256 public zunamiLpInStrat = 0;
     uint256[3] public decimalsMultiplierS;
 
     ICurvePoolUnderlying public pool;
@@ -62,10 +61,20 @@ contract CurveConvexStrat is Context, BaseStrat {
         }
     }
 
+    /**
+     * @dev Returns ZLP amount invested in strategy.
+     * After user deposit this amount grow, after withdraw goes down.
+     */
+    /// @return Returns ZLP amount invested in strategy
     function getZunamiLpInStrat() external view virtual returns (uint256) {
         return zunamiLpInStrat;
     }
 
+    /**
+     * @dev Returns total USD holdings in strategy.
+     * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice.
+     */
+    /// @return Returns total USD holdings in strategy
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
             DENOMINATOR;
@@ -98,6 +107,12 @@ contract CurveConvexStrat is Context, BaseStrat {
         return sum + lpBalance + cvxHoldings + crvHoldings;
     }
 
+    /**
+     * @dev Returns deposited amount in USD.
+     * If deposit failed return zero
+     */
+    /// @return Returns deposited amount in USD.
+    /// @param amounts - amounts in stablecoins that user deposit
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256 _amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
@@ -119,6 +134,16 @@ contract CurveConvexStrat is Context, BaseStrat {
         }
     }
 
+    /**
+     * @dev Returns true if withdraw success and false if fail.
+     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
+     */
+    /// @return Returns true if withdraw success and false if fail.
+    /**
+     * @param depositor - address of user that deposit funds
+     * lpShares - amount of ZLP for withdraw
+     * minAmounts -  array of amounts stablecoins that user want minimum receive
+     */
     function withdraw(
         address depositor,
         uint256 lpShares,
@@ -156,6 +181,10 @@ contract CurveConvexStrat is Context, BaseStrat {
         return true;
     }
 
+    /**
+     * @dev can be called by Zunami contract.
+     * This function need for moveFunds between strategys.
+     */
     function withdrawAll() external virtual onlyZunami {
         crvRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
@@ -171,9 +200,5 @@ contract CurveConvexStrat is Context, BaseStrat {
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee
             );
         }
-    }
-
-    function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
-        _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
     }
 }
