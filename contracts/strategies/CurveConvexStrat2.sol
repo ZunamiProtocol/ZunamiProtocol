@@ -81,8 +81,8 @@ contract CurveConvexStrat2 is Context, BaseStrat {
     /**
      * @dev Returns ZLP amount invested in strategy.
      * After user deposit this amount grow, after withdraw goes down.
+     * @return Returns ZLP amount invested in strategy
      */
-    /// @return Returns ZLP amount invested in strategy
     function getZunamiLpInStrat() external view virtual returns (uint256) {
         return zunamiLpInStrat;
     }
@@ -90,8 +90,8 @@ contract CurveConvexStrat2 is Context, BaseStrat {
     /**
      * @dev Returns total USD holdings in strategy.
      * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice + extraToken * extraTokenPrice.
+     * @return Returns total USD holdings in strategy
      */
-    /// @return Returns total USD holdings in strategy
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
             DENOMINATOR;
@@ -137,9 +137,9 @@ contract CurveConvexStrat2 is Context, BaseStrat {
     /**
      * @dev Returns deposited amount in USD.
      * If deposit failed return zero
+     * @return Returns deposited amount in USD.
+     * @param amounts - amounts in stablecoins that user deposit
      */
-    /// @return Returns deposited amount in USD.
-    /// @param amounts - amounts in stablecoins that user deposit
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         uint256 _amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
@@ -168,12 +168,10 @@ contract CurveConvexStrat2 is Context, BaseStrat {
     /**
      * @dev Returns true if withdraw success and false if fail.
      * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
-     */
-    /// @return Returns true if withdraw success and false if fail.
-    /**
+     * @return Returns true if withdraw success and false if fail.
      * @param depositor - address of user that deposit funds
-     * lpShares - amount of ZLP for withdraw
-     * minAmounts -  array of amounts stablecoins that user want minimum receive
+     * @param lpShares - amount of ZLP for withdraw
+     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
         address depositor,
@@ -218,7 +216,9 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         return true;
     }
 
-    /// @dev sell base token on strategy can be called by anyone
+    /**
+     * @dev sell base token on strategy can be called by anyone
+     */
     function sellToken() public virtual {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
@@ -227,7 +227,9 @@ contract CurveConvexStrat2 is Context, BaseStrat {
         }
     }
 
-    /// @dev sell extra reward token on strategy can be called by anyone
+    /**
+     * @dev sell extra reward token on strategy can be called by anyone
+     */
     function sellExtraToken() public virtual {
         uint256 extraBalance = extraToken.balanceOf(address(this));
         if (extraBalance == 0) {
