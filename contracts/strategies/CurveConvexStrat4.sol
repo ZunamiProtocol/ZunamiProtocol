@@ -21,7 +21,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     using SafeERC20 for IConvexMinter;
 
     uint256 public usdtPoolId = 2;
-    uint256 public zunamiLpInStrat = 0;
     uint256[4] public decimalsMultiplierS;
 
     ICurvePool4 public pool;
@@ -74,10 +73,20 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         }
     }
 
+    /**
+     * @dev Returns ZLP amount invested in strategy.
+     * After user deposit this amount grow, after withdraw goes down.
+     */
+    /// @return Returns ZLP amount invested in strategy
     function getZunamiLpInStrat() external view virtual returns (uint256) {
         return zunamiLpInStrat;
     }
 
+    /**
+     * @dev Returns total USD holdings in strategy.
+     * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice + extraToken * extraTokenPrice.
+     */
+    /// @return Returns total USD holdings in strategy
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
             DENOMINATOR;
@@ -120,6 +129,12 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         return sum + lpBalance + cvxHoldings + crvHoldings + extraHoldings;
     }
 
+    /**
+     * @dev Returns deposited amount in USD.
+     * If deposit failed return zero
+     */
+    /// @return Returns deposited amount in USD.
+    /// @param amounts - amounts in stablecoins that user deposit
     function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
         // check decimal amounts
         uint256 decAmounts = 0;
@@ -147,6 +162,16 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         }
     }
 
+    /**
+     * @dev Returns true if withdraw success and false if fail.
+     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
+     */
+    /// @return Returns true if withdraw success and false if fail.
+    /**
+     * @param depositor - address of user that deposit funds
+     * lpShares - amount of ZLP for withdraw
+     * minAmounts -  array of amounts stablecoins that user want minimum receive
+     */
     function withdraw(
         address depositor,
         uint256 lpShares,
@@ -191,6 +216,7 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         return true;
     }
 
+    /// @dev sell extra reward token on strategy can be called by anyone
     function sellExtraToken() public virtual {
         uint256 extraBalance = extraToken.balanceOf(address(this));
         if (extraBalance == 0) {
@@ -213,11 +239,16 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         emit SellRewards(0, 0, extraBalance);
     }
 
+    /// @dev sell base token on strategy can be called by anyone
     function sellToken() public virtual {
         token.safeApprove(address(pool), token.balanceOf(address(this)));
         pool.exchange_underlying(3, 2, token.balanceOf(address(this)), 0);
     }
 
+    /**
+     * @dev can be called by Zunami contract.
+     * This function need for moveFunds between strategys.
+     */
     function withdrawAll() external virtual onlyZunami {
         crvRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
@@ -235,24 +266,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee
-            );
-        }
-    }
-
-    function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
-        _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
-    }
-
-    function emergency() external onlyOwner {
-        crvRewards.withdrawAllAndUnwrap(true);
-        uint256 lpBalance = poolLP.balanceOf(address(this));
-        uint256[4] memory minAmounts;
-        pool.remove_liquidity(lpBalance, minAmounts);
-
-        for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeTransfer(
-                _msgSender(),
-                IERC20Metadata(tokens[i]).balanceOf(address(this))
             );
         }
     }
