@@ -9,6 +9,20 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
+/**
+ *
+ * @title Zunami Protocol
+ *
+ * @notice Contract for Convex&Curve protocols optimize.
+ * Users can use this contract for optimize yield and gas.
+ *
+ *
+ * @dev Zunami is main contract.
+ * Contract does not store user funds.
+ * All user funds goes to Convex&Curve pools.
+ *
+ */
+
 contract Zunami is Context, Ownable, ERC20 {
     using SafeERC20 for IERC20Metadata;
 
@@ -42,19 +56,27 @@ contract Zunami is Context, Ownable, ERC20 {
     bool public isLock = false;
     uint256 public constant MIN_LOCK_TIME = 1 days;
 
-    PendingWithdrawal[] public pendingWithdrawals;
     mapping(address => uint256[3]) public accDepositPending;
-    mapping(address => bool) public userExistence;
+    mapping(address => PendingWithdrawal) public pendingWithdrawals;
 
     event PendingDepositEvent(address depositor, uint256[3] amounts);
+    event PendingWithdrawEvent(address withdrawer, uint256[3] amounts);
     event Deposited(address depositor, uint256[3] amounts, uint256 lpShares);
     event Withdrawn(address withdrawer, uint256[3] amounts, uint256 lpShares);
     event AddStrategy(address strategyAddr);
     event BadDeposit(address depositor, uint256[3] amounts, uint256 lpShares);
     event BadWithdraw(address withdrawer, uint256[3] amounts, uint256 lpShares);
 
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier isNotLocked() {
         require(!isLock, 'Zunami: Deposit functions locked');
+        _;
+    }
+
+    modifier isStrategyStarted(uint256 pid) {
+        require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
         _;
     }
 
@@ -71,16 +93,29 @@ contract Zunami is Context, Ownable, ERC20 {
         }
     }
 
+    /**
+     * @dev update managementFee, this is a Zunami commission from protocol profit
+     * @param  newManagementFee - minAmount 0, maxAmount FEE_DENOMINATOR - 1
+     */
+
     function setManagementFee(uint256 newManagementFee) external onlyOwner {
         require(newManagementFee < FEE_DENOMINATOR, 'Zunami: wrong fee');
         managementFee = newManagementFee;
     }
 
+    /**
+     * @dev Returns managementFee for strategy's when contract sell rewards
+     * @return Returns commission on the amount of profit in the transaction
+     * @param amount - amount of profit for calculate managementFee
+     */
     function calcManagementFee(uint256 amount) external view returns (uint256) {
         return (amount * managementFee) / FEE_DENOMINATOR;
     }
 
-    // total holdings for all pools
+    /**
+     * @dev Returns commission total holdings for all pools (strategy's)
+     * @return Returns sum holdings (USD) for all pools
+     */
     function totalHoldings() public view returns (uint256) {
         uint256 length = poolInfo.length;
         uint256 totalHold = 0;
@@ -90,35 +125,65 @@ contract Zunami is Context, Ownable, ERC20 {
         return totalHold;
     }
 
+    /**
+     * @dev Returns price depends on the income of users
+     * @return Returns currently price of ZLP (1e18 = 1$)
+     */
     function lpPrice() external view returns (uint256) {
         return (totalHoldings() * 1e18) / totalSupply();
     }
 
-    function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
-        // user transfer funds to contract
-        if (userExistence[_msgSender()] == false) {
-            accDepositPending[_msgSender()] = [0, 0, 0];
-            userExistence[_msgSender()] = true;
-        }
+    /**
+     * @dev Returns number (length of poolInfo)
+     * @return Returns number (length of poolInfo)
+     */
+    function poolInfoLength() external view returns (uint256) {
+        return poolInfo.length;
+    }
 
+    /**
+     * @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
+     * @param amounts - array of deposit amounts by user
+     */
+    function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
                 accDepositPending[_msgSender()][i] += amounts[i];
             }
         }
+
         emit PendingDepositEvent(_msgSender(), amounts);
     }
 
+    /**
+     * @dev in this func user sends pending withdraw to the contract and then waits for the completion of the transaction for all users
+     * @param  lpAmount - amount of ZLP for withdraw
+     * @param minAmounts - array of amounts stablecoins that user want minimum receive
+     */
     function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts) external {
-        PendingWithdrawal memory pendingWithdrawal;
-        pendingWithdrawal.lpAmount = lpAmount;
-        pendingWithdrawal.minAmounts = minAmounts;
-        pendingWithdrawal.withdrawer = _msgSender();
-        pendingWithdrawals.push(pendingWithdrawal);
+        PendingWithdrawal memory user;
+        address userAddr = _msgSender();
+
+        user.lpAmount = lpAmount;
+        user.minAmounts = minAmounts;
+        user.withdrawer = userAddr;
+
+        pendingWithdrawals[userAddr] = user;
+
+        emit PendingWithdrawEvent(userAddr, minAmounts);
     }
 
-    function completeDeposits(address[] memory userList, uint256 pid) external onlyOwner {
+    /**
+     * @dev Zunami protocol owner complete all active pending deposits of users
+     * @param userList - dev send array of users from pending to complete
+     * @param pid - number of the pool to which the deposit goes
+     */
+    function completeDeposits(address[] memory userList, uint256 pid)
+        external
+        onlyOwner
+        isStrategyStarted(pid)
+    {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256[3] memory totalAmounts;
         // total sum deposit, contract => strategy
@@ -148,10 +213,12 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 lpShares = 0;
         uint256 changedHoldings = 0;
         uint256 currentUserAmount = 0;
+        address userAddr;
 
         for (uint256 z = 0; z < userList.length; z++) {
             currentUserAmount = (sum * userCompleteHoldings[z]) / addHoldings;
-            deposited[userList[z]] += currentUserAmount;
+            userAddr = userList[z];
+            deposited[userAddr] += currentUserAmount;
             changedHoldings += currentUserAmount;
             if (totalSupply() == 0) {
                 lpShares = currentUserAmount;
@@ -160,42 +227,71 @@ contract Zunami is Context, Ownable, ERC20 {
                     (currentUserAmount * totalSupply()) /
                     (holdings + changedHoldings - currentUserAmount);
             }
-            _mint(userList[z], lpShares);
+            _mint(userAddr, lpShares);
             strategy.updateZunamiLpInStrat(lpShares, true);
             // remove deposit from list
-            delete accDepositPending[userList[z]];
-            // = [0, 0, 0];
+            delete accDepositPending[userAddr];
         }
         totalDeposited += changedHoldings;
     }
 
-    function completeWithdrawals(uint256 withdrawalsToComplete, uint256 pid) external onlyOwner {
-        require(pendingWithdrawals.length > 0, 'there are no pending withdrawals requests');
+    /**
+     * @dev Zunami protocol owner complete all active pending withdrawals of users
+     * @param userList - array of users from pending withdraw to complete
+     * @param pid - number of the pool from which the funds are withdrawn
+     */
+    function completeWithdrawals(address[] memory userList, uint256 pid)
+        external
+        onlyOwner
+        isStrategyStarted(pid)
+    {
+        require(userList.length > 0, 'there are no pending withdrawals requests');
 
-        uint256 minWithdrawalsIndex = pendingWithdrawals.length > withdrawalsToComplete
-            ? pendingWithdrawals.length - withdrawalsToComplete
-            : 0;
-        uint256 i = pendingWithdrawals.length;
+        PendingWithdrawal memory user;
+        IStrategy strategy = poolInfo[pid].strategy;
 
-        do {
-            i--;
-            delegatedWithdrawal(
-                pendingWithdrawals[i].withdrawer,
-                pendingWithdrawals[i].lpAmount,
-                pendingWithdrawals[i].minAmounts,
-                pid
-            );
-            pendingWithdrawals.pop();
-        } while (i > minWithdrawalsIndex);
+        for (uint256 i = 0; i < userList.length; i++) {
+            user = pendingWithdrawals[userList[i]];
+            uint256 balance = balanceOf(user.withdrawer);
+
+            if (balance >= user.lpAmount && user.lpAmount > 0) {
+                if (!(strategy.withdraw(user.withdrawer, user.lpAmount, user.minAmounts))) {
+                    emit BadWithdraw(user.withdrawer, user.minAmounts, user.lpAmount);
+
+                    return;
+                }
+
+                uint256 userDeposit = (totalDeposited * user.lpAmount) / totalSupply();
+                _burn(user.withdrawer, user.lpAmount);
+                strategy.updateZunamiLpInStrat(user.lpAmount, false);
+
+                if (userDeposit > deposited[user.withdrawer]) {
+                    userDeposit = deposited[user.withdrawer];
+                }
+
+                deposited[user.withdrawer] -= userDeposit;
+                totalDeposited -= userDeposit;
+
+                emit Withdrawn(user.withdrawer, user.minAmounts, user.lpAmount);
+            }
+
+            delete pendingWithdrawals[userList[i]];
+        }
     }
 
+    /**
+     * @dev deposit in one tx, without waiting complete by dev
+     * @return Returns amount of lpShares minted for user
+     * @param amounts - user send amounts of stablecoins to deposit
+     * @param pid - number of the pool to which the deposit goes
+     */
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
         isNotLocked
+        isStrategyStarted(pid)
         returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
-        require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
         uint256 holdings = totalHoldings();
 
         for (uint256 i = 0; i < amounts.length; i++) {
@@ -225,67 +321,74 @@ contract Zunami is Context, Ownable, ERC20 {
         return lpShares;
     }
 
+    /**
+     * @dev withdraw in one tx, without waiting complete by dev
+     * @param lpShares - amount of ZLP for withdraw
+     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
+     * @param pid - number of the pool from which the funds are withdrawn
+     */
     function withdraw(
         uint256 lpShares,
         uint256[3] memory minAmounts,
         uint256 pid
-    ) external {
+    ) external isStrategyStarted(pid) {
         IStrategy strategy = poolInfo[pid].strategy;
-        require(balanceOf(_msgSender()) >= lpShares, 'Zunami: not enough LP balance');
+        address userAddr = _msgSender();
+
+        require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
-            strategy.withdraw(_msgSender(), lpShares, minAmounts),
+            strategy.withdraw(userAddr, lpShares, minAmounts),
             'user lps share should be at least required'
         );
+
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
-        _burn(_msgSender(), lpShares);
+        _burn(userAddr, lpShares);
         strategy.updateZunamiLpInStrat(lpShares, false);
-        if (userDeposit > deposited[_msgSender()]) {
-            userDeposit = deposited[_msgSender()];
+
+        if (userDeposit > deposited[userAddr]) {
+            userDeposit = deposited[userAddr];
         }
-        deposited[_msgSender()] -= userDeposit;
+
+        deposited[userAddr] -= userDeposit;
         totalDeposited -= userDeposit;
-        emit Withdrawn(_msgSender(), minAmounts, lpShares);
+
+        emit Withdrawn(userAddr, minAmounts, lpShares);
     }
 
-    function delegatedWithdrawal(
-        address withdrawer,
-        uint256 lpShares,
-        uint256[3] memory minAmounts,
-        uint256 pid
-    ) internal {
-        if ((balanceOf(withdrawer) >= lpShares) && lpShares > 0) {
-            IStrategy strategy = poolInfo[pid].strategy;
-            if (!(strategy.withdraw(withdrawer, lpShares, minAmounts))) {
-                emit BadWithdraw(withdrawer, minAmounts, lpShares);
-                return;
-            }
-            uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
-            _burn(withdrawer, lpShares);
-            strategy.updateZunamiLpInStrat(lpShares, false);
-            if (userDeposit > deposited[withdrawer]) {
-                userDeposit = deposited[withdrawer];
-            }
-            deposited[withdrawer] -= userDeposit;
-            totalDeposited -= userDeposit;
-            emit Withdrawn(withdrawer, minAmounts, lpShares);
-        }
-    }
+    /**
+     * @dev security func, dev can disable all new deposits (not withdrawals)
+     * @param _lock - dev can lock or unlock deposits
+     */
 
     function setLock(bool _lock) external onlyOwner {
         isLock = _lock;
     }
 
+    /**
+     * @dev dev withdraw commission from one strategy
+     * @param strategyAddr - address from which strategy managementFees withdrawn
+     */
+
     function claimManagementFees(address strategyAddr) external onlyOwner {
         IStrategy(strategyAddr).claimManagementFees();
     }
 
-    // new functions
+    /**
+     * @dev add new strategy in strategy list, deposits in the new strategy are blocked for one day for safety
+     * @param _strategy - add new address strategy in poolInfo Array
+     */
+
     function add(address _strategy) external onlyOwner {
         poolInfo.push(
             PoolInfo({ strategy: IStrategy(_strategy), startTime: block.timestamp + MIN_LOCK_TIME })
         );
     }
 
+    /**
+     * @dev dev can transfer funds between strategy's for better APY
+     * @param  _from - number strategy, from which funds are withdrawn
+     * @param _to - number strategy, to which funds are deposited
+     */
     function moveFunds(uint256 _from, uint256 _to) external onlyOwner {
         IStrategy fromStrat = poolInfo[_from].strategy;
         IStrategy toStrat = poolInfo[_to].strategy;
@@ -307,6 +410,11 @@ contract Zunami is Context, Ownable, ERC20 {
         toStrat.updateZunamiLpInStrat(transferLpAmount, true);
     }
 
+    /**
+     * @dev dev can transfer funds from few strategy's to one strategy for better APY
+     * @param _from - array of strategy's, from which funds are withdrawn
+     * @param _to - number strategy, to which funds are deposited
+     */
     function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyOwner {
         uint256 length = _from.length;
         uint256[3] memory amounts;
@@ -324,16 +432,16 @@ contract Zunami is Context, Ownable, ERC20 {
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
             if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(
-                    address(poolInfo[_to].strategy),
-                    amounts[y]
-                );
+                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
             }
         }
         poolInfo[_to].strategy.updateZunamiLpInStrat(zunamiLp, true);
         require(poolInfo[_to].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
+    /**
+     * @dev dev can emergency transfer funds from all strategy's to zero pool (strategy)
+     */
     function emergencyWithdraw() external onlyOwner {
         uint256 length = poolInfo.length;
         require(length > 1, 'Zunami: Nothing withdraw');
@@ -359,7 +467,9 @@ contract Zunami is Context, Ownable, ERC20 {
         require(poolInfo[0].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
-    // user withdraw funds from list
+    /**
+     * @dev user remove his active pending deposit
+     */
     function pendingDepositRemove() external {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             if (accDepositPending[_msgSender()][i] > 0) {
@@ -372,6 +482,9 @@ contract Zunami is Context, Ownable, ERC20 {
         delete accDepositPending[_msgSender()];
     }
 
+    /**
+     * @dev disable renounceOwnership for safety
+     */
     function renounceOwnership() public view override onlyOwner {
         revert('Zunami must have an owner');
     }
