@@ -68,6 +68,7 @@ describe('ZunStaker', function () {
         });
 
         vezun.connect(owner).transferOwnership(zunStaker.address);
+        zun.connect(owner).transfer(zunStaker.address, web3.utils.toWei('5000000', 'ether'));
     });
     after(async function () {
         if (DEBUG_MODE) {

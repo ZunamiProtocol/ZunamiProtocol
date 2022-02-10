@@ -73,17 +73,18 @@ describe('ZLPStaker', function () {
         });
 
         xzlp.connect(owner).transferOwnership(zunStaker.address);
+        zun.connect(owner).transfer(zunStaker.address, web3.utils.toWei('5000000', 'ether'));
     });
     after(async function () {
         if (DEBUG_MODE) {
             for (const user of [alice, bob, carol, rosa]) {
                 let zun_balance = await zun.balanceOf(user.address);
                 let zun_staked = await zunStaker.totalDepositOf(user.address);
-                let vezun_balance = await xzlp.balanceOf(user.address);
+                let xzlp_balance = await xzlp.balanceOf(user.address);
                 let usdt_balance = await usdt.balanceOf(user.address);
                 console.log('  ---PRINT BALANCES--- ');
                 console.log('  ZUN: ', ethers.utils.formatUnits(zun_balance, 18));
-                console.log('  veZun: ', ethers.utils.formatUnits(vezun_balance, 18));
+                console.log('  xZLP: ', ethers.utils.formatUnits(xzlp_balance, 18));
                 console.log('  getDepositsOf: ', ethers.utils.formatUnits(zun_staked, 18));
                 console.log('  USDT: ', ethers.utils.formatUnits(usdt_balance, 6));
                 console.log(
@@ -126,14 +127,18 @@ describe('ZLPStaker', function () {
             for (var i = 0; i < SKIP_TIMES; i++) {
                 await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
             }
-            for (const user of [alice, bob, carol, rosa]) {
-                const zunBalBefore = await zun.balanceOf(user.address);
-                await zunStaker.connect(user).claim(0);
-                const zunBalAfter = await zun.balanceOf(user.address);
-                console.log(
-                    'claim amount:',
-                    ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
-                );
+            if (DEBUG_MODE) {
+                for (const user of [alice, bob, carol, rosa]) {
+                    const zunBalBefore = await zun.balanceOf(user.address);
+                    await zunStaker.connect(user).claim(0);
+                    const zunBalAfter = await zun.balanceOf(user.address);
+                    const pendingZunTotal = await zunStaker.pendingZunTotal(user.address);
+                    console.log('pendingZunTotal:', ethers.utils.formatUnits(pendingZunTotal, 18));
+                    console.log(
+                        'claim amount:',
+                        ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
+                    );
+                }
             }
 
             await time.increaseTo((await time.latest()).add(time.duration.seconds(WEEKS_2 + 1)));
@@ -141,7 +146,16 @@ describe('ZLPStaker', function () {
                 await xzlp
                     .connect(user)
                     .approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
-                await expect(zunStaker.connect(user).withdraw(0));
+                let xzlp_before = await xzlp.balanceOf(user.address);
+                await zunStaker.connect(user).withdraw(0);
+                let xzlp_after = await xzlp.balanceOf(user.address);
+                if (DEBUG_MODE) {
+                    console.log(
+                        'xZLP before withdraw: ',
+                        ethers.utils.formatUnits(xzlp_before, 18)
+                    );
+                    console.log('xZLP after withdraw: ', ethers.utils.formatUnits(xzlp_after, 18));
+                }
             }
         });
         it(' skip blocks and read pendings of user', async () => {
