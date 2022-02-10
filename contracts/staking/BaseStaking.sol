@@ -46,7 +46,7 @@ contract BaseStaking is Ownable {
     event Deposited(uint256 amount, uint256 duration, address indexed receiver);
     event Withdrawn(uint256 indexed depositId, address indexed receiver, uint256 amount);
 
-    modifier isClaimLocked() {
+    modifier isClaimNotLocked() {
         require(!isClaimLock, 'ZunStaker: Claim functions locked');
         _;
     }
@@ -115,12 +115,12 @@ contract BaseStaking is Ownable {
         isClaimLock = _isClaimLock;
     }
 
-    function claim(uint256 _depositId) public isClaimLocked {
+    function claim(uint256 _depositId) public isClaimNotLocked {
         updatePool();
         _claim(_msgSender(), _depositId);
     }
 
-    function claimAll() public isClaimLocked {
+    function claimAll() public isClaimNotLocked {
         updatePool();
         uint256 length = getDepositsOfLength(_msgSender());
 
