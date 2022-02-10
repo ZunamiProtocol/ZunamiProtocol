@@ -12,8 +12,10 @@ import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import {
     BLOCKS,
+    DEBUG_MODE,
     provider,
     SKIP_TIMES,
+    usdtAccount,
     usdtAddress,
     WEEKS_2,
     WEEKS_26,
@@ -32,93 +34,43 @@ describe('ZunStaker', function () {
     let vezun: Contract;
 
     let usdt: Contract;
-    const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
 
-    function testStaker() {
-        it('owner send ZUN balance to users', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                await zun.transfer(user.address, web3.utils.toWei('1000000', 'ether'));
-            }
-        });
-        it('users try transfer ZUN', async () => {
-            await expectRevert(
-                zun.connect(alice).transfer(owner.address, web3.utils.toWei('1100000', 'ether')),
-                'ERC20: transfer amount exceeds balance'
-            );
+    before(async function () {
+        let ZUN: ContractFactory = await ethers.getContractFactory('ZUN');
+        let VEZUN: ContractFactory = await ethers.getContractFactory('veZUN');
+        zun = await ZUN.deploy();
+        vezun = await VEZUN.deploy();
+        await zun.deployed();
+        await vezun.deployed();
 
-            for (const user of [alice, bob, carol, rosa]) {
-                zun.connect(user).transfer(owner.address, web3.utils.toWei('100', 'ether'));
-                zun.connect(owner).transfer(user.address, web3.utils.toWei('100', 'ether'));
-            }
+        let ZunStaker: ContractFactory = await ethers.getContractFactory('ZunStaker');
+        zunStaker = await ZunStaker.deploy(zun.address, vezun.address);
+        await zunStaker.deployed();
+
+        [owner, alice, bob, carol, rosa] = await ethers.getSigners();
+        usdt = new ethers.Contract(usdtAddress, erc20ABI, owner);
+        owner.sendTransaction({
+            to: usdtAccount,
+            value: ethers.utils.parseEther('10'),
         });
-        it('users try deposit ZUN > veZUN', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                zun.connect(user).approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
-                zunStaker.connect(user).deposit(web3.utils.toWei('10000', 'ether'), WEEKS_2);
-                zunStaker.connect(user).deposit(web3.utils.toWei('20000', 'ether'), WEEKS_26);
-                zunStaker.connect(user).deposit(web3.utils.toWei('30000', 'ether'), WEEKS_52);
-            }
+
+        await network.provider.request({
+            method: 'hardhat_impersonateAccount',
+            params: [usdtAccount],
         });
-        it('users try withdraw veZUN before min time', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                await expectRevert(zunStaker.connect(user).withdraw(0), 'too soon');
-            }
+        const usdtAccountSigner: Signer = ethers.provider.getSigner(usdtAccount);
+        await usdt
+            .connect(usdtAccountSigner)
+            .transfer(owner.address, web3.utils.toWei('1000000', 'mwei'));
+        await network.provider.request({
+            method: 'hardhat_stopImpersonatingAccount',
+            params: [usdtAccount],
         });
-        it('users try claim', async () => {
-            for (var i = 0; i < SKIP_TIMES; i++) {
-                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            }
-            for (const user of [alice, bob, carol, rosa]) {
-                const zunBalBefore = await zun.balanceOf(user.address);
-                await zunStaker.connect(user).claim(0);
-                const zunBalAfter = await zun.balanceOf(user.address);
-                console.log(
-                    'claim amount:',
-                    ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
-                );
-            }
-        });
-        it('users try withdraw veZUN', async () => {
-            await time.increaseTo((await time.latest()).add(time.duration.seconds(WEEKS_2 + 1)));
-            for (const user of [alice, bob, carol, rosa]) {
-                await vezun
-                    .connect(user)
-                    .approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
-                await zunStaker.connect(user).withdraw(0);
-            }
-        });
-        it(' skip blocks and read pendings of user', async () => {
-            for (var i = 0; i < SKIP_TIMES; i++) {
-                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
-            }
-            for (const user of [alice, bob, carol, rosa]) {
-                const pendingZunTotal = await zunStaker.pendingZunTotal(user.address);
-                console.log('pendingZunTotal:', ethers.utils.formatUnits(pendingZunTotal, 18));
-            }
-        });
-        it('getMultiplier', async () => {
-            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_2), 18)).to.equal(
-                '1.038356164383561643'
-            );
-            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_26), 18)).to.equal(
-                '1.498630136986301369'
-            );
-            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_52), 18)).to.equal(
-                '1.997260273972602739'
-            );
-        });
-        it('users try claimAll', async () => {
-            for (const user of [alice, bob, carol, rosa]) {
-                const zunBalBeforeClaimAll = await zun.balanceOf(user.address);
-                await zunStaker.connect(user).claimAll();
-                const zunBalAfterClaimAll = await zun.balanceOf(user.address);
-                console.log(
-                    'claimAll amount:',
-                    ethers.utils.formatUnits(zunBalAfterClaimAll.sub(zunBalBeforeClaimAll), 18)
-                );
-            }
-        });
-        it('print balances', async () => {
+
+        vezun.connect(owner).transferOwnership(zunStaker.address);
+    });
+    after(async function () {
+        if (DEBUG_MODE) {
             for (const user of [alice, bob, carol, rosa]) {
                 let zun_balance = await zun.balanceOf(user.address);
                 let zun_staked = await zunStaker.totalDepositOf(user.address);
@@ -135,44 +87,91 @@ describe('ZunStaker', function () {
                         parseFloat(ethers.utils.formatUnits(zun_staked, 18))
                 );
             }
+        }
+    });
+
+    describe('ZunStaker', function () {
+        it('users try transfer ERC20', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                await zun.transfer(user.address, web3.utils.toWei('1000000', 'ether'));
+            }
+            await expect(
+                zun.connect(alice).transfer(owner.address, web3.utils.toWei('1100000', 'ether')),
+                'ERC20: transfer amount exceeds balance'
+            ).to.be.reverted;
+
+            for (const user of [alice, bob, carol, rosa]) {
+                zun.connect(user).transfer(owner.address, web3.utils.toWei('100', 'ether'));
+                zun.connect(owner).transfer(user.address, web3.utils.toWei('100', 'ether'));
+            }
         });
-    }
+        it('users try deposit, claim, withdraw ZUN > veZUN', async () => {
+            for (const user of [alice, bob, carol, rosa]) {
+                zun.connect(user).approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
+                zunStaker.connect(user).deposit(web3.utils.toWei('10000', 'ether'), WEEKS_2);
+                zunStaker.connect(user).deposit(web3.utils.toWei('20000', 'ether'), WEEKS_26);
+                zunStaker.connect(user).deposit(web3.utils.toWei('30000', 'ether'), WEEKS_52);
+            }
 
-    describe('ZunStaker - test 01', function () {
-        before(async function () {
-            let ZUN: ContractFactory = await ethers.getContractFactory('ZUN');
-            let VEZUN: ContractFactory = await ethers.getContractFactory('veZUN');
-            zun = await ZUN.deploy();
-            vezun = await VEZUN.deploy();
-            await zun.deployed();
-            await vezun.deployed();
+            for (const user of [alice, bob, carol, rosa]) {
+                await expect(zunStaker.connect(user).withdraw(0), 'too soon').to.be.reverted;
+            }
 
-            let ZunStaker: ContractFactory = await ethers.getContractFactory('ZunStaker');
-            zunStaker = await ZunStaker.deploy(zun.address, vezun.address);
-            await zunStaker.deployed();
-
-            [owner, alice, bob, carol, rosa] = await ethers.getSigners();
-            usdt = new ethers.Contract(usdtAddress, erc20ABI, owner);
-            owner.sendTransaction({
-                to: usdtAccount,
-                value: ethers.utils.parseEther('10'),
-            });
-
-            await network.provider.request({
-                method: 'hardhat_impersonateAccount',
-                params: [usdtAccount],
-            });
-            const usdtAccountSigner: Signer = ethers.provider.getSigner(usdtAccount);
-            await usdt
-                .connect(usdtAccountSigner)
-                .transfer(owner.address, web3.utils.toWei('1000000', 'mwei'));
-            await network.provider.request({
-                method: 'hardhat_stopImpersonatingAccount',
-                params: [usdtAccount],
-            });
-
-            vezun.connect(owner).transferOwnership(zunStaker.address);
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+            if (DEBUG_MODE) {
+                for (const user of [alice, bob, carol, rosa]) {
+                    const zunBalBefore = await zun.balanceOf(user.address);
+                    await zunStaker.connect(user).claim(0);
+                    const zunBalAfter = await zun.balanceOf(user.address);
+                    console.log(
+                        'claim amount:',
+                        ethers.utils.formatUnits(zunBalAfter.sub(zunBalBefore), 18)
+                    );
+                }
+            }
         });
-        testStaker();
+        it('users try withdraw veZUN', async () => {
+            await time.increaseTo((await time.latest()).add(time.duration.seconds(WEEKS_2 + 1)));
+            for (const user of [alice, bob, carol, rosa]) {
+                await vezun
+                    .connect(user)
+                    .approve(zunStaker.address, web3.utils.toWei('1000000', 'ether'));
+                await zunStaker.connect(user).withdraw(0);
+            }
+        });
+        it(' skip blocks and read pendings of user', async () => {
+            for (var i = 0; i < SKIP_TIMES; i++) {
+                await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
+            }
+            if (DEBUG_MODE) {
+                for (const user of [alice, bob, carol, rosa]) {
+                    const pendingZunTotal = await zunStaker.pendingZunTotal(user.address);
+                    console.log('pendingZunTotal:', ethers.utils.formatUnits(pendingZunTotal, 18));
+                }
+            }
+            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_2), 18)).to.equal(
+                '1.038356164383561643'
+            );
+            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_26), 18)).to.equal(
+                '1.498630136986301369'
+            );
+            expect(ethers.utils.formatUnits(await zunStaker.getMultiplier(WEEKS_52), 18)).to.equal(
+                '1.997260273972602739'
+            );
+            // try claimAll
+            if (DEBUG_MODE) {
+                for (const user of [alice, bob, carol, rosa]) {
+                    const zunBalBeforeClaimAll = await zun.balanceOf(user.address);
+                    await zunStaker.connect(user).claimAll();
+                    const zunBalAfterClaimAll = await zun.balanceOf(user.address);
+                    console.log(
+                        'claimAll amount:',
+                        ethers.utils.formatUnits(zunBalAfterClaimAll.sub(zunBalBeforeClaimAll), 18)
+                    );
+                }
+            }
+        });
     });
 });
