@@ -21,6 +21,7 @@ contract BaseStrat is Ownable {
     IConvexMinter public cvx;
     IUniswapRouter public router;
     address public zun;
+    address public feeDistributor;
 
     uint256 public constant DENOMINATOR = 1e18;
     uint256 public constant USD_MULTIPLIER = 1e12;
@@ -63,7 +64,7 @@ contract BaseStrat is Ownable {
     /**
      * @dev anyone can sell rewards, func do nothing if crv&cvx balance is zero
      */
-    function sellCrvCvx() public virtual {
+    function sellCrvCvx() public {
         uint256 cvxBalance = cvx.balanceOf(address(this));
         uint256 crvBalance = crv.balanceOf(address(this));
         if (cvxBalance == 0 || crvBalance == 0) {
@@ -95,35 +96,13 @@ contract BaseStrat is Ownable {
 
     /**
      * @dev dev claim managementFees from strategy.
-     * zunBuybackAmount goes to buyback ZUN token if buybackFee > 0 && ZUN address not a zero.
-     * adminFeeAmount is amount for transfer to dev or governance.
+     * adminFeeAmount is amount for transfer to feeDistributor contract.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public virtual onlyZunami {
+    function claimManagementFees() public {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
-        if (transferBalance > 0) {
-            uint256 zunBuybackAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
-            uint256 adminFeeAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
-                DEPOSIT_DENOMINATOR;
-            if (adminFeeAmount > 0) {
-                IERC20Metadata(usdt).safeTransfer(owner(), adminFeeAmount);
-            }
-            if (zunBuybackAmount > 0 && zun != address(0)) {
-                IERC20Metadata(usdt).safeApprove(address(router), zunBuybackAmount);
-                address[] memory path = new address[](3);
-                path[0] = usdt;
-                path[1] = Constants.WETH_ADDRESS;
-                path[2] = zun;
-                router.swapExactTokensForTokens(
-                    zunBuybackAmount,
-                    0,
-                    path,
-                    BUYBACK_ADDRESS,
-                    block.timestamp + Constants.TRADE_DEADLINE
-                );
-            }
-        }
+        IERC20Metadata(usdt).safeTransfer(feeDistributor, transferBalance);
         managementFees = 0;
     }
 
@@ -178,5 +157,13 @@ contract BaseStrat is Ownable {
      */
     function updateZunamiLpInStrat(uint256 _amount, bool _isMint) external onlyZunami {
         _isMint ? (zunamiLpInStrat += _amount) : (zunamiLpInStrat -= _amount);
+    }
+
+    /**
+     * @dev function used for update managementFee address and can be called only by owner.
+     * @param _feeDistributor - address for distribute fee
+     */
+    function updateFeeDistributor(address _feeDistributor) external onlyOwner {
+        feeDistributor = _feeDistributor;
     }
 }
