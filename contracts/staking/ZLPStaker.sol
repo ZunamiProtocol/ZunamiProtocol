@@ -31,6 +31,11 @@ contract ZLPStaker is BaseStaking {
         ZLP = _ZLP;
     }
 
+    /**
+     * @dev external function, user can deposit ZLP
+     * @param _amount - amount of ZLP for staking
+     * @param _duration - duration of lock deposit in seconds
+     */
     function deposit(uint256 _amount, uint256 _duration) external {
         require(_amount > 0, 'bad _amount');
         // Don't allow locking > maxLockDuration
@@ -58,6 +63,10 @@ contract ZLPStaker is BaseStaking {
         emit Deposited(_amount, duration, _msgSender());
     }
 
+    /**
+     * @dev external function, user can withdraw ZLP
+     * @param _depositId - deposit id in user deposits array
+     */
     function withdraw(uint256 _depositId) external {
         require(_depositId < depositsOf[_msgSender()].length, '!exist');
         Deposit storage userDeposit = depositsOf[_msgSender()][_depositId];
