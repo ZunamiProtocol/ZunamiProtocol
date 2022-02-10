@@ -12,10 +12,9 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
 
 import '../interfaces/IVeZunToken.sol';
-import "./BaseStaking.sol";
+import './BaseStaking.sol';
 
 contract ZLPStaker is BaseStaking {
-
     using Math for uint256;
     using SafeERC20 for IERC20;
 
@@ -45,12 +44,12 @@ contract ZLPStaker is BaseStaking {
 
         depositsOf[_msgSender()].push(
             Deposit({
-        amount : _amount,
-        mintedAmount : mintAmount,
-        rewardDebt : (mintAmount * accZunPerShare) / 1e18,
-        start : uint64(block.timestamp),
-        end : uint64(block.timestamp) + uint64(duration)
-        })
+                amount: _amount,
+                mintedAmount: mintAmount,
+                rewardDebt: (mintAmount * accZunPerShare) / 1e18,
+                start: uint64(block.timestamp),
+                end: uint64(block.timestamp) + uint64(duration)
+            })
         );
         totalDepositOf[_msgSender()] += _amount;
 
@@ -58,6 +57,7 @@ contract ZLPStaker is BaseStaking {
         lpSupply += mintAmount;
         emit Deposited(_amount, duration, _msgSender());
     }
+
     function withdraw(uint256 _depositId) external {
         require(_depositId < depositsOf[_msgSender()].length, '!exist');
         Deposit storage userDeposit = depositsOf[_msgSender()][_depositId];
@@ -66,8 +66,8 @@ contract ZLPStaker is BaseStaking {
 
         // get rewards
         uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
-        1e18 -
-        userDeposit.rewardDebt;
+            1e18 -
+            userDeposit.rewardDebt;
 
         totalDepositOf[_msgSender()] -= userDeposit.amount;
         // burn pool shares
@@ -88,5 +88,4 @@ contract ZLPStaker is BaseStaking {
         userDeposit = depositsOf[_msgSender()][depositsOf[_msgSender()].length - 1];
         depositsOf[_msgSender()].pop();
     }
-
 }

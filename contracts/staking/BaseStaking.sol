@@ -34,7 +34,6 @@ contract BaseStaking is Ownable {
     mapping(address => Deposit[]) public depositsOf;
     mapping(address => uint256) public totalDepositOf;
 
-
     uint256 public lpSupply; // total supply
     uint256 public accZunPerShare = 0;
     uint256 public lastRewardBlock = 0; // change in prod
@@ -66,7 +65,6 @@ contract BaseStaking is Ownable {
         accZunPerShare += (ZunReward * 1e18) / lpSupply;
         lastRewardBlock = block.number;
     }
-
 
     function getMultiplier(uint256 _lockDuration) public view returns (uint256) {
         return 1e18 + ((maxBonus * _lockDuration) / maxLockDuration);
@@ -143,9 +141,9 @@ contract BaseStaking is Ownable {
         }
         for (uint256 i = 0; i < length; i++) {
             totalPending +=
-            (depositsOf[_user][i].mintedAmount * localShare) /
-            1e18 -
-            depositsOf[_user][i].rewardDebt;
+                (depositsOf[_user][i].mintedAmount * localShare) /
+                1e18 -
+                depositsOf[_user][i].rewardDebt;
         }
         return totalPending;
     }
@@ -153,8 +151,8 @@ contract BaseStaking is Ownable {
     function _claim(address user, uint256 _depositId) internal {
         Deposit storage userDeposit = depositsOf[user][_depositId];
         uint256 pending = (userDeposit.mintedAmount * accZunPerShare) /
-        1e18 -
-        userDeposit.rewardDebt;
+            1e18 -
+            userDeposit.rewardDebt;
         if (pending > 0) {
             safeZunTransfer(user, pending);
         }
