@@ -14,4 +14,8 @@ export const usdcAccount: string = '0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6';
 export const usdtAccount: string = '0x67aB29354a70732CDC97f372Be81d657ce8822cd';
 export const testCheckSumm = 2950; // 3000 base
 
+export const WEEKS_2 = 1209600;
+export const WEEKS_26 = 15724800;
+export const WEEKS_52 = 31449600;
+
 export const DEBUG_MODE = false;
