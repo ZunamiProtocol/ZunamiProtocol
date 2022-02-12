@@ -9,6 +9,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './utils/Constants.sol';
 
 import './interfaces/IUniswapRouter.sol';
+import './interfaces/IZunStaker.sol';
 
 contract FeeDistributor is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -16,6 +17,7 @@ contract FeeDistributor is Ownable {
     address public zunami;
     IUniswapRouter public router;
     address public zun;
+    IZunStaker public zunStaker;
 
     uint256 public constant DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
@@ -49,7 +51,7 @@ contract FeeDistributor is Ownable {
     function disitributeFee() public {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
         if (stratBalance > 0) {
-            if(!distributeActive) {
+            if (!distributeActive) {
                 uint256 zunBuybackAmount = (stratBalance * buybackFee) / DEPOSIT_DENOMINATOR;
                 uint256 adminFeeAmount = (stratBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
                 DEPOSIT_DENOMINATOR;
@@ -74,8 +76,11 @@ contract FeeDistributor is Ownable {
                     );
                 }
             }
-            if(distributeActive) {
-
+            if (distributeActive) {
+                if (IERC20Metadata(usdt).allowance(address(this), address(zunStaker)) == 0) {
+                    IERC20Metadata(usdt).safeApprove(address(zunStaker), Constants.MAX_UINT_NUMBER);
+                }
+                zunStaker.updateUsdtPerShare(stratBalance);
             }
         }
 
