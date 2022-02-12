@@ -25,6 +25,8 @@ library Constants {
     uint256 internal constant CVX_OUSD_PID = 56;
     uint256 internal constant TRADE_DEADLINE = 2000;
 
+    uint256 internal constant MAX_UINT_NUMBER = 115792089237316195423570985008687907853269984665640564039457584007913129639935; // change on prod
+
     address internal constant CVX_ADDRESS = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
     address internal constant CRV_ADDRESS = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address internal constant USDC_ADDRESS = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
