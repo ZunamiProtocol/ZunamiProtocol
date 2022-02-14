@@ -104,8 +104,7 @@ contract BaseStrat is Ownable {
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
             uint256 zunBuybackAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
-            uint256 adminFeeAmount = (transferBalance * (DEPOSIT_DENOMINATOR - buybackFee)) /
-                DEPOSIT_DENOMINATOR;
+            uint256 adminFeeAmount = transferBalance - zunBuybackAmount;
             if (adminFeeAmount > 0) {
                 IERC20Metadata(usdt).safeTransfer(owner(), adminFeeAmount);
             }
