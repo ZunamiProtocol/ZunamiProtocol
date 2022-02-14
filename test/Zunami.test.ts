@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { ethers, network, upgrades } from 'hardhat';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ContractFactory, Signer } from 'ethers';
@@ -118,7 +118,7 @@ describe('Zunami', function () {
     // --- MULTI-TEST ----
     describe('Test 4 strategys (Aave, OUSD, USDP, SUSD)', async function () {
         before(async function () {
-            let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+            let Zunami: ContractFactory = await ethers.getContractFactory('ZunamiUpgradeable');
             let AaveCurveConvex: ContractFactory = await ethers.getContractFactory(
                 'AaveCurveConvex'
             );
@@ -139,7 +139,7 @@ describe('Zunami', function () {
             await strategy2.deployed();
             await strategy2b.deployed();
             await strategy4.deployed();
-            zunami = await Zunami.deploy();
+            zunami = await upgrades.deployProxy(Zunami, [], {kind: 'uups'});
             await zunami.deployed();
             strategy.setZunami(zunami.address);
             strategy2.setZunami(zunami.address);

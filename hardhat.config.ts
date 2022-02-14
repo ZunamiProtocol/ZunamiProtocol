@@ -5,6 +5,7 @@ import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-truffle5';
 import '@nomiclabs/hardhat-ganache';
 
+import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 

@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { ethers, network, upgrades } from 'hardhat';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ContractFactory, Signer } from 'ethers';
@@ -142,11 +142,11 @@ describe(STRATEGY_NAME, function () {
     // ---  STRATEGY ----
     describe(`Test solo ${STRATEGY_NAME} in Zunami`, function () {
         before(async function () {
-            let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
+            let Zunami: ContractFactory = await ethers.getContractFactory('ZunamiUpgradeable');
             let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
-            zunami = await Zunami.deploy();
+            zunami = await upgrades.deployProxy(Zunami, [], {kind: 'uups'});
             await zunami.deployed();
             strategy.setZunami(zunami.address);
             strategy.setZunToken(usdc.address);

@@ -1,13 +1,14 @@
+import { ethers, upgrades } from 'hardhat';
+
 async function main() {
     console.log('Start deploy');
-    const Zunami = await ethers.getContractFactory('Zunami');
+    const Zunami = await ethers.getContractFactory('ZunamiUpgradeable');
     const OUSDCurveConvex = await ethers.getContractFactory('OUSDCurveConvex');
     const USDPCurveConvex = await ethers.getContractFactory('USDPCurveConvex');
 
     const ousd = await OUSDCurveConvex.deploy();
     const usdp = await USDPCurveConvex.deploy();
-    const zunami = await Zunami.deploy();
-
+    const zunami = await upgrades.deployProxy(Zunami, [], {kind: 'uups'});
     await zunami.deployed();
     await ousd.deployed();
     await usdp.deployed();

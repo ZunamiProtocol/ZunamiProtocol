@@ -1,11 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts/utils/Context.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
+
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
@@ -23,8 +25,8 @@ import './interfaces/IStrategy.sol';
  *
  */
 
-contract Zunami is Context, Ownable, ERC20 {
-    using SafeERC20 for IERC20Metadata;
+contract ZunamiUpgradeable is ContextUpgradeable, OwnableUpgradeable, ERC20Upgradeable, UUPSUpgradeable {
+    using SafeERC20Upgradeable for IERC20MetadataUpgradeable;
 
     struct PendingDeposit {
         uint256[3] amounts;
@@ -52,9 +54,9 @@ contract Zunami is Context, Ownable, ERC20 {
     uint256 public totalDeposited;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public managementFee = 10; // 1%
-    bool public isLock = false;
     uint256 public constant MIN_LOCK_TIME = 1 days;
+    uint256 public managementFee;
+    bool public isLock;
 
     mapping(address => uint256[3]) public accDepositPending;
     mapping(address => PendingWithdrawal) public pendingWithdrawals;
@@ -80,18 +82,27 @@ contract Zunami is Context, Ownable, ERC20 {
         _;
     }
 
-    constructor() ERC20('ZunamiLP', 'ZLP') {
+    function initialize() initializer public {
+        __Context_init();
+        __Ownable_init();
+        __ERC20_init('ZunamiLP', 'ZLP');
+        __UUPSUpgradeable_init();
+
+        managementFee = 10; // 1%
+
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
         for (uint256 i; i < POOL_ASSETS; i++) {
-            if (IERC20Metadata(tokens[i]).decimals() < 18) {
-                decimalsMultiplierS[i] = 10**(18 - IERC20Metadata(tokens[i]).decimals());
+            if (IERC20MetadataUpgradeable(tokens[i]).decimals() < 18) {
+                decimalsMultiplierS[i] = 10**(18 - IERC20MetadataUpgradeable(tokens[i]).decimals());
             } else {
                 decimalsMultiplierS[i] = 1;
             }
         }
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     /**
      * @dev update managementFee, this is a Zunami commission from protocol profit
@@ -148,7 +159,7 @@ contract Zunami is Context, Ownable, ERC20 {
     function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
+                IERC20MetadataUpgradeable(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
                 accDepositPending[_msgSender()][i] += amounts[i];
             }
         }
@@ -205,7 +216,7 @@ contract Zunami is Context, Ownable, ERC20 {
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             if (totalAmounts[y] > 0) {
                 addHoldings += totalAmounts[y] * decimalsMultiplierS[y];
-                IERC20Metadata(tokens[y]).safeTransfer(address(strategy), totalAmounts[y]);
+                IERC20MetadataUpgradeable(tokens[y]).safeTransfer(address(strategy), totalAmounts[y]);
             }
         }
         uint256 sum = strategy.deposit(totalAmounts);
@@ -296,7 +307,7 @@ contract Zunami is Context, Ownable, ERC20 {
 
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(
+                IERC20MetadataUpgradeable(tokens[i]).safeTransferFrom(
                     _msgSender(),
                     address(strategy),
                     amounts[i]
@@ -394,14 +405,14 @@ contract Zunami is Context, Ownable, ERC20 {
         IStrategy toStrat = poolInfo[_to].strategy;
         uint256[3] memory amountsBefore;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            amountsBefore[y] = IERC20MetadataUpgradeable(tokens[y]).balanceOf(address(this));
         }
         fromStrat.withdrawAll();
         uint256[3] memory amounts;
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - amountsBefore[i];
+            amounts[i] = IERC20MetadataUpgradeable(tokens[i]).balanceOf(address(this)) - amountsBefore[i];
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
+                IERC20MetadataUpgradeable(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
             }
         }
         toStrat.deposit(amounts);
@@ -421,7 +432,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory amountsBefore;
         uint256 zunamiLp = 0;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            amountsBefore[y] = IERC20MetadataUpgradeable(tokens[y]).balanceOf(address(this));
         }
         for (uint256 i = 0; i < length; i++) {
             poolInfo[_from[i]].strategy.withdrawAll();
@@ -430,9 +441,9 @@ contract Zunami is Context, Ownable, ERC20 {
             poolInfo[_from[i]].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
+            amounts[y] = IERC20MetadataUpgradeable(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
             if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
+                IERC20MetadataUpgradeable(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
             }
         }
         poolInfo[_to].strategy.updateZunamiLpInStrat(zunamiLp, true);
@@ -449,7 +460,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256[3] memory amountsBefore;
         uint256 zunamiLp = 0;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            amountsBefore[y] = IERC20MetadataUpgradeable(tokens[y]).balanceOf(address(this));
         }
         for (uint256 i = 1; i < length; i++) {
             poolInfo[i].strategy.withdrawAll();
@@ -458,9 +469,9 @@ contract Zunami is Context, Ownable, ERC20 {
             poolInfo[i].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
         }
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
+            amounts[y] = IERC20MetadataUpgradeable(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
             if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[0].strategy), amounts[y]);
+                IERC20MetadataUpgradeable(tokens[y]).safeTransfer(address(poolInfo[0].strategy), amounts[y]);
             }
         }
         poolInfo[0].strategy.updateZunamiLpInStrat(zunamiLp, true);
@@ -473,7 +484,7 @@ contract Zunami is Context, Ownable, ERC20 {
     function pendingDepositRemove() external {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             if (accDepositPending[_msgSender()][i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransfer(
+                IERC20MetadataUpgradeable(tokens[i]).safeTransfer(
                     _msgSender(),
                     accDepositPending[_msgSender()][i]
                 );
@@ -488,4 +499,6 @@ contract Zunami is Context, Ownable, ERC20 {
     function renounceOwnership() public view override onlyOwner {
         revert('Zunami must have an owner');
     }
+
+    uint256[50] private __gap;
 }
