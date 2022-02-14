@@ -164,6 +164,7 @@ contract Zunami is Context, Ownable, ERC20 {
     function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts) external {
         PendingWithdrawal memory user;
         address userAddr = _msgSender();
+        require(lpAmount > 0, 'Zunami: lpAmount must be higher 0');
 
         user.lpAmount = lpAmount;
         user.minAmounts = minAmounts;
@@ -254,11 +255,10 @@ contract Zunami is Context, Ownable, ERC20 {
             user = pendingWithdrawals[userList[i]];
             uint256 balance = balanceOf(user.withdrawer);
 
-            if (balance >= user.lpAmount && user.lpAmount > 0) {
+            if (balance >= user.lpAmount) {
                 if (!(strategy.withdraw(user.withdrawer, user.lpAmount, user.minAmounts))) {
                     emit BadWithdraw(user.withdrawer, user.minAmounts, user.lpAmount);
-
-                    return;
+                    delete pendingWithdrawals[userList[i]];
                 }
 
                 uint256 userDeposit = (totalDeposited * user.lpAmount) / totalSupply();
