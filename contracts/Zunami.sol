@@ -366,11 +366,11 @@ contract Zunami is Context, Ownable, ERC20 {
 
     /**
      * @dev dev withdraw commission from one strategy
-     * @param strategyAddr - address from which strategy managementFees withdrawn
+     * @param _pid - id from which strategy managementFees withdrawn
      */
 
-    function claimManagementFees(address strategyAddr) external onlyOwner {
-        IStrategy(strategyAddr).claimManagementFees();
+    function claimManagementFees(uint256 _pid) external onlyOwner {
+        poolInfo[_pid].strategy.claimManagementFees();
     }
 
     /**

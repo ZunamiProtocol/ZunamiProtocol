@@ -19,6 +19,7 @@ import {
     usdtAccount,
     usdtAddress,
     testCheckSumm,
+    DEBUG_MODE,
 } from './constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
@@ -291,7 +292,7 @@ describe('Zunami', function () {
             });
 
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
-                expect(await zunami.claimManagementFees(strategy.address));
+                expect(await zunami.claimManagementFees(0));
                 expect(await zunami.add(strategy2.address));
                 expect(parseInt(await zunami.poolInfoLength())).equal(2);
                 // expect().equal(2);
@@ -314,7 +315,9 @@ describe('Zunami', function () {
 
                 let totalSupply = await zunami.totalSupply();
                 expect(parseFloat(ethers.utils.formatUnits(totalSupply, 18))).to.gt(1190);
-                console.log('totalSupply', totalSupply);
+                if (DEBUG_MODE) {
+                    console.log('totalSupply', totalSupply);
+                }
 
                 let lpPrice = await zunami.lpPrice();
                 expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
@@ -487,12 +490,22 @@ describe('Zunami', function () {
             });
 
             it('should claim all strats successful complete', async () => {
-                for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
-                    expect(ethers.utils.formatUnits(await strat.managementFees(), 6)).to.equal(
-                        ethers.utils.formatUnits(await usdt.balanceOf(strat.address), 6)
-                    );
-                    expect(await zunami.claimManagementFees(strat.address));
-                }
+                expect(ethers.utils.formatUnits(await strategy.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy.address), 6)
+                );
+                expect(ethers.utils.formatUnits(await strategy2.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy2.address), 6)
+                );
+                expect(ethers.utils.formatUnits(await strategy2b.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy2b.address), 6)
+                );
+                expect(ethers.utils.formatUnits(await strategy4.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy4.address), 6)
+                );
+                expect(await zunami.claimManagementFees(0));
+                expect(await zunami.claimManagementFees(1));
+                expect(await zunami.claimManagementFees(2));
+                expect(await zunami.claimManagementFees(3));
             });
 
             it('should 2 users deposit in diff blocks&pools, skip blocks, withdraw successful complete', async () => {
