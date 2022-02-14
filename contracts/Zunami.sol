@@ -40,6 +40,7 @@ contract Zunami is Context, Ownable, ERC20 {
     struct PoolInfo {
         IStrategy strategy;
         uint256 startTime;
+        uint256 zunamiLpInStrat;
     }
 
     uint8 private constant POOL_ASSETS = 3;
@@ -142,6 +143,14 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     /**
+     * @dev Returns number (length of poolInfo)
+     * @return Returns number (length of poolInfo)
+     */
+    function getZunamiLpInStrat(uint256 pid) external view returns (uint256) {
+        return poolInfo[pid].zunamiLpInStrat;
+    }
+
+    /**
      * @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
      * @param amounts - array of deposit amounts by user
      */
@@ -228,7 +237,7 @@ contract Zunami is Context, Ownable, ERC20 {
                     (holdings + changedHoldings - currentUserAmount);
             }
             _mint(userAddr, lpShares);
-            strategy.updateZunamiLpInStrat(lpShares, true);
+            poolInfo[pid].zunamiLpInStrat += lpShares;
             // remove deposit from list
             delete accDepositPending[userAddr];
         }
@@ -255,7 +264,7 @@ contract Zunami is Context, Ownable, ERC20 {
             uint256 balance = balanceOf(user.withdrawer);
 
             if (balance >= user.lpAmount && user.lpAmount > 0) {
-                if (!(strategy.withdraw(user.withdrawer, user.lpAmount, user.minAmounts))) {
+                if (!(strategy.withdraw(user.withdrawer, user.lpAmount, user.minAmounts, pid))) {
                     emit BadWithdraw(user.withdrawer, user.minAmounts, user.lpAmount);
 
                     return;
@@ -263,7 +272,7 @@ contract Zunami is Context, Ownable, ERC20 {
 
                 uint256 userDeposit = (totalDeposited * user.lpAmount) / totalSupply();
                 _burn(user.withdrawer, user.lpAmount);
-                strategy.updateZunamiLpInStrat(user.lpAmount, false);
+                poolInfo[pid].zunamiLpInStrat -= user.lpAmount;
 
                 if (userDeposit > deposited[user.withdrawer]) {
                     userDeposit = deposited[user.withdrawer];
@@ -313,7 +322,7 @@ contract Zunami is Context, Ownable, ERC20 {
             lpShares = (sum * totalSupply()) / holdings;
         }
         _mint(_msgSender(), lpShares);
-        strategy.updateZunamiLpInStrat(lpShares, true);
+        poolInfo[pid].zunamiLpInStrat += lpShares;
         deposited[_msgSender()] += sum;
         totalDeposited += sum;
 
@@ -337,13 +346,13 @@ contract Zunami is Context, Ownable, ERC20 {
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
-            strategy.withdraw(userAddr, lpShares, minAmounts),
+            strategy.withdraw(userAddr, lpShares, minAmounts, pid),
             'user lps share should be at least required'
         );
 
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
         _burn(userAddr, lpShares);
-        strategy.updateZunamiLpInStrat(lpShares, false);
+        poolInfo[pid].zunamiLpInStrat -= lpShares;
 
         if (userDeposit > deposited[userAddr]) {
             userDeposit = deposited[userAddr];
@@ -380,7 +389,11 @@ contract Zunami is Context, Ownable, ERC20 {
 
     function add(address _strategy) external onlyOwner {
         poolInfo.push(
-            PoolInfo({ strategy: IStrategy(_strategy), startTime: block.timestamp + MIN_LOCK_TIME })
+            PoolInfo({
+                strategy: IStrategy(_strategy),
+                startTime: block.timestamp + MIN_LOCK_TIME,
+                zunamiLpInStrat: 0
+            })
         );
     }
 
@@ -405,9 +418,9 @@ contract Zunami is Context, Ownable, ERC20 {
             }
         }
         toStrat.deposit(amounts);
-        uint256 transferLpAmount = fromStrat.getZunamiLpInStrat();
-        fromStrat.updateZunamiLpInStrat(transferLpAmount, false);
-        toStrat.updateZunamiLpInStrat(transferLpAmount, true);
+        uint256 transferLpAmount = poolInfo[_from].zunamiLpInStrat;
+        poolInfo[_from].zunamiLpInStrat = 0;
+        poolInfo[_to].zunamiLpInStrat += transferLpAmount;
     }
 
     /**
@@ -425,9 +438,8 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         for (uint256 i = 0; i < length; i++) {
             poolInfo[_from[i]].strategy.withdrawAll();
-            uint256 thisPidLpAmount = poolInfo[_from[i]].strategy.getZunamiLpInStrat();
-            zunamiLp += thisPidLpAmount;
-            poolInfo[_from[i]].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
+            zunamiLp += poolInfo[_from[i]].zunamiLpInStrat;
+            poolInfo[_from[i]].zunamiLpInStrat = 0;
         }
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
@@ -435,7 +447,7 @@ contract Zunami is Context, Ownable, ERC20 {
                 IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
             }
         }
-        poolInfo[_to].strategy.updateZunamiLpInStrat(zunamiLp, true);
+        poolInfo[_to].zunamiLpInStrat += zunamiLp;
         require(poolInfo[_to].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 
@@ -453,9 +465,8 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         for (uint256 i = 1; i < length; i++) {
             poolInfo[i].strategy.withdrawAll();
-            uint256 thisPidLpAmount = poolInfo[i].strategy.getZunamiLpInStrat();
-            zunamiLp += thisPidLpAmount;
-            poolInfo[i].strategy.updateZunamiLpInStrat(thisPidLpAmount, false);
+            zunamiLp += poolInfo[i].zunamiLpInStrat;
+            poolInfo[i].zunamiLpInStrat = 0;
         }
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
@@ -463,7 +474,7 @@ contract Zunami is Context, Ownable, ERC20 {
                 IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[0].strategy), amounts[y]);
             }
         }
-        poolInfo[0].strategy.updateZunamiLpInStrat(zunamiLp, true);
+        poolInfo[0].zunamiLpInStrat += zunamiLp;
         require(poolInfo[0].strategy.deposit(amounts) > 0, 'too low amount!');
     }
 

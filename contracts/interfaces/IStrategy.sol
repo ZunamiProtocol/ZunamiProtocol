@@ -7,7 +7,8 @@ interface IStrategy {
     function withdraw(
         address depositer,
         uint256 lpsShare,
-        uint256[3] memory amounts
+        uint256[3] memory amounts,
+        uint256 pid
     ) external returns (bool);
 
     function withdrawAll() external;
@@ -15,8 +16,4 @@ interface IStrategy {
     function totalHoldings() external view returns (uint256);
 
     function claimManagementFees() external;
-
-    function updateZunamiLpInStrat(uint256 _newAmount, bool _isMint) external;
-
-    function getZunamiLpInStrat() external view returns (uint256);
 }

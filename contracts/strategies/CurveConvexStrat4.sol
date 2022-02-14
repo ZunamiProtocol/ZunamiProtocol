@@ -74,15 +74,6 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     }
 
     /**
-     * @dev Returns ZLP amount invested in strategy.
-     * After user deposit this amount grow, after withdraw goes down.
-     * @return Returns ZLP amount invested in strategy
-     */
-    function getZunamiLpInStrat() external view virtual returns (uint256) {
-        return zunamiLpInStrat;
-    }
-
-    /**
      * @dev Returns total USD holdings in strategy.
      * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice + extraToken * extraTokenPrice.
      * @return Returns total USD holdings in strategy
@@ -173,14 +164,16 @@ contract CurveConvexStrat4 is Context, BaseStrat {
     function withdraw(
         address depositor,
         uint256 lpShares,
-        uint256[3] memory minAmounts
+        uint256[3] memory minAmounts,
+        uint256 pid
     ) external virtual onlyZunami returns (bool) {
         uint256[4] memory minAmounts4;
         for (uint256 i = 0; i < 3; i++) {
             minAmounts4[i] = minAmounts[i];
         }
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
-        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) / zunamiLpInStrat;
+        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+            zunami.getZunamiLpInStrat(pid);
 
         if (depositedShare < crvRequiredLPs) {
             return false;
@@ -198,7 +191,9 @@ contract CurveConvexStrat4 is Context, BaseStrat {
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / zunamiLpInStrat;
+            userBalances[i] =
+                ((prevBalances[i] - managementFee) * lpShares) /
+                zunami.getZunamiLpInStrat(pid);
         }
 
         pool.remove_liquidity(depositedShare, minAmounts4);
