@@ -10,9 +10,7 @@ contract IronBankCurveConvex is CurveConvexStrat {
             Constants.CRV_IRONBANK_ADDRESS,
             Constants.CRV_IRONBANK_LP_ADDRESS,
             Constants.CVX_IRONBANK_REWARDS_ADDRESS,
-            Constants.CVX_IRONBANK_PID,
-            address(0),
-            address(0)
+            Constants.CVX_IRONBANK_PID
         )
     {}
 }
