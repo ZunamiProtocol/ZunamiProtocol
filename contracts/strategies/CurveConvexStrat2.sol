@@ -160,20 +160,19 @@ contract CurveConvexStrat2 is Context, BaseStrat {
      * @dev Returns true if withdraw success and false if fail.
      * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
      * @return Returns true if withdraw success and false if fail.
-     * @param depositor - address of user that deposit funds
+     * @param withdrawer - address of user that deposit funds
      * @param lpShares - amount of ZLP for withdraw
      * @param minAmounts -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
-        address depositor,
+        address withdrawer,
         uint256 lpShares,
-        uint256[3] memory minAmounts,
-        uint256 pid
+        uint256 strategyLpShares,
+        uint256[3] memory minAmounts
     ) external virtual onlyZunami returns (bool) {
         uint256[2] memory minAmounts2;
         minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
-            zunami.getZunamiLpInStrat(pid);
+        uint256 depositedShare = ( crvRewards.balanceOf(address(this) ) * lpShares) / strategyLpShares;
 
         if (depositedShare < pool.calc_token_amount(minAmounts2, false)) {
             return false;
@@ -190,8 +189,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] =
-                ((prevBalances[i] - managementFee) * lpShares) /
-                zunami.getZunamiLpInStrat(pid);
+                ( (prevBalances[i] - managementFee) * lpShares ) / strategyLpShares;
         }
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
         pool.remove_liquidity(depositedShare, minAmounts2);
@@ -201,7 +199,7 @@ contract CurveConvexStrat2 is Context, BaseStrat {
 
         for (uint256 i = 0; i < 3; i++) {
             IERC20Metadata(tokens[i]).safeTransfer(
-                depositor,
+                withdrawer,
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) -
                     prevBalances[i] +
                     userBalances[i]

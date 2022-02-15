@@ -9,6 +9,4 @@ interface IZunami {
     function totalHoldings() external returns (uint256);
 
     function calcManagementFee(uint256 amount) external returns (uint256);
-
-    function getZunamiLpInStrat(uint256 pid) external view returns (uint256);
 }

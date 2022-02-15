@@ -5,10 +5,10 @@ interface IStrategy {
     function deposit(uint256[3] memory amounts) external returns (uint256);
 
     function withdraw(
-        address depositer,
-        uint256 lpsShare,
-        uint256[3] memory amounts,
-        uint256 pid
+        address withdrawer,
+        uint256 lpShare,
+        uint256 strategyLpShare,
+        uint256[3] memory amounts
     ) external returns (bool);
 
     function withdrawAll() external;
