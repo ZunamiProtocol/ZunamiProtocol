@@ -257,8 +257,8 @@ contract Zunami is Context, Ownable, ERC20 {
             if (balance >= user.lpAmount && user.lpAmount > 0) {
                 if (!(strategy.withdraw(user.withdrawer, user.lpAmount, user.minAmounts))) {
                     emit BadWithdraw(user.withdrawer, user.minAmounts, user.lpAmount);
-
-                    return;
+                    delete pendingWithdrawals[userList[i]];
+                    continue;
                 }
 
                 uint256 userDeposit = (totalDeposited * user.lpAmount) / totalSupply();

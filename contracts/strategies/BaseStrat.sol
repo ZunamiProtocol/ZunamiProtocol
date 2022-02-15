@@ -63,7 +63,7 @@ contract BaseStrat is Ownable {
     /**
      * @dev anyone can sell rewards, func do nothing if crv&cvx balance is zero
      */
-    function sellCrvCvx() public virtual {
+    function sellCrvCvx() public {
         uint256 cvxBalance = cvx.balanceOf(address(this));
         uint256 crvBalance = crv.balanceOf(address(this));
         if (cvxBalance == 0 || crvBalance == 0) {
@@ -99,7 +99,7 @@ contract BaseStrat is Ownable {
      * adminFeeAmount is amount for transfer to dev or governance.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public virtual onlyZunami {
+    function claimManagementFees() public onlyZunami {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
