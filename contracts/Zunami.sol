@@ -209,7 +209,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
         }
         uint256 sum = strategy.deposit(totalAmounts);
-        require(sum > 0, 'too low amount!');
+        require(sum > 0, 'Zunami: too low amount!');
         uint256 lpShares = 0;
         uint256 changedHoldings = 0;
         uint256 currentUserAmount = 0;
@@ -245,7 +245,7 @@ contract Zunami is Context, Ownable, ERC20 {
         onlyOwner
         isStrategyStarted(pid)
     {
-        require(userList.length > 0, 'there are no pending withdrawals requests');
+        require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
         PendingWithdrawal memory user;
         IStrategy strategy = poolInfo[pid].strategy;
@@ -304,7 +304,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
         }
         uint256 sum = strategy.deposit(amounts);
-        require(sum > 0, 'too low amount!');
+        require(sum > 0, 'Zunami: too low amount!');
 
         uint256 lpShares = 0;
         if (totalSupply() == 0) {
@@ -338,7 +338,7 @@ contract Zunami is Context, Ownable, ERC20 {
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
             strategy.withdraw(userAddr, lpShares, minAmounts),
-            'user lps share should be at least required'
+            'Zunami: user lps share should be at least required'
         );
 
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
@@ -436,7 +436,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
         }
         poolInfo[_to].strategy.updateZunamiLpInStrat(zunamiLp, true);
-        require(poolInfo[_to].strategy.deposit(amounts) > 0, 'too low amount!');
+        require(poolInfo[_to].strategy.deposit(amounts) > 0, 'Zunami: too low amount!');
     }
 
     /**
@@ -464,7 +464,7 @@ contract Zunami is Context, Ownable, ERC20 {
             }
         }
         poolInfo[0].strategy.updateZunamiLpInStrat(zunamiLp, true);
-        require(poolInfo[0].strategy.deposit(amounts) > 0, 'too low amount!');
+        require(poolInfo[0].strategy.deposit(amounts) > 0, 'Zunami: too low amount!');
     }
 
     /**
@@ -486,6 +486,6 @@ contract Zunami is Context, Ownable, ERC20 {
      * @dev disable renounceOwnership for safety
      */
     function renounceOwnership() public view override onlyOwner {
-        revert('Zunami must have an owner');
+        revert('Zunami: Zunami must have an owner');
     }
 }
