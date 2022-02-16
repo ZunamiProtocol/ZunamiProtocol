@@ -12,7 +12,7 @@ import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IZunami.sol';
 
-contract BaseStrat is Ownable {
+abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
@@ -22,12 +22,13 @@ contract BaseStrat is Ownable {
     IUniswapRouter public router;
     address public zun;
 
-    uint256 public constant DENOMINATOR = 1e18;
+    uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant USD_MULTIPLIER = 1e12;
     uint256 public minDepositAmount = 9975; // 99.75%
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
     address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
+    uint256 public usdtPoolId = 2;
     address public usdt;
     uint256 public managementFees = 0;
     uint256 public buybackFee = 0;
@@ -36,6 +37,8 @@ contract BaseStrat is Ownable {
     address[] crvToUsdtPath;
     address[3] public tokens;
     address[] extraTokenSwapPath;
+
+    uint256[4] public decimalsMultiplierS;
 
     event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -52,11 +55,23 @@ contract BaseStrat is Ownable {
         cvx = IConvexMinter(Constants.CVX_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
         usdt = Constants.USDT_ADDRESS;
+        crvToUsdtPath = [Constants.CRV_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
+        cvxToUsdtPath = [Constants.CVX_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
+
         tokens[0] = Constants.DAI_ADDRESS;
         tokens[1] = Constants.USDC_ADDRESS;
         tokens[2] = Constants.USDT_ADDRESS;
-        crvToUsdtPath = [Constants.CRV_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
-        cvxToUsdtPath = [Constants.CVX_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
+        for (uint256 i; i < 3; i++) {
+            decimalsMultiplierS[i] = calcTokenDecimalsMultiplier(IERC20Metadata(tokens[i]));
+        }
+    }
+
+
+    function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns(uint256) {
+        uint8 decimals = token.decimals();
+        require(decimals <= 18, "Zunami: wrong token decimals");
+        if (decimals == 18) return 1;
+        return 10 ** (18 - decimals);
     }
 
     /**
