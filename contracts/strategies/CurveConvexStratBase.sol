@@ -182,4 +182,14 @@ abstract contract CurveConvexStratBase is Ownable {
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
     }
+
+    /**
+     * @dev owner can withdraw all funds in emergency case
+     * @param _token - IERC20Metadata token that needed withdraw from Strategy
+     */
+    function inCaseTokenStuck(IERC20Metadata _token) external onlyOwner {
+        uint256 tokenBalance = _token.balanceOf(address(this));
+        _token.safeTransfer(_msgSender(), tokenBalance);
+    }
+
 }
