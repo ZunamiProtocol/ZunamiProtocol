@@ -1,7 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-interface ICurvePool2 {
+import "./ICurvePoolPricable.sol";
+
+interface ICurvePool2 is ICurvePoolPricable {
     function add_liquidity(uint256[2] memory amounts, uint256 minMintAmount)
         external
         returns (uint256);
@@ -21,6 +23,4 @@ interface ICurvePool2 {
         external
         view
         returns (uint256);
-
-    function get_virtual_price() external view returns (uint256);
 }
