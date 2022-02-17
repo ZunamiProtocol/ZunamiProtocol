@@ -21,66 +21,18 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
     using SafeERC20 for IConvexMinter;
 
     ICurvePoolUnderlying public pool;
-    IERC20Metadata public poolLP;
-    IUniswapV2Pair public crvweth;
-    IUniswapV2Pair public wethcvx;
-    IUniswapV2Pair public wethusdt;
-    IConvexBooster public booster;
-    IConvexRewards public crvRewards;
-    uint256 public cvxPoolPID;
 
     constructor(
         address poolAddr,
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID
-    ) {
-        crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
-        wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
-        wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
-        booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
-
-        cvxPoolPID = poolPID;
+    ) CurveConvexStratBase(poolLPAddr, rewardsAddr, poolPID) {
         pool = ICurvePoolUnderlying(poolAddr);
-        poolLP = IERC20Metadata(poolLPAddr);
-        crvRewards = IConvexRewards(rewardsAddr);
     }
 
-    /**
-     * @dev Returns total USD holdings in strategy.
-     * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice.
-     * @return Returns total USD holdings in strategy
-     */
-    function totalHoldings() public view virtual returns (uint256) {
-        uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
-            CURVE_PRICE_DENOMINATOR;
-        uint256 cvxHoldings = 0;
-        uint256 crvHoldings = 0;
-        uint256[] memory amounts;
-        uint256 crvErned = crvRewards.earned(address(this));
-        uint256 cvxTotalCliffs = cvx.totalCliffs();
-
-        uint256 amountIn = (crvErned *
-            (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff())) /
-            cvxTotalCliffs +
-            cvx.balanceOf(address(this));
-        if (amountIn > 0) {
-            amounts = router.getAmountsOut(amountIn, cvxToUsdtPath);
-            cvxHoldings = amounts[amounts.length - 1];
-        }
-
-        amountIn = crvErned + crv.balanceOf(address(this));
-        if (amountIn > 0) {
-            amounts = router.getAmountsOut(amountIn, crvToUsdtPath);
-            crvHoldings = amounts[amounts.length - 1];
-        }
-
-        uint256 sum = 0;
-        for (uint256 i = 0; i < 3; i++) {
-            sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
-        }
-
-        return sum + lpBalance + cvxHoldings + crvHoldings;
+    function getCurvePoolPrice() internal view override returns (uint256) {
+        return pool.get_virtual_price();
     }
 
     /**
@@ -125,14 +77,14 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         uint256[3] memory minAmounts
     ) external virtual onlyZunami returns (bool) {
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+        uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
             strategyLpShares;
 
         if (depositedShare < crvRequiredLPs) {
             return false;
         }
 
-        crvRewards.withdrawAndUnwrap(depositedShare, true);
+        cvxRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
 
         uint256[] memory userBalances = new uint256[](3);
@@ -162,7 +114,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
      * This function need for moveFunds between strategys.
      */
     function withdrawAll() external virtual onlyZunami {
-        crvRewards.withdrawAllAndUnwrap(true);
+        cvxRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
 
         uint256 lpBalance = poolLP.balanceOf(address(this));

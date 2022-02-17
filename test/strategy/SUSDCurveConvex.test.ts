@@ -241,7 +241,7 @@ describe(STRATEGY_NAME, function () {
         it('claimManagementFees should be successful', async () => {});
 
         it('users withdraw from zunami after claim should be successful', async () => {
-            expect(await zunami.claimManagementFees(strategy.address));
+            expect(await zunami.claimManagementFees(0));
             for (const user of [alice, bob, carol, rosa]) {
                 expect(
                     await zunami

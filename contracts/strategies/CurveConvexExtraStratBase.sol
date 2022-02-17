@@ -20,16 +20,9 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    IERC20Metadata public poolLP;
     IERC20Metadata public token;
-    IUniswapV2Pair public crvweth;
-    IUniswapV2Pair public wethcvx;
-    IUniswapV2Pair public wethusdt;
-    IConvexBooster public booster;
-    IConvexRewards public crvRewards;
     IERC20Metadata public extraToken;
     IConvexRewards public extraRewards;
-    uint256 public cvxPoolPID;
 
     constructor(
         address poolLPAddr,
@@ -38,16 +31,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         address tokenAddr,
         address extraRewardsAddr,
         address extraTokenAddr
-    ) {
-        crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
-        wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
-        wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
-        booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
-
-        cvxPoolPID = poolPID;
-        poolLP = IERC20Metadata(poolLPAddr);
-        crvRewards = IConvexRewards(rewardsAddr);
-
+    ) CurveConvexStratBase(poolLPAddr, rewardsAddr, poolPID) {
         token = IERC20Metadata(tokenAddr);
         if (extraTokenAddr != address(0)) {
             extraToken = IERC20Metadata(extraTokenAddr);
@@ -63,49 +47,15 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice + extraToken * extraTokenPrice.
      * @return Returns total USD holdings in strategy
      */
-    function totalHoldings() public view virtual returns (uint256) {
-        uint256 lpBalance = (crvRewards.balanceOf(address(this)) * getCurvePoolPrice()) /
-            CURVE_PRICE_DENOMINATOR;
-        uint256 cvxHoldings = 0;
-        uint256 crvHoldings = 0;
-        uint256 extraHoldings = 0;
-        uint256[] memory amounts;
-        uint256 crvErned = crvRewards.earned(address(this));
-        uint256 cvxTotalCliffs = cvx.totalCliffs();
-
-        uint256 amountIn = (crvErned *
-            (cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff())) /
-            cvxTotalCliffs +
-            cvx.balanceOf(address(this));
-        if (amountIn > 0) {
-            amounts = router.getAmountsOut(amountIn, cvxToUsdtPath);
-            cvxHoldings = amounts[amounts.length - 1];
-        }
-        amountIn = crvErned + crv.balanceOf(address(this));
-        if (amountIn > 0) {
-            amounts = router.getAmountsOut(amountIn, crvToUsdtPath);
-            crvHoldings = amounts[amounts.length - 1];
-        }
+    function totalHoldings() public view override virtual returns (uint256) {
+        uint256 extraEarnings = 0;
         if (address(extraToken) != address(0)) {
-            amountIn = extraRewards.earned(address(this)) + extraToken.balanceOf(address(this));
-            if (amountIn > 0) {
-                amounts = router.getAmountsOut(amountIn, extraTokenSwapPath);
-                extraHoldings = amounts[amounts.length - 1];
-            }
+            uint256 amountIn = extraRewards.earned(address(this)) + extraToken.balanceOf(address(this));
+            extraEarnings = priceTokenByUniswap(amountIn, extraTokenSwapPath);
         }
 
-        uint256 sum = 0;
-
-        sum += token.balanceOf(address(this)) * decimalsMultiplierS[3];
-
-        for (uint256 i = 0; i < 3; i++) {
-            sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
-        }
-
-        return sum + lpBalance + extraHoldings + (cvxHoldings + crvHoldings) * USD_MULTIPLIER;
+        return super.totalHoldings() + extraEarnings + token.balanceOf(address(this)) * decimalsMultiplierS[3];
     }
-
-    function getCurvePoolPrice() internal view virtual returns (uint256);
 
     /**
      * @dev Returns deposited amount in USD.
@@ -131,7 +81,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
     ) external virtual returns (bool);
 
     function sellRewardsAndExtraToken(uint256 depositedShare) internal {
-        crvRewards.withdrawAndUnwrap(depositedShare, true);
+        cvxRewards.withdrawAndUnwrap(depositedShare, true);
         sellCrvCvx();
         if (address(extraToken) != address(0)) {
             sellExtraToken();
@@ -198,7 +148,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      * This function need for moveFunds between strategys.
      */
     function withdrawAll() external virtual onlyZunami {
-        crvRewards.withdrawAllAndUnwrap(true);
+        cvxRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
         if (address(extraToken) != address(0)) {
             sellExtraToken();
