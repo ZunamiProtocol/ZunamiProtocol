@@ -12,7 +12,7 @@ import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
 import '../interfaces/IZunami.sol';
-import "./CurveConvexExtraStratBase.sol";
+import './CurveConvexExtraStratBase.sol';
 
 contract CurveConvexStrat4 is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
@@ -28,18 +28,20 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         address tokenAddr,
         address extraRewardsAddr,
         address extraTokenAddr
-    ) CurveConvexExtraStratBase(
-        poolLPAddr,
-        rewardsAddr,
-        poolPID,
-        tokenAddr,
-        extraRewardsAddr,
-        extraTokenAddr
-    ){
+    )
+        CurveConvexExtraStratBase(
+            poolLPAddr,
+            rewardsAddr,
+            poolPID,
+            tokenAddr,
+            extraRewardsAddr,
+            extraTokenAddr
+        )
+    {
         pool = ICurvePool4(poolAddr);
     }
 
-    function getCurvePoolPrice() internal view override returns(uint256){
+    function getCurvePoolPrice() internal view override returns (uint256) {
         return pool.get_virtual_price();
     }
 
@@ -95,7 +97,8 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
             minAmounts4[i] = minAmounts[i];
         }
         uint256 crvRequiredLPs = ICurvePool4(address(pool)).calc_token_amount(minAmounts4, false);
-        uint256 depositedShare = ( crvRewards.balanceOf(address(this) ) * lpShares) / strategyLpShares;
+        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+            strategyLpShares;
 
         if (depositedShare < crvRequiredLPs) {
             return false;
@@ -103,22 +106,21 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
 
         sellRewardsAndExtraToken(depositedShare);
 
-        (uint256[] memory userBalances, uint256[] memory prevBalances) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
+        (
+            uint256[] memory userBalances,
+            uint256[] memory prevBalances
+        ) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
 
         ICurvePool4(address(pool)).remove_liquidity(depositedShare, minAmounts4);
 
         sellToken();
-        transferUserAllTokens(
-            withdrawer,
-            userBalances,
-            prevBalances
-        );
+        transferUserAllTokens(withdrawer, userBalances, prevBalances);
 
         return true;
     }
 
     /**
- * @dev sell base token on strategy can be called by anyone
+     * @dev sell base token on strategy can be called by anyone
      */
     function sellToken() public virtual {
         uint256 sellBal = token.balanceOf(address(this));

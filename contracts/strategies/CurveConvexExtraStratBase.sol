@@ -65,7 +65,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      */
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = (crvRewards.balanceOf(address(this)) * getCurvePoolPrice()) /
-        CURVE_PRICE_DENOMINATOR;
+            CURVE_PRICE_DENOMINATOR;
         uint256 cvxHoldings = 0;
         uint256 crvHoldings = 0;
         uint256 extraHoldings = 0;
@@ -105,10 +105,10 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         return sum + lpBalance + cvxHoldings + crvHoldings + extraHoldings;
     }
 
-    function getCurvePoolPrice() internal view virtual returns(uint256);
+    function getCurvePoolPrice() internal view virtual returns (uint256);
 
     /**
- * @dev Returns deposited amount in USD.
+     * @dev Returns deposited amount in USD.
      * If deposit failed return zero
      * @return Returns deposited amount in USD.
      * @param amounts - amounts in stablecoins that user deposit
@@ -138,17 +138,17 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         }
     }
 
-    function getCurrentStratAndUserBalances(
-        uint256 lpShares,
-        uint256 strategyLpShares
-    ) internal view returns(uint256[] memory userBalances, uint256[] memory prevBalances) {
+    function getCurrentStratAndUserBalances(uint256 lpShares, uint256 strategyLpShares)
+        internal
+        view
+        returns (uint256[] memory userBalances, uint256[] memory prevBalances)
+    {
         userBalances = new uint256[](3);
         prevBalances = new uint256[](3);
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            userBalances[i] =
-            ( (prevBalances[i] - managementFee) * lpShares ) / strategyLpShares;
+            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
         }
     }
 
@@ -161,8 +161,8 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             IERC20Metadata(tokens[i]).safeTransfer(
                 withdrawer,
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) -
-                prevBalances[i] +
-                userBalances[i]
+                    prevBalances[i] +
+                    userBalances[i]
             );
         }
     }

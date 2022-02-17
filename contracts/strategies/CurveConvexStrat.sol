@@ -53,7 +53,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
      */
     function totalHoldings() public view virtual returns (uint256) {
         uint256 lpBalance = (crvRewards.balanceOf(address(this)) * pool.get_virtual_price()) /
-        CURVE_PRICE_DENOMINATOR;
+            CURVE_PRICE_DENOMINATOR;
         uint256 cvxHoldings = 0;
         uint256 crvHoldings = 0;
         uint256[] memory amounts;
@@ -125,7 +125,8 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         uint256[3] memory minAmounts
     ) external virtual onlyZunami returns (bool) {
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = ( crvRewards.balanceOf(address(this)) * lpShares ) / strategyLpShares;
+        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+            strategyLpShares;
 
         if (depositedShare < crvRequiredLPs) {
             return false;
@@ -139,8 +140,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            userBalances[i] =
-                ( (prevBalances[i] - managementFee) * lpShares ) / strategyLpShares;
+            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
         }
 
         pool.remove_liquidity(depositedShare, minAmounts, true);
