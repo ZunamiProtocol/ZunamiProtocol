@@ -102,7 +102,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             sum += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
         }
 
-        return sum + lpBalance + extraHoldings + (cvxHoldings + crvHoldings) * 1e12;
+        return sum + lpBalance + extraHoldings + (cvxHoldings + crvHoldings) * USD_MULTIPLIER;
     }
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
