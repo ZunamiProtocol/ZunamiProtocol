@@ -154,10 +154,10 @@ describe(STRATEGY_NAME, function () {
 
         it('Add pool from owner should be successful', async () => {
             await expect(
-                zunami.connect(alice).add(strategy.address),
+                zunami.connect(alice).addPool(strategy.address),
                 'Ownable: caller is not the owner'
             ).to.be.reverted;
-            expect(await zunami.add(strategy.address)); // 0 pool
+            expect(await zunami.addPool(strategy.address)); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));

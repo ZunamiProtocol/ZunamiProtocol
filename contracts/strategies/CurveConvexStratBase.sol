@@ -23,7 +23,6 @@ abstract contract CurveConvexStratBase is Ownable {
     address public zun;
 
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
-    uint256 public constant USD_MULTIPLIER = 1e12;
     uint256 public minDepositAmount = 9975; // 99.75%
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
     address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
@@ -184,8 +183,8 @@ abstract contract CurveConvexStratBase is Ownable {
     }
 
     /**
-     * @dev owner can withdraw all funds in emergency case
-     * @param _token - IERC20Metadata token that needed withdraw from Strategy
+     * @dev owner can withdraw all stuck funds in emergency case
+     * @param _token - IERC20Metadata token that should be fully withdraw from Strategy
      */
     function inCaseTokenStuck(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = _token.balanceOf(address(this));

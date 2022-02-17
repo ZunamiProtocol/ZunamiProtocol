@@ -162,11 +162,11 @@ describe('Zunami', function () {
         describe('Test strategy - Aave', function () {
             it('should add pool from owner successful complete', async () => {
                 await expectRevert(
-                    zunami.connect(alice).add(strategy.address),
+                    zunami.connect(alice).addPool(strategy.address),
                     'Ownable: caller is not the owner'
                 );
 
-                await expect(await zunami.add(strategy.address));
+                await expect(await zunami.addPool(strategy.address));
             });
 
             it('should deposit after MIN_LOCK_TIME successful complete', async () => {
@@ -293,7 +293,7 @@ describe('Zunami', function () {
 
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
                 expect(await zunami.claimManagementFees(0));
-                expect(await zunami.add(strategy2.address));
+                expect(await zunami.addPool(strategy2.address));
                 expect(parseInt(await zunami.poolInfoLength())).equal(2);
                 // expect().equal(2);
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -364,7 +364,7 @@ describe('Zunami', function () {
 
                 expect(await zunami.connect(carol).pendingDepositRemove());
 
-                expect(await zunami.add(strategy2b.address));
+                expect(await zunami.addPool(strategy2b.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 expect(
                     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2)
@@ -413,7 +413,7 @@ describe('Zunami', function () {
 
                 expect(await zunami.connect(carol).pendingDepositRemove());
 
-                expect(await zunami.add(strategy4.address));
+                expect(await zunami.addPool(strategy4.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 expect(
                     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3)
