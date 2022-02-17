@@ -233,11 +233,13 @@ contract Zunami is Context, Ownable, ERC20 {
             if (totalSupply() == 0) {
                 lpShares = currentUserAmount;
             } else {
-                lpShares = (currentUserAmount * totalSupply()) / (holdings + changedHoldings);
+                lpShares =
+                (currentUserAmount * totalSupply()) /
+                (holdings + changedHoldings);
             }
             changedHoldings += currentUserAmount;
             _mint(userAddr, lpShares);
-            totalDeposited += lpShares;
+            poolInfo[pid].lpShares += lpShares;
             // remove deposit from list
             delete accDepositPending[userAddr];
         }
@@ -250,9 +252,9 @@ contract Zunami is Context, Ownable, ERC20 {
      * @param pid - number of the pool from which the funds are withdrawn
      */
     function completeWithdrawals(address[] memory userList, uint256 pid)
-        external
-        onlyOwner
-        isStrategyStarted(pid)
+    external
+    onlyOwner
+    isStrategyStarted(pid)
     {
         require(userList.length > 0, 'there are no pending withdrawals requests');
 
@@ -264,16 +266,7 @@ contract Zunami is Context, Ownable, ERC20 {
             uint256 balance = balanceOf(user.withdrawer);
 
             if (balance >= user.lpShares) {
-                if (
-                    !(
-                        strategy.withdraw(
-                            user.withdrawer,
-                            user.lpShares,
-                            poolInfo[pid].lpShares,
-                            user.minAmounts
-                        )
-                    )
-                ) {
+                if (!(strategy.withdraw(user.withdrawer, user.lpShares, poolInfo[pid].lpShares, user.minAmounts))) {
                     emit BadWithdraw(user.withdrawer, user.minAmounts, user.lpShares);
                     delete pendingWithdrawals[userList[i]];
                     continue;
