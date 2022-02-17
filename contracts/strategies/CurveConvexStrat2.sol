@@ -98,7 +98,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     ) external override onlyZunami returns (bool) {
         uint256[2] memory minAmounts2;
         minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+        uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
             strategyLpShares;
 
         if (depositedShare < ICurvePool2(address(pool)).calc_token_amount(minAmounts2, false)) {

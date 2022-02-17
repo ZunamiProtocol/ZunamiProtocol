@@ -97,7 +97,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
             minAmounts4[i] = minAmounts[i];
         }
         uint256 crvRequiredLPs = ICurvePool4(address(pool)).calc_token_amount(minAmounts4, false);
-        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+        uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
             strategyLpShares;
 
         if (depositedShare < crvRequiredLPs) {

@@ -42,7 +42,6 @@ contract Zunami is Context, Ownable, ERC20 {
     address[POOL_ASSETS] public tokens;
     uint256[POOL_ASSETS] public decimalsMultiplierS;
 
-    mapping(address => uint256) public deposited;
     uint256 public totalDeposited;
 
     // Info of each pool
@@ -191,7 +190,7 @@ contract Zunami is Context, Ownable, ERC20 {
         isStrategyStarted(pid)
     {
         IStrategy strategy = poolInfo[pid].strategy;
-        uint256 holdings = totalHoldings();
+        uint256 currentTotalHoldings = totalHoldings();
 
         uint256 completeAmount = 0;
         uint256[3] memory totalAmounts;
@@ -215,32 +214,29 @@ contract Zunami is Context, Ownable, ERC20 {
                 IERC20Metadata(tokens[y]).safeTransfer(address(strategy), totalTokenAmount);
             }
         }
-        uint256 totalDeposited = strategy.deposit(totalAmounts);
-        require(totalDeposited > 0, 'Zunami: too low deposit!');
+        uint256 totalDepositedNow = strategy.deposit(totalAmounts);
+        require(totalDepositedNow > 0, 'Zunami: too low deposit!');
         uint256 lpShares = 0;
-        uint256 changedHoldings = 0;
+        uint256 addedHoldings = 0;
         uint256 userDeposited = 0;
         address userAddr;
 
         for (uint256 z = 0; z < userList.length; z++) {
-            userDeposited = (totalDeposited * userCompleteHoldings[z]) / newHoldings;
+            userDeposited = (totalDepositedNow * userCompleteHoldings[z]) / newHoldings;
             userAddr = userList[z];
-            deposited[userAddr] += currentUserAmount;
             if (totalSupply() == 0) {
                 lpShares = userDeposited;
             } else {
-                lpShares =
-                (currentUserAmount * totalSupply()) /
-                (holdings + changedHoldings);
+                lpShares = (totalSupply() * userDeposited) / (currentTotalHoldings + addedHoldings);
             }
-            changedHoldings += currentUserAmount;
+            addedHoldings += userDeposited;
             _mint(userAddr, lpShares);
             poolInfo[pid].lpShares += lpShares;
             emit Deposited(userAddr, pendingDeposits[userAddr], lpShares);
             // remove deposit from list
             delete pendingDeposits[userAddr];
         }
-        totalDeposited += changedHoldings;
+        totalDeposited += addedHoldings;
     }
 
     /**
@@ -262,9 +258,8 @@ contract Zunami is Context, Ownable, ERC20 {
         for (uint256 i = 0; i < userList.length; i++) {
             user = userList[i];
             withdrawal = pendingWithdrawals[user];
-            uint256 userLpShares = balanceOf(user);
 
-            if (userLpShares >= withdrawal.lpShares) {
+            if (balanceOf(user) >= withdrawal.lpShares) {
                 if (!(strategy.withdraw(user, withdrawal.lpShares, poolInfo[pid].lpShares, withdrawal.minAmounts))) {
                     emit FailedWithdrawal(user, withdrawal.minAmounts, withdrawal.lpShares);
                     delete pendingWithdrawals[user];
@@ -275,11 +270,6 @@ contract Zunami is Context, Ownable, ERC20 {
                 _burn(user, withdrawal.lpShares);
                 poolInfo[pid].lpShares -= withdrawal.lpShares;
 
-                if (userDeposit > deposited[user]) {
-                    userDeposit = deposited[user];
-                }
-
-                deposited[user] -= userDeposit;
                 totalDeposited -= userDeposit;
 
                 emit Withdrawn(user, withdrawal.minAmounts, withdrawal.lpShares);
@@ -324,7 +314,6 @@ contract Zunami is Context, Ownable, ERC20 {
         }
         _mint(_msgSender(), lpShares);
         poolInfo[pid].lpShares += lpShares;
-        deposited[_msgSender()] += newDeposited;
         totalDeposited += newDeposited;
 
         emit Deposited(_msgSender(), amounts, lpShares);
@@ -355,11 +344,6 @@ contract Zunami is Context, Ownable, ERC20 {
         _burn(userAddr, lpShares);
         poolInfo[pid].lpShares -= lpShares;
 
-        if (userDeposit > deposited[userAddr]) {
-            userDeposit = deposited[userAddr];
-        }
-
-        deposited[userAddr] -= userDeposit;
         totalDeposited -= userDeposit;
 
         emit Withdrawn(userAddr, minAmounts, lpShares);
