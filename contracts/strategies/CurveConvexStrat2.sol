@@ -31,21 +31,23 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         address tokenAddr,
         address extraRewardsAddr,
         address extraTokenAddr
-    ) CurveConvexExtraStratBase(
-        poolLPAddr,
-        rewardsAddr,
-        poolPID,
-        tokenAddr,
-        extraRewardsAddr,
-        extraTokenAddr
-    ) {
+    )
+        CurveConvexExtraStratBase(
+            poolLPAddr,
+            rewardsAddr,
+            poolPID,
+            tokenAddr,
+            extraRewardsAddr,
+            extraTokenAddr
+        )
+    {
         pool = ICurvePool2(poolAddr);
 
         pool3 = ICurvePool(Constants.CRV_3POOL_ADDRESS);
         pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
     }
 
-    function getCurvePoolPrice() internal view override returns(uint256){
+    function getCurvePoolPrice() internal view override returns (uint256) {
         return pool.get_virtual_price();
     }
 
@@ -96,7 +98,8 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     ) external override onlyZunami returns (bool) {
         uint256[2] memory minAmounts2;
         minAmounts2[1] = pool3.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = ( crvRewards.balanceOf(address(this) ) * lpShares) / strategyLpShares;
+        uint256 depositedShare = (crvRewards.balanceOf(address(this)) * lpShares) /
+            strategyLpShares;
 
         if (depositedShare < ICurvePool2(address(pool)).calc_token_amount(minAmounts2, false)) {
             return false;
@@ -104,7 +107,10 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
 
         sellRewardsAndExtraToken(depositedShare);
 
-        (uint256[] memory userBalances, uint256[] memory prevBalances) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
+        (
+            uint256[] memory userBalances,
+            uint256[] memory prevBalances
+        ) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
 
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
         ICurvePool2(address(pool)).remove_liquidity(depositedShare, minAmounts2);
@@ -114,11 +120,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;
         pool3.remove_liquidity(crv3LiqAmount, minAmounts);
 
-        transferUserAllTokens(
-            withdrawer,
-            userBalances,
-            prevBalances
-        );
+        transferUserAllTokens(withdrawer, userBalances, prevBalances);
 
         return true;
     }

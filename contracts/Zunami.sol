@@ -225,15 +225,15 @@ contract Zunami is Context, Ownable, ERC20 {
         for (uint256 z = 0; z < userList.length; z++) {
             userDeposited = (totalDeposited * userCompleteHoldings[z]) / newHoldings;
             userAddr = userList[z];
-            deposited[userAddr] += userDeposited;
-            changedHoldings += userDeposited;
+            deposited[userAddr] += currentUserAmount;
             if (totalSupply() == 0) {
                 lpShares = userDeposited;
             } else {
                 lpShares =
-                    (userDeposited * totalSupply()) /
-                    (holdings + changedHoldings - userDeposited);
+                (currentUserAmount * totalSupply()) /
+                (holdings + changedHoldings);
             }
+            changedHoldings += currentUserAmount;
             _mint(userAddr, lpShares);
             poolInfo[pid].lpShares += lpShares;
             emit Deposited(userAddr, pendingDeposits[userAddr], lpShares);
