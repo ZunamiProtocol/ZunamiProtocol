@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/security/Pausable.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
@@ -23,7 +24,7 @@ import './interfaces/IStrategy.sol';
  *
  */
 
-contract Zunami is Context, Ownable, ERC20 {
+contract Zunami is Context, Ownable, ERC20, Pausable {
     using SafeERC20 for IERC20Metadata;
 
     struct PendingWithdrawal {
@@ -56,20 +57,16 @@ contract Zunami is Context, Ownable, ERC20 {
     mapping(address => PendingWithdrawal) public pendingWithdrawals;
 
     event CreatedPendingDeposit(address indexed depositor, uint256[3] amounts);
-    event CreatedPendingWithdrawal(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
+    event CreatedPendingWithdrawal(
+        address indexed withdrawer,
+        uint256[3] amounts,
+        uint256 lpShares
+    );
     event Deposited(address indexed depositor, uint256[3] amounts, uint256 lpShares);
     event Withdrawn(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
     event AddedPool(uint256 pid, address strategyAddr, uint256 startTime);
     event FailedDeposit(address indexed depositor, uint256[3] amounts, uint256 lpShares);
     event FailedWithdrawal(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier isNotLocked() {
-        require(!isLock, 'Zunami: Deposit functions locked');
-        _;
-    }
 
     modifier isStrategyStarted(uint256 pid) {
         require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
@@ -150,7 +147,7 @@ contract Zunami is Context, Ownable, ERC20 {
      * @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
      * @param amounts - array of deposit amounts by user
      */
-    function delegateDeposit(uint256[3] memory amounts) external isNotLocked {
+    function delegateDeposit(uint256[3] memory amounts) external whenNotPaused {
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
                 IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
@@ -166,7 +163,10 @@ contract Zunami is Context, Ownable, ERC20 {
      * @param  lpAmount - amount of ZLP for withdraw
      * @param minAmounts - array of amounts stablecoins that user want minimum receive
      */
-    function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts) external {
+    function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts)
+        external
+        whenNotPaused
+    {
         PendingWithdrawal memory withdrawal;
         address userAddr = _msgSender();
         require(lpAmount > 0, 'Zunami: lpAmount must be higher 0');
@@ -245,9 +245,9 @@ contract Zunami is Context, Ownable, ERC20 {
      * @param pid - number of the pool from which the funds are withdrawn
      */
     function completeWithdrawals(address[] memory userList, uint256 pid)
-    external
-    onlyOwner
-    isStrategyStarted(pid)
+        external
+        onlyOwner
+        isStrategyStarted(pid)
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
@@ -260,7 +260,16 @@ contract Zunami is Context, Ownable, ERC20 {
             withdrawal = pendingWithdrawals[user];
 
             if (balanceOf(user) >= withdrawal.lpShares) {
-                if (!(strategy.withdraw(user, withdrawal.lpShares, poolInfo[pid].lpShares, withdrawal.minAmounts))) {
+                if (
+                    !(
+                        strategy.withdraw(
+                            user,
+                            withdrawal.lpShares,
+                            poolInfo[pid].lpShares,
+                            withdrawal.minAmounts
+                        )
+                    )
+                ) {
                     emit FailedWithdrawal(user, withdrawal.minAmounts, withdrawal.lpShares);
                     delete pendingWithdrawals[user];
                     continue;
@@ -287,7 +296,7 @@ contract Zunami is Context, Ownable, ERC20 {
      */
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
-        isNotLocked
+        whenNotPaused
         isStrategyStarted(pid)
         returns (uint256)
     {
@@ -330,7 +339,7 @@ contract Zunami is Context, Ownable, ERC20 {
         uint256 lpShares,
         uint256[3] memory minAmounts,
         uint256 pid
-    ) external isStrategyStarted(pid) {
+    ) external whenNotPaused isStrategyStarted(pid) {
         IStrategy strategy = poolInfo[pid].strategy;
         address userAddr = _msgSender();
 
@@ -350,15 +359,6 @@ contract Zunami is Context, Ownable, ERC20 {
     }
 
     /**
-     * @dev security func, dev can disable all new deposits (not withdrawals)
-     * @param _lock - dev can lock or unlock deposits
-     */
-
-    function setLock(bool _lock) external onlyOwner {
-        isLock = _lock;
-    }
-
-    /**
      * @dev dev withdraw commission from one strategy
      * @param _pid - id from which strategy managementFees withdrawn
      */
@@ -373,14 +373,10 @@ contract Zunami is Context, Ownable, ERC20 {
      */
 
     function addPool(address _strategyAddr) external onlyOwner {
-        require(_strategyAddr != address(0), "Zunami: zero strategy addr");
+        require(_strategyAddr != address(0), 'Zunami: zero strategy addr');
         uint256 startTime = block.timestamp + MIN_LOCK_TIME;
         poolInfo.push(
-            PoolInfo({
-                strategy: IStrategy(_strategyAddr),
-                startTime: startTime,
-                lpShares: 0
-            })
+            PoolInfo({ strategy: IStrategy(_strategyAddr), startTime: startTime, lpShares: 0 })
         );
         emit AddedPool(poolInfo.length - 1, _strategyAddr, startTime);
     }

@@ -249,9 +249,6 @@ describe('Zunami', function () {
                 let calcManagementFee = await zunami.calcManagementFee(1000);
                 expect(parseFloat(calcManagementFee)).equal(20);
 
-                expect(await zunami.setLock(true));
-                expect(await zunami.setLock(false));
-
                 const newBuybackFee = 5000;
                 const buybackFeeEqual = '0.000000000000005';
                 expect(await strategy.updateBuybackFee(newBuybackFee)); // 50%
