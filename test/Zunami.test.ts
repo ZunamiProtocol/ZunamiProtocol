@@ -545,6 +545,29 @@ describe('Zunami', function () {
                 );
             });
 
+            it('test emergency in Zunami', async () => {
+                let usdt_owner_before = await usdt.balanceOf(owner.address);
+                await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
+                await zunami.connect(owner).inCaseTokenStuck(usdt.address);
+                let usdt_owner_after = await usdt.balanceOf(owner.address);
+                expect(usdt_owner_after == usdt_owner_before);
+            });
+
+            it('test emergency in Strats', async () => {
+                let usdt_owner_before = await usdt.balanceOf(owner.address);
+                await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
+                await zunami.connect(owner).inCaseTokenStuck(usdt.address);
+                let usdt_owner_after = await usdt.balanceOf(owner.address);
+                expect(usdt_owner_after == usdt_owner_before);
+                for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
+                    let usdt_owner_before = await usdt.balanceOf(owner.address);
+                    let stratUsdtBalance = await usdt.balanceOf(strat.address);
+                    await strat.connect(owner).inCaseTokenStuck(usdt.address);
+                    let usdt_owner_after = await usdt.balanceOf(owner.address);
+                    expect(usdt_owner_before == usdt_owner_after.add(stratUsdtBalance));
+                }
+            });
+
             it('print balances', async () => {
                 for (const user of [alice, bob, carol, rosa]) {
                     let usdt_balance = await usdt.balanceOf(user.address);
