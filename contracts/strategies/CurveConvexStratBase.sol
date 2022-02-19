@@ -11,9 +11,9 @@ import '../utils/Constants.sol';
 import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IZunami.sol';
-import "../interfaces/IUniswapV2Pair.sol";
-import "../interfaces/IConvexBooster.sol";
-import "../interfaces/IConvexRewards.sol";
+import '../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/IConvexBooster.sol';
+import '../interfaces/IConvexRewards.sol';
 
 abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -90,12 +90,11 @@ abstract contract CurveConvexStratBase is Ownable {
         cvxRewards = IConvexRewards(rewardsAddr);
     }
 
-
-    function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns(uint256) {
+    function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
         uint8 decimals = token.decimals();
-        require(decimals <= 18, "Zunami: wrong token decimals");
+        require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-        return 10 ** (18 - decimals);
+        return 10**(18 - decimals);
     }
 
     /**
@@ -135,7 +134,7 @@ abstract contract CurveConvexStratBase is Ownable {
     }
 
     /**
- * @dev Returns total USD holdings in strategy.
+     * @dev Returns total USD holdings in strategy.
      * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice.
      * @return Returns total USD holdings in strategy
      */
@@ -148,7 +147,8 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 cvxTotalCliffs = cvx.totalCliffs();
         uint256 cvxRemainCliffs = cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff();
 
-        uint256 amountIn = (crvEarned * cvxRemainCliffs) / cvxTotalCliffs +
+        uint256 amountIn = (crvEarned * cvxRemainCliffs) /
+            cvxTotalCliffs +
             cvx.balanceOf(address(this));
         uint256 cvxEarnings = priceTokenByUniswap(amountIn, cvxToUsdtPath);
 
@@ -157,13 +157,19 @@ abstract contract CurveConvexStratBase is Ownable {
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
-            tokensHoldings += IERC20Metadata(tokens[i]).balanceOf(address(this)) * decimalsMultiplierS[i];
+            tokensHoldings +=
+                IERC20Metadata(tokens[i]).balanceOf(address(this)) *
+                decimalsMultiplierS[i];
         }
 
         return tokensHoldings + crvLpHoldings + (cvxEarnings + crvEarnings) * CURVE_USD_MULTIPLIER;
     }
 
-    function priceTokenByUniswap(uint amountIn, address[] memory uniswapPath) internal view returns (uint256) {
+    function priceTokenByUniswap(uint256 amountIn, address[] memory uniswapPath)
+        internal
+        view
+        returns (uint256)
+    {
         if (amountIn == 0) return 0;
         uint256[] memory amounts = router.getAmountsOut(amountIn, uniswapPath);
         return amounts[amounts.length - 1];
@@ -255,5 +261,4 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
     }
-
 }

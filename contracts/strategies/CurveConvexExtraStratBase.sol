@@ -47,14 +47,19 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice + extraToken * extraTokenPrice.
      * @return Returns total USD holdings in strategy
      */
-    function totalHoldings() public view override virtual returns (uint256) {
+    function totalHoldings() public view virtual override returns (uint256) {
         uint256 extraEarnings = 0;
         if (address(extraToken) != address(0)) {
-            uint256 amountIn = extraRewards.earned(address(this)) + extraToken.balanceOf(address(this));
+            uint256 amountIn = extraRewards.earned(address(this)) +
+                extraToken.balanceOf(address(this));
             extraEarnings = priceTokenByUniswap(amountIn, extraTokenSwapPath);
         }
 
-        return super.totalHoldings() + extraEarnings + token.balanceOf(address(this)) * decimalsMultiplierS[3];
+        return
+            super.totalHoldings() +
+            extraEarnings +
+            token.balanceOf(address(this)) *
+            decimalsMultiplierS[3];
     }
 
     /**

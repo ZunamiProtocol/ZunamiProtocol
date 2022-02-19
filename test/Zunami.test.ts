@@ -249,9 +249,6 @@ describe('Zunami', function () {
                 let calcManagementFee = await zunami.calcManagementFee(1000);
                 expect(parseFloat(calcManagementFee)).equal(20);
 
-                expect(await zunami.setLock(true));
-                expect(await zunami.setLock(false));
-
                 const newBuybackFee = 5000;
                 const buybackFeeEqual = '0.000000000000005';
                 expect(await strategy.updateBuybackFee(newBuybackFee)); // 50%
@@ -546,6 +543,29 @@ describe('Zunami', function () {
                             1
                         )
                 );
+            });
+
+            it('test emergency in Zunami', async () => {
+                let usdt_owner_before = await usdt.balanceOf(owner.address);
+                await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
+                await zunami.connect(owner).inCaseTokenStuck(usdt.address);
+                let usdt_owner_after = await usdt.balanceOf(owner.address);
+                expect(usdt_owner_after == usdt_owner_before);
+            });
+
+            it('test emergency in Strats', async () => {
+                let usdt_owner_before = await usdt.balanceOf(owner.address);
+                await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
+                await zunami.connect(owner).inCaseTokenStuck(usdt.address);
+                let usdt_owner_after = await usdt.balanceOf(owner.address);
+                expect(usdt_owner_after == usdt_owner_before);
+                for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
+                    let usdt_owner_before = await usdt.balanceOf(owner.address);
+                    let stratUsdtBalance = await usdt.balanceOf(strat.address);
+                    await strat.connect(owner).inCaseTokenStuck(usdt.address);
+                    let usdt_owner_after = await usdt.balanceOf(owner.address);
+                    expect(usdt_owner_before == usdt_owner_after.add(stratUsdtBalance));
+                }
             });
 
             it('print balances', async () => {
