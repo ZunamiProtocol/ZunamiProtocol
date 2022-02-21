@@ -7,17 +7,10 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../utils/Constants.sol';
 import '../interfaces/ICurvePool.sol';
 import '../interfaces/ICurvePool2.sol';
-import '../interfaces/IUniswapV2Pair.sol';
-import '../interfaces/IUniswapRouter.sol';
-import '../interfaces/IConvexBooster.sol';
-import '../interfaces/IConvexMinter.sol';
-import '../interfaces/IConvexRewards.sol';
-import '../interfaces/IZunami.sol';
 import './CurveConvexExtraStratBase.sol';
 
 contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
-    using SafeERC20 for IConvexMinter;
 
     ICurvePool2 public pool;
     ICurvePool public pool3;
@@ -58,28 +51,31 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
      * @param amounts - amounts in stablecoins that user deposit
      */
     function deposit(uint256[3] memory amounts) external override onlyZunami returns (uint256) {
-        uint256 _amountsTotal;
+        uint256 amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
-            _amountsTotal += amounts[i] * decimalsMultiplierS[i];
+            amountsTotal += amounts[i] * decimalsMultiplierS[i];
         }
-        uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
+        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool3.get_virtual_price();
         uint256 depositedLp = pool3.calc_token_amount(amounts, true);
-        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin) {
-            for (uint256 i = 0; i < 3; i++) {
-                IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
-            }
-            pool3.add_liquidity(amounts, 0);
-            uint256[2] memory amounts2;
-            amounts2[1] = pool3LP.balanceOf(address(this));
-            pool3LP.safeIncreaseAllowance(address(pool), amounts2[1]);
-            uint256 poolLPs = ICurvePool2(address(pool)).add_liquidity(amounts2, 0);
-            poolLP.safeApprove(address(booster), poolLPs);
-            booster.depositAll(cvxPoolPID, true);
-            return ((poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR);
-        } else {
+        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
             return (0);
         }
+
+        for (uint256 i = 0; i < 3; i++) {
+            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
+        }
+        pool3.add_liquidity(amounts, 0);
+
+        uint256[2] memory amounts2;
+        amounts2[1] = pool3LP.balanceOf(address(this));
+        pool3LP.safeIncreaseAllowance(address(pool), amounts2[1]);
+        uint256 poolLPs = pool.add_liquidity(amounts2, 0);
+
+        poolLP.safeApprove(address(booster), poolLPs);
+        booster.depositAll(cvxPoolPID, true);
+
+        return ((poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR);
     }
 
     /**
@@ -101,7 +97,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
             strategyLpShares;
 
-        if (depositedShare < ICurvePool2(address(pool)).calc_token_amount(minAmounts2, false)) {
+        if (depositedShare < pool.calc_token_amount(minAmounts2, false)) {
             return false;
         }
 
@@ -113,7 +109,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         ) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
 
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
-        ICurvePool2(address(pool)).remove_liquidity(depositedShare, minAmounts2);
+        pool.remove_liquidity(depositedShare, minAmounts2);
 
         sellToken();
 
@@ -132,14 +128,14 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
             token.safeApprove(address(pool), sellBal);
-            ICurvePool2(address(pool)).exchange_underlying(0, 3, sellBal, 0);
+            pool.exchange_underlying(0, 3, sellBal, 0);
         }
     }
 
     function withdrawAllSpecific() internal override {
         uint256[2] memory minAmounts2;
         uint256[3] memory minAmounts;
-        ICurvePool2(address(pool)).remove_liquidity(poolLP.balanceOf(address(this)), minAmounts2);
+        pool.remove_liquidity(poolLP.balanceOf(address(this)), minAmounts2);
         sellToken();
         pool3.remove_liquidity(pool3LP.balanceOf(address(this)), minAmounts);
     }

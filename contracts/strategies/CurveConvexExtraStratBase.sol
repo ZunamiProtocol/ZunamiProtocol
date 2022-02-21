@@ -8,17 +8,13 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
 import '../interfaces/ICurvePool4.sol';
-import '../interfaces/IUniswapV2Pair.sol';
-import '../interfaces/IUniswapRouter.sol';
-import '../interfaces/IConvexBooster.sol';
-import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IConvexRewards.sol';
-import '../interfaces/IZunami.sol';
 import './CurveConvexStratBase.sol';
 
 abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
     using SafeERC20 for IERC20Metadata;
-    using SafeERC20 for IConvexMinter;
+
+    uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 3;
 
     IERC20Metadata public token;
     IERC20Metadata public extraToken;
@@ -39,7 +35,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         }
         extraRewards = IConvexRewards(extraRewardsAddr);
 
-        decimalsMultiplierS[3] = calcTokenDecimalsMultiplier(token);
+        decimalsMultiplierS[ZUNAMI_EXTRA_TOKEN_ID] = calcTokenDecimalsMultiplier(token);
     }
 
     /**
@@ -48,18 +44,19 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual override returns (uint256) {
-        uint256 extraEarnings = 0;
+        uint256 extraEarningsUSDT = 0;
         if (address(extraToken) != address(0)) {
             uint256 amountIn = extraRewards.earned(address(this)) +
                 extraToken.balanceOf(address(this));
-            extraEarnings = priceTokenByUniswap(amountIn, extraTokenSwapPath);
+            extraEarningsUSDT = priceTokenByUniswap(amountIn, extraTokenSwapPath);
         }
 
         return
             super.totalHoldings() +
-            extraEarnings +
+            extraEarningsUSDT *
+            decimalsMultiplierS[ZUNAMI_USDT_TOKEN_ID] +
             token.balanceOf(address(this)) *
-            decimalsMultiplierS[3];
+            decimalsMultiplierS[ZUNAMI_EXTRA_TOKEN_ID];
     }
 
     /**
@@ -101,7 +98,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         userBalances = new uint256[](3);
         prevBalances = new uint256[](3);
         for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
+            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
         }
@@ -130,9 +127,10 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         if (extraBalance == 0) {
             return;
         }
-        extraToken.safeApprove(address(router), extraToken.balanceOf(address(this)));
-        uint256 usdtBalanceBefore = IERC20Metadata(tokens[2]).balanceOf(address(this));
 
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
+
+        extraToken.safeApprove(address(router), extraToken.balanceOf(address(this)));
         router.swapExactTokensForTokens(
             extraBalance,
             0,
@@ -142,7 +140,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         );
 
         managementFees += zunami.calcManagementFee(
-            IERC20Metadata(tokens[2]).balanceOf(address(this)) - usdtBalanceBefore
+            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this)) - usdtBalanceBefore
         );
 
         emit SellRewards(0, 0, extraBalance);
@@ -162,7 +160,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         withdrawAllSpecific();
 
         for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
+            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee

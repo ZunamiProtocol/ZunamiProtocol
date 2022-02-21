@@ -85,6 +85,14 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         }
     }
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /**
      * @dev update managementFee, this is a Zunami commission from protocol profit
      * @param  newManagementFee - minAmount 0, maxAmount FEE_DENOMINATOR - 1

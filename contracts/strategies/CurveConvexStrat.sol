@@ -8,17 +8,10 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
 import '../interfaces/ICurvePoolUnderlying.sol';
-import '../interfaces/IUniswapV2Pair.sol';
-import '../interfaces/IUniswapRouter.sol';
-import '../interfaces/IConvexBooster.sol';
-import '../interfaces/IConvexMinter.sol';
-import '../interfaces/IConvexRewards.sol';
-import '../interfaces/IZunami.sol';
 import './CurveConvexStratBase.sol';
 
 contract CurveConvexStrat is Context, CurveConvexStratBase {
     using SafeERC20 for IERC20Metadata;
-    using SafeERC20 for IConvexMinter;
 
     ICurvePoolUnderlying public pool;
 
@@ -49,17 +42,19 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
-        if ((depositedLp * lpPrice) / 1e18 >= amountsMin) {
-            for (uint256 i = 0; i < 3; i++) {
-                IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
-            }
-            uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
-            poolLP.safeApprove(address(booster), poolLPs);
-            booster.depositAll(cvxPoolPID, true);
-            return ((poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR);
-        } else {
-            return (0);
+        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
+            return 0;
         }
+
+        for (uint256 i = 0; i < 3; i++) {
+            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
+        }
+        uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
+
+        poolLP.safeApprove(address(booster), poolLPs);
+        booster.depositAll(cvxPoolPID, true);
+
+        return (poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
     }
 
     /**
@@ -90,7 +85,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         uint256[] memory userBalances = new uint256[](3);
         uint256[] memory prevBalances = new uint256[](3);
         for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
+            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
         }
@@ -122,7 +117,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         pool.remove_liquidity(lpBalance, minAmounts, true);
 
         for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == usdtPoolId) ? managementFees : 0;
+            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
             IERC20Metadata(tokens[i]).safeTransfer(
                 _msgSender(),
                 IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee

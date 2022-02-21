@@ -149,7 +149,6 @@ describe(STRATEGY_NAME, function () {
             zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
             strategy.setZunami(zunami.address);
-            strategy.setZunToken(usdc.address);
         });
 
         it('Add pool from owner should be successful', async () => {
@@ -230,18 +229,14 @@ describe(STRATEGY_NAME, function () {
             expect(await zunami.setManagementFee(20));
             let calcManagementFee = await zunami.calcManagementFee(1000);
             expect(parseFloat(calcManagementFee)).equal(20);
-            expect(await zunami.setLock(true));
-            expect(await zunami.setLock(false));
-            const newBuybackFee = 5000;
-            const buybackFeeEqual = '0.000000000000005';
-            expect(await strategy.updateBuybackFee(newBuybackFee));
-            expect(ethers.utils.formatUnits(await strategy.buybackFee())).equal(buybackFeeEqual);
+            expect(await zunami.pause());
+            expect(await zunami.unpause());
         });
 
         it('claimManagementFees should be successful', async () => {});
 
         it('users withdraw from zunami after claim should be successful', async () => {
-            expect(await zunami.claimManagementFees(0));
+            expect(await strategy.claimManagementFees());
             for (const user of [alice, bob, carol, rosa]) {
                 expect(
                     await zunami
