@@ -29,7 +29,6 @@ abstract contract CurveConvexStratBase is Ownable {
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public minDepositAmount = 9975; // 99.75%
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
-    address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     address public feeDistributor;
 
     uint256 public usdtPoolId = 2;
