@@ -245,4 +245,12 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
     }
+
+    /**
+     * @dev governance can set feeDistributor address for distribute protocol fees
+     * @param _feeDistributor - address feeDistributor that be used for claim fees
+     */
+    function changeFeeDistributor(address _feeDistributor) external onlyOwner {
+        feeDistributor = _feeDistributor;
+    }
 }
