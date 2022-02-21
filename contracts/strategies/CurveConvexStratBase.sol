@@ -254,10 +254,10 @@ abstract contract CurveConvexStratBase is Ownable {
     }
 
     /**
-     * @dev owner can withdraw all stuck funds in emergency case
+     * @dev governance can withdraw all stuck funds in emergency case
      * @param _token - IERC20Metadata token that should be fully withdraw from Strategy
      */
-    function inCaseTokenStuck(IERC20Metadata _token) external onlyOwner {
+    function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
     }

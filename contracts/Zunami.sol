@@ -50,7 +50,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
 
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public managementFee = 10; // 1%
-    bool public isLock = false;
     uint256 public constant MIN_LOCK_TIME = 1 days;
 
     mapping(address => uint256[3]) public pendingDeposits;
@@ -68,15 +67,14 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     event FailedDeposit(address indexed depositor, uint256[3] amounts, uint256 lpShares);
     event FailedWithdrawal(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
 
-    modifier isStrategyStarted(uint256 pid) {
-        require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: strategy not started yet!');
+    modifier startedPool(uint256 pid) {
+        require(poolInfo.length != 0 && pid < poolInfo.length, 'Zunami: pool not existed!');
+        require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: pool not started yet!');
         _;
     }
 
-    constructor() ERC20('ZunamiLP', 'ZLP') {
-        tokens[0] = Constants.DAI_ADDRESS;
-        tokens[1] = Constants.USDC_ADDRESS;
-        tokens[2] = Constants.USDT_ADDRESS;
+    constructor(address[POOL_ASSETS] memory _tokens) ERC20('ZunamiLP', 'ZLP') {
+        tokens = _tokens;
         for (uint256 i; i < POOL_ASSETS; i++) {
             uint256 decimals = IERC20Metadata(tokens[i]).decimals();
             if (decimals < 18) {
@@ -127,15 +125,15 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-     * @dev Returns number (length of poolInfo)
-     * @return number (length of poolInfo)
+     * @dev Returns number of pools
+     * @return number of pools
      */
-    function poolInfoLength() external view returns (uint256) {
+    function poolCount() external view returns (uint256) {
         return poolInfo.length;
     }
 
     /**
-     * @dev Returns pool info by pool id
+    * @dev Returns pool info by pool id
      * @param pid - pool id
      * @return pool info
      */
@@ -187,7 +185,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     function completeDeposits(address[] memory userList, uint256 pid)
         external
         onlyOwner
-        isStrategyStarted(pid)
+        startedPool(pid)
     {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256 currentTotalHoldings = totalHoldings();
@@ -247,7 +245,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     function completeWithdrawals(address[] memory userList, uint256 pid)
         external
         onlyOwner
-        isStrategyStarted(pid)
+        startedPool(pid)
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
@@ -297,7 +295,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     function deposit(uint256[3] memory amounts, uint256 pid)
         external
         whenNotPaused
-        isStrategyStarted(pid)
+        startedPool(pid)
         returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
@@ -339,14 +337,14 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         uint256 lpShares,
         uint256[3] memory minAmounts,
         uint256 pid
-    ) external whenNotPaused isStrategyStarted(pid) {
+    ) external whenNotPaused startedPool(pid) {
         IStrategy strategy = poolInfo[pid].strategy;
         address userAddr = _msgSender();
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
             strategy.withdraw(userAddr, lpShares, poolInfo[pid].lpShares, minAmounts),
-            'user lps share should be at least required'
+            'Zunami: user lps share should be at least required'
         );
 
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
@@ -478,17 +476,17 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-     * @dev disable renounceOwnership for safety
+     * @dev disable renouncing of ownership for safety
      */
     function renounceOwnership() public view override onlyOwner {
         revert('Zunami: must have an owner');
     }
 
     /**
-     * @dev owner can withdraw all stuck funds in emergency case
+     * @dev governance can withdraw all stuck funds in emergency case
      * @param _token - IERC20Metadata token that should be fully withdraw from Zunami
      */
-    function inCaseTokenStuck(IERC20Metadata _token) external onlyOwner {
+    function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
     }

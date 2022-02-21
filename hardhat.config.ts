@@ -41,6 +41,13 @@ const config: HardhatUserConfig = {
         cache: './cache',
     },
     networks: {
+        // hardhat: {
+        //     allowUnlimitedContractSize: false,
+        //     mining: {
+        //         auto: true,
+        //         interval: 0
+        //     }
+        // },
         hardhat: {
             forking: {
                 url: `${process.env.NODE_API_KEY}`,

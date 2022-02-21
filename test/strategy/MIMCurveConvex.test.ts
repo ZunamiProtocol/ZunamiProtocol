@@ -146,7 +146,7 @@ describe(STRATEGY_NAME, function () {
             let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
-            zunami = await Zunami.deploy();
+            zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
             strategy.setZunami(zunami.address);
             strategy.setZunToken(usdc.address);
@@ -184,7 +184,7 @@ describe(STRATEGY_NAME, function () {
                     ],
                     0
                 ),
-                'Zunami: strategy not started yet!'
+                'Zunami: pool not started yet!'
             ).to.be.reverted;
 
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));

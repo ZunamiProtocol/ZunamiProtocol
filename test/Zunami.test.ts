@@ -140,7 +140,7 @@ describe('Zunami', function () {
             await strategy2.deployed();
             await strategy2b.deployed();
             await strategy4.deployed();
-            zunami = await Zunami.deploy();
+            zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
             strategy.setZunami(zunami.address);
             strategy2.setZunami(zunami.address);
@@ -179,7 +179,7 @@ describe('Zunami', function () {
                         ],
                         0
                     ),
-                    'Zunami: strategy not started yet!'
+                    'Zunami: pool not started yet!'
                 );
 
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -291,7 +291,7 @@ describe('Zunami', function () {
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
                 expect(await zunami.claimManagementFees(0));
                 expect(await zunami.addPool(strategy2.address));
-                expect(parseInt(await zunami.poolInfoLength())).equal(2);
+                expect(parseInt(await zunami.poolCount())).equal(2);
                 // expect().equal(2);
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 for (const user of [alice, bob, carol, rosa]) {
@@ -548,7 +548,7 @@ describe('Zunami', function () {
             it('test emergency in Zunami', async () => {
                 let usdt_owner_before = await usdt.balanceOf(owner.address);
                 await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
-                await zunami.connect(owner).inCaseTokenStuck(usdt.address);
+                await zunami.connect(owner).withdrawStuckToken(usdt.address);
                 let usdt_owner_after = await usdt.balanceOf(owner.address);
                 expect(usdt_owner_after == usdt_owner_before);
             });
@@ -556,13 +556,13 @@ describe('Zunami', function () {
             it('test emergency in Strats', async () => {
                 let usdt_owner_before = await usdt.balanceOf(owner.address);
                 await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
-                await zunami.connect(owner).inCaseTokenStuck(usdt.address);
+                await zunami.connect(owner).withdrawStuckToken(usdt.address);
                 let usdt_owner_after = await usdt.balanceOf(owner.address);
                 expect(usdt_owner_after == usdt_owner_before);
                 for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
                     let usdt_owner_before = await usdt.balanceOf(owner.address);
                     let stratUsdtBalance = await usdt.balanceOf(strat.address);
-                    await strat.connect(owner).inCaseTokenStuck(usdt.address);
+                    await strat.connect(owner).withdrawStuckToken(usdt.address);
                     let usdt_owner_after = await usdt.balanceOf(owner.address);
                     expect(usdt_owner_before == usdt_owner_after.add(stratUsdtBalance));
                 }
