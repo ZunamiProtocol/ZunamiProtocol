@@ -1,19 +1,30 @@
+const constants = require('./constants.json');
+
+async function deployAndLinkStrategy(name, zunami) {
+    const factory = await ethers.getContractFactory(name);
+    const strategy = await factory.deploy();
+    await strategy.deployed();
+    console.log(`${name} strategy deployed to: ${strategy.address}`);
+    await zunami.addPool(strategy.address);
+    console.log(`Added ${name} pool to Zunami`);
+    await strategy.setZunami(zunami.address);
+    console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
+}
+
 async function main() {
     console.log('Start deploy');
     const Zunami = await ethers.getContractFactory('Zunami');
-    const OUSDCurveConvex = await ethers.getContractFactory('OUSDCurveConvex');
-    const USDPCurveConvex = await ethers.getContractFactory('USDPCurveConvex');
-
-    const ousd = await OUSDCurveConvex.deploy();
-    const usdp = await USDPCurveConvex.deploy();
-    const zunami = await Zunami.deploy();
+    const zunami = await Zunami.deploy([
+        constants.daiAddress,
+        constants.usdcAddress,
+        constants.usdtAddress,
+    ]);
 
     await zunami.deployed();
-    await ousd.deployed();
-    await usdp.deployed();
     console.log('Zunami deployed to:', zunami.address);
-    console.log('OUSD strategy deployed to:', ousd.address);
-    console.log('USDP strategy deployed to:', usdp.address);
+
+    await deployAndLinkStrategy('USDNCurveConvex', zunami);
+    await deployAndLinkStrategy('DUSDCurveConvex', zunami);
 }
 
 main()
