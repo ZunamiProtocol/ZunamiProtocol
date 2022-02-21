@@ -30,6 +30,7 @@ abstract contract CurveConvexStratBase is Ownable {
     uint256 public minDepositAmount = 9975; // 99.75%
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
     address public constant BUYBACK_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address public feeDistributor;
 
     uint256 public usdtPoolId = 2;
     address public usdt;
@@ -88,6 +89,7 @@ abstract contract CurveConvexStratBase is Ownable {
         cvxPoolPID = poolPID;
         poolLP = IERC20Metadata(poolLPAddr);
         cvxRewards = IConvexRewards(rewardsAddr);
+        feeDistributor = _msgSender();
     }
 
     function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
@@ -183,29 +185,11 @@ abstract contract CurveConvexStratBase is Ownable {
      * adminFeeAmount is amount for transfer to dev or governance.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public virtual onlyZunami {
+    function claimManagementFees() public {
         uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
         uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
         if (transferBalance > 0) {
-            uint256 zunBuybackAmount = (transferBalance * buybackFee) / DEPOSIT_DENOMINATOR;
-            uint256 adminFeeAmount = transferBalance - zunBuybackAmount;
-            if (adminFeeAmount > 0) {
-                IERC20Metadata(usdt).safeTransfer(owner(), adminFeeAmount);
-            }
-            if (zunBuybackAmount > 0 && zun != address(0)) {
-                IERC20Metadata(usdt).safeApprove(address(router), zunBuybackAmount);
-                address[] memory path = new address[](3);
-                path[0] = usdt;
-                path[1] = Constants.WETH_ADDRESS;
-                path[2] = zun;
-                router.swapExactTokensForTokens(
-                    zunBuybackAmount,
-                    0,
-                    path,
-                    BUYBACK_ADDRESS,
-                    block.timestamp + Constants.TRADE_DEADLINE
-                );
-            }
+            IERC20Metadata(usdt).safeTransfer(feeDistributor, transferBalance);
         }
         managementFees = 0;
     }
