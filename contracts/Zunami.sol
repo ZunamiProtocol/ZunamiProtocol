@@ -357,15 +357,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-     * @dev dev withdraw commission from one strategy
-     * @param _pid - id from which strategy managementFees withdrawn
-     */
-
-    function claimManagementFees(uint256 _pid) external onlyOwner {
-        poolInfo[_pid].strategy.claimManagementFees();
-    }
-
-    /**
      * @dev add a new pool, deposits in the new pool are blocked for one day for safety
      * @param _strategyAddr - the new pool strategy address
      */
