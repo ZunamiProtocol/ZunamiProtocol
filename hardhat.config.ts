@@ -5,6 +5,9 @@ import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-truffle5';
 import '@nomiclabs/hardhat-ganache';
 
+import 'hardhat-contract-sizer'
+import 'hardhat-deploy';
+
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 

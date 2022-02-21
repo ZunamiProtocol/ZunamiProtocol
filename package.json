@@ -6,6 +6,7 @@
         "lint": "npx prettier --write 'contracts/**/*.sol' && npx prettier --write 'scripts/**/*.js' && npx prettier --write 'test/**/*.ts'",
         "lint:contracts": "npx prettier --write 'contracts/**/*.sol'",
         "compile": "npx hardhat compile",
+        "contract:size": "npx hardhat size-contracts;",
         "fork": "npx hardhat node",
         "test": "npx hardhat test",
         "test:coverage": "npx hardhat coverage  --testfiles 'test/*.ts'",
@@ -13,7 +14,8 @@
         "deploy:mainnet": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
         "deploy:rinkeby": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
         "deploy:matic": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:polygon": "npx hardhat deploy --network polygon --tags Zunami --gasprice 1000000000"
+        "deploy:polygon": "npx hardhat deploy --network polygon --tags Zunami --gasprice 1000000000",
+        "deploy:development": "npx hardhat deploy --network development --tags Zunami --gasprice 1000000000"
     },
     "repository": {
         "type": "git",
@@ -44,6 +46,7 @@
         "ethereum-waffle": "^3.3.0",
         "ethers": "^5.4.5",
         "hardhat": "^2.6.8",
+        "hardhat-contract-sizer": "^2.4.0",
         "hardhat-deploy": "^0.7.10",
         "hardhat-deploy-ethers": "^0.3.0-beta.8",
         "hardhat-gas-reporter": "^1.0.4",

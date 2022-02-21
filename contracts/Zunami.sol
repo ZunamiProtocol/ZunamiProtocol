@@ -380,32 +380,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-     * @dev dev can transfer funds between strategy's for better APY
-     * @param  _from - number strategy, from which funds are withdrawn
-     * @param _to - number strategy, to which funds are deposited
-     */
-    function moveFunds(uint256 _from, uint256 _to) external onlyOwner {
-        IStrategy fromStrat = poolInfo[_from].strategy;
-        IStrategy toStrat = poolInfo[_to].strategy;
-        uint256[3] memory amountsBefore;
-        for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
-        }
-        fromStrat.withdrawAll();
-        uint256[3] memory amounts;
-        for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            amounts[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - amountsBefore[i];
-            if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransfer(address(toStrat), amounts[i]);
-            }
-        }
-        toStrat.deposit(amounts);
-        uint256 transferLpAmount = poolInfo[_from].lpShares;
-        poolInfo[_from].lpShares = 0;
-        poolInfo[_to].lpShares += transferLpAmount;
-    }
-
-    /**
      * @dev dev can transfer funds from few strategy's to one strategy for better APY
      * @param _from - array of strategy's, from which funds are withdrawn
      * @param _to - number strategy, to which funds are deposited
@@ -431,33 +405,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         }
         poolInfo[_to].lpShares += zunamiLp;
         require(poolInfo[_to].strategy.deposit(amounts) > 0, 'Zunami: Too low amount!');
-    }
-
-    /**
-     * @dev dev can emergency transfer funds from all strategy's to zero pool (strategy)
-     */
-    function emergencyWithdraw() external onlyOwner {
-        uint256 length = poolInfo.length;
-        require(length > 1, 'Zunami: Nothing withdraw');
-        uint256[3] memory amounts;
-        uint256[3] memory amountsBefore;
-        uint256 zunamiLp = 0;
-        for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
-        }
-        for (uint256 i = 1; i < length; i++) {
-            poolInfo[i].strategy.withdrawAll();
-            zunamiLp += poolInfo[i].lpShares;
-            poolInfo[i].lpShares = 0;
-        }
-        for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
-            if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[0].strategy), amounts[y]);
-            }
-        }
-        poolInfo[0].lpShares += zunamiLp;
-        require(poolInfo[0].strategy.deposit(amounts) > 0, 'Zunami: Too low amount!');
     }
 
     /**
@@ -488,7 +435,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      */
     function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = _token.balanceOf(address(this));
-        _token.safeApprove(_msgSender(), tokenBalance);
         _token.safeTransfer(_msgSender(), tokenBalance);
     }
 }
