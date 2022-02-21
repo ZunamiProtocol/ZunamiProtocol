@@ -133,7 +133,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-    * @dev Returns pool info by pool id
+     * @dev Returns pool info by pool id
      * @param pid - pool id
      * @return pool info
      */
@@ -488,6 +488,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      */
     function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = _token.balanceOf(address(this));
+        _token.safeApprove(_msgSender(), tokenBalance);
         _token.safeTransfer(_msgSender(), tokenBalance);
     }
 }

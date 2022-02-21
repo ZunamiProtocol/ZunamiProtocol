@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 
 contract StubToken is ERC20Burnable {
-    uint8 immutable private decimal_;
+    uint8 private immutable decimal_;
 
     constructor(
         string memory _name,

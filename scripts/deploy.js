@@ -1,4 +1,4 @@
-const constants = require("./constants.json");
+const constants = require('./constants.json');
 
 async function main() {
     console.log('Start deploy');
@@ -6,7 +6,11 @@ async function main() {
     const USDNCurveConvex = await ethers.getContractFactory('USDNCurveConvex');
 
     const usdn = await USDNCurveConvex.deploy();
-    const zunami = await Zunami.deploy([constants.daiAddress, constants.usdcAddress, constants.usdtAddress]);
+    const zunami = await Zunami.deploy([
+        constants.daiAddress,
+        constants.usdcAddress,
+        constants.usdtAddress,
+    ]);
 
     await zunami.deployed();
     await usdn.deployed();
@@ -15,6 +19,9 @@ async function main() {
 
     await zunami.addPool(usdn.address);
     console.log('Added USDN pool to Zunami');
+
+    await usdn.setZunami(zunami.address);
+    console.log('USDN pool activate SetZunami');
 }
 
 main()
