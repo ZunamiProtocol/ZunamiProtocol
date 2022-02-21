@@ -289,7 +289,7 @@ describe('Zunami', function () {
             });
 
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
-                expect(await zunami.claimManagementFees(0));
+                expect(await strategy.claimManagementFees());
                 expect(await zunami.addPool(strategy2.address));
                 expect(parseInt(await zunami.poolCount())).equal(2);
                 // expect().equal(2);
@@ -499,10 +499,10 @@ describe('Zunami', function () {
                 expect(ethers.utils.formatUnits(await strategy4.managementFees(), 6)).to.equal(
                     ethers.utils.formatUnits(await usdt.balanceOf(strategy4.address), 6)
                 );
-                expect(await zunami.claimManagementFees(0));
-                expect(await zunami.claimManagementFees(1));
-                expect(await zunami.claimManagementFees(2));
-                expect(await zunami.claimManagementFees(3));
+                expect(await strategy.claimManagementFees());
+                expect(await strategy2.claimManagementFees());
+                expect(await strategy2b.claimManagementFees());
+                expect(await strategy4.claimManagementFees());
             });
 
             it('should 2 users deposit in diff blocks&pools, skip blocks, withdraw successful complete', async () => {
