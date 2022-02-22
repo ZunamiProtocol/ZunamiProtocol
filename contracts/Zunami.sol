@@ -39,21 +39,20 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     uint8 private constant POOL_ASSETS = 3;
+    uint256 public constant FEE_DENOMINATOR = 1000;
+    uint256 public constant MIN_LOCK_TIME = 1 days;
+
+    PoolInfo[] public poolInfo;
 
     address[POOL_ASSETS] public tokens;
     uint256[POOL_ASSETS] public decimalsMultiplierS;
 
-    uint256 public totalDeposited;
-
-    // Info of each pool
-    PoolInfo[] public poolInfo;
-
-    uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public managementFee = 10; // 1%
-    uint256 public constant MIN_LOCK_TIME = 1 days;
-
     mapping(address => uint256[3]) public pendingDeposits;
     mapping(address => PendingWithdrawal) public pendingWithdrawals;
+
+    uint256 public totalDeposited = 0;
+    uint256 public managementFee = 10; // 1%
+    bool public launched = false;
 
     event CreatedPendingDeposit(address indexed depositor, uint256[3] amounts);
     event CreatedPendingWithdrawal(
@@ -138,15 +137,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      */
     function poolCount() external view returns (uint256) {
         return poolInfo.length;
-    }
-
-    /**
-     * @dev Returns pool info by pool id
-     * @param pid - pool id
-     * @return pool info
-     */
-    function getPoolInfo(uint256 pid) external view returns (PoolInfo memory) {
-        return poolInfo[pid];
     }
 
     /**
@@ -371,11 +361,15 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
 
     function addPool(address _strategyAddr) external onlyOwner {
         require(_strategyAddr != address(0), 'Zunami: zero strategy addr');
-        uint256 startTime = block.timestamp + MIN_LOCK_TIME;
+        uint256 startTime = block.timestamp + (launched ? MIN_LOCK_TIME : 0);
         poolInfo.push(
             PoolInfo({ strategy: IStrategy(_strategyAddr), startTime: startTime, lpShares: 0 })
         );
         emit AddedPool(poolInfo.length - 1, _strategyAddr, startTime);
+    }
+
+    function launch() external onlyOwner {
+        launched = true;
     }
 
     /**
