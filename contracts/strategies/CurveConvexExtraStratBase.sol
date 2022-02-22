@@ -19,6 +19,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
     IERC20Metadata public token;
     IERC20Metadata public extraToken;
     IConvexRewards public extraRewards;
+    address[] extraTokenSwapPath;
 
     constructor(
         address poolLPAddr,

@@ -38,7 +38,6 @@ abstract contract CurveConvexStratBase is Ownable {
     address[] cvxToUsdtPath;
     address[] crvToUsdtPath;
     address[3] public tokens;
-    address[] extraTokenSwapPath;
 
     IERC20Metadata public poolLP;
     IConvexBooster public booster;
