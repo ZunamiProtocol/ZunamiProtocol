@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 interface IStrategy {
     function deposit(uint256[3] memory amounts) external returns (uint256);
