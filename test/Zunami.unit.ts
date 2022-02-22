@@ -91,6 +91,7 @@ describe('Zunami', () => {
         await expect(await zunami.decimalsMultiplierS(2)).to.be.equal(10 ** 12);
 
         await expect(await zunami.totalDeposited()).to.be.equal(0);
+        await expect(await zunami.launched()).to.be.equal(false);
 
         await expect(await zunami.FEE_DENOMINATOR()).to.be.equal(1000);
         await expect(await zunami.managementFee()).to.be.equal(10);
@@ -532,5 +533,25 @@ describe('Zunami', () => {
         );
         expect((await zunami.poolInfo(pid)).lpShares).to.be.equal(0);
         expect(await zunami.totalDeposited()).to.be.equal(0);
+    });
+
+    it('should use launched when starting pool', async () => {
+        await expect(await zunami.launched()).to.be.equal(false);
+
+        const strategy = await mockStrategy();
+        await zunami.addPool(strategy.address);
+
+        expect((await zunami.poolInfo(0)).startTime).to.be.equal((await time.latest()).toNumber());
+
+        await zunami.launch();
+        await expect(await zunami.launched()).to.be.equal(true);
+
+        const strategy2 = await mockStrategy();
+        const creationTime = await time.latest();
+        await zunami.addPool(strategy2.address);
+
+        const transactionDelay = 4; // seconds
+        const startTime = creationTime.add(MIN_LOCK_TIME).toNumber() - transactionDelay;
+        expect((await zunami.poolInfo(1)).startTime).to.be.equal(startTime);
     });
 });
