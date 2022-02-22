@@ -146,18 +146,18 @@ describe(STRATEGY_NAME, function () {
             let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
             strategy = await deployedStrat.deploy();
             await strategy.deployed();
-            zunami = await Zunami.deploy();
+            zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
             strategy.setZunami(zunami.address);
-            strategy.setZunToken(usdc.address);
+            await zunami.launch();
         });
 
         it('Add pool from owner should be successful', async () => {
             await expect(
-                zunami.connect(alice).add(strategy.address),
+                zunami.connect(alice).addPool(strategy.address),
                 'Ownable: caller is not the owner'
             ).to.be.reverted;
-            expect(await zunami.add(strategy.address)); // 0 pool
+            expect(await zunami.addPool(strategy.address)); // 0 pool
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
@@ -184,7 +184,7 @@ describe(STRATEGY_NAME, function () {
                     ],
                     0
                 ),
-                'Zunami: strategy not started yet!'
+                'Zunami: pool not started yet!'
             ).to.be.reverted;
 
             await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -230,18 +230,14 @@ describe(STRATEGY_NAME, function () {
             expect(await zunami.setManagementFee(20));
             let calcManagementFee = await zunami.calcManagementFee(1000);
             expect(parseFloat(calcManagementFee)).equal(20);
-            expect(await zunami.setLock(true));
-            expect(await zunami.setLock(false));
-            const newBuybackFee = 5000;
-            const buybackFeeEqual = '0.000000000000005';
-            expect(await strategy.updateBuybackFee(newBuybackFee));
-            expect(ethers.utils.formatUnits(await strategy.buybackFee())).equal(buybackFeeEqual);
+            expect(await zunami.pause());
+            expect(await zunami.unpause());
         });
 
         it('claimManagementFees should be successful', async () => {});
 
         it('users withdraw from zunami after claim should be successful', async () => {
-            expect(await zunami.claimManagementFees(strategy.address));
+            expect(await strategy.claimManagementFees());
             for (const user of [alice, bob, carol, rosa]) {
                 expect(
                     await zunami

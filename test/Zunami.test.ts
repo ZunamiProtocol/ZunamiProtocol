@@ -19,6 +19,7 @@ import {
     usdtAccount,
     usdtAddress,
     testCheckSumm,
+    DEBUG_MODE,
 } from './constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
@@ -139,33 +140,29 @@ describe('Zunami', function () {
             await strategy2.deployed();
             await strategy2b.deployed();
             await strategy4.deployed();
-            zunami = await Zunami.deploy();
+            zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
             strategy.setZunami(zunami.address);
             strategy2.setZunami(zunami.address);
             strategy4.setZunami(zunami.address);
             strategy2b.setZunami(zunami.address);
 
-            // set mock address for test buyback
-            strategy.setZunToken(usdc.address);
-            strategy2.setZunToken(usdc.address);
-            strategy4.setZunToken(usdc.address);
-            strategy2b.setZunToken(usdc.address);
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await dai.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
             }
+
+            await zunami.launch();
         });
         describe('Test strategy - Aave', function () {
             it('should add pool from owner successful complete', async () => {
                 await expectRevert(
-                    zunami.connect(alice).add(strategy.address),
+                    zunami.connect(alice).addPool(strategy.address),
                     'Ownable: caller is not the owner'
                 );
 
-                await expect(await zunami.add(strategy.address));
+                await expect(await zunami.addPool(strategy.address));
             });
 
             it('should deposit after MIN_LOCK_TIME successful complete', async () => {
@@ -178,7 +175,7 @@ describe('Zunami', function () {
                         ],
                         0
                     ),
-                    'Zunami: strategy not started yet!'
+                    'Zunami: pool not started yet!'
                 );
 
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -248,28 +245,6 @@ describe('Zunami', function () {
                 let calcManagementFee = await zunami.calcManagementFee(1000);
                 expect(parseFloat(calcManagementFee)).equal(20);
 
-                expect(await zunami.setLock(true));
-                expect(await zunami.setLock(false));
-
-                const newBuybackFee = 5000;
-                const buybackFeeEqual = '0.000000000000005';
-                expect(await strategy.updateBuybackFee(newBuybackFee)); // 50%
-                expect(await strategy2.updateBuybackFee(newBuybackFee)); // 50%
-                expect(await strategy2b.updateBuybackFee(newBuybackFee)); // 50%
-                expect(await strategy4.updateBuybackFee(newBuybackFee)); // 50%
-                expect(ethers.utils.formatUnits(await strategy.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-                expect(ethers.utils.formatUnits(await strategy2.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-                expect(ethers.utils.formatUnits(await strategy2b.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-                expect(ethers.utils.formatUnits(await strategy4.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-
                 const newMinDepositAmount = 9970;
                 const minDepositAmountEqual = '0.00000000000000997';
                 await strategy.updateMinDepositAmount(newMinDepositAmount);
@@ -291,9 +266,9 @@ describe('Zunami', function () {
             });
 
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
-                expect(await zunami.claimManagementFees(strategy.address));
-                expect(await zunami.add(strategy2.address));
-                expect(parseInt(await zunami.poolInfoLength())).equal(2);
+                expect(await strategy.claimManagementFees());
+                expect(await zunami.addPool(strategy2.address));
+                expect(parseInt(await zunami.poolCount())).equal(2);
                 // expect().equal(2);
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 for (const user of [alice, bob, carol, rosa]) {
@@ -314,14 +289,16 @@ describe('Zunami', function () {
 
                 let totalSupply = await zunami.totalSupply();
                 expect(parseFloat(ethers.utils.formatUnits(totalSupply, 18))).to.gt(1190);
-                console.log('totalSupply', totalSupply);
+                if (DEBUG_MODE) {
+                    console.log('totalSupply', totalSupply);
+                }
 
                 let lpPrice = await zunami.lpPrice();
                 expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
             });
 
             it('should withdraw after moveFunds successful complete', async () => {
-                expect(await zunami.moveFunds(1, 0));
+                expect(await zunami.moveFundsBatch([1], 0));
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
@@ -361,7 +338,7 @@ describe('Zunami', function () {
 
                 expect(await zunami.connect(carol).pendingDepositRemove());
 
-                expect(await zunami.add(strategy2b.address));
+                expect(await zunami.addPool(strategy2b.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 expect(
                     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 2)
@@ -396,7 +373,7 @@ describe('Zunami', function () {
             });
         });
         describe('Test strategy4 - SUSD', function () {
-            it('should create new pool, delegate + complete Deposit, removePending, delegate&complete Withdrawals, Emergency, successful complete', async () => {
+            it('should create new pool, delegate + complete Deposit, removePending, delegate&complete Withdrawals, successful complete', async () => {
                 for (const user of [alice, bob, carol, rosa]) {
                     let usdt_balance = await usdt.balanceOf(user.address);
                     let usdc_balance = await usdc.balanceOf(user.address);
@@ -410,7 +387,7 @@ describe('Zunami', function () {
 
                 expect(await zunami.connect(carol).pendingDepositRemove());
 
-                expect(await zunami.add(strategy4.address));
+                expect(await zunami.addPool(strategy4.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
                 expect(
                     await zunami.completeDeposits([alice.address, bob.address, rosa.address], 3)
@@ -424,8 +401,7 @@ describe('Zunami', function () {
                 }
 
                 expect(await zunami.completeWithdrawals([alice.address, bob.address], 3));
-
-                expect(await zunami.emergencyWithdraw());
+                expect(await zunami.moveFundsBatch([1, 2, 3], 0))
             });
 
             it('should delegate & completeWithdrawals successful complete', async () => {
@@ -468,7 +444,7 @@ describe('Zunami', function () {
                 for (var i = 0; i < SKIP_TIMES; i++) {
                     await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
                 }
-                expect(await zunami.moveFunds(0, 1));
+                expect(await zunami.moveFundsBatch([0], 1));
                 expect(await zunami.moveFundsBatch([1, 2], 0));
 
                 for (const user of [alice, bob, rosa, carol]) {
@@ -487,12 +463,22 @@ describe('Zunami', function () {
             });
 
             it('should claim all strats successful complete', async () => {
-                for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
-                    expect(ethers.utils.formatUnits(await strat.managementFees(), 6)).to.equal(
-                        ethers.utils.formatUnits(await usdt.balanceOf(strat.address), 6)
-                    );
-                    expect(await zunami.claimManagementFees(strat.address));
-                }
+                expect(ethers.utils.formatUnits(await strategy.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy.address), 6)
+                );
+                expect(ethers.utils.formatUnits(await strategy2.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy2.address), 6)
+                );
+                expect(ethers.utils.formatUnits(await strategy2b.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy2b.address), 6)
+                );
+                expect(ethers.utils.formatUnits(await strategy4.managementFees(), 6)).to.equal(
+                    ethers.utils.formatUnits(await usdt.balanceOf(strategy4.address), 6)
+                );
+                expect(await strategy.claimManagementFees());
+                expect(await strategy2.claimManagementFees());
+                expect(await strategy2b.claimManagementFees());
+                expect(await strategy4.claimManagementFees());
             });
 
             it('should 2 users deposit in diff blocks&pools, skip blocks, withdraw successful complete', async () => {
@@ -533,6 +519,29 @@ describe('Zunami', function () {
                             1
                         )
                 );
+            });
+
+            it('test emergency in Zunami', async () => {
+                let usdt_owner_before = await usdt.balanceOf(owner.address);
+                await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
+                await zunami.connect(owner).withdrawStuckToken(usdt.address);
+                let usdt_owner_after = await usdt.balanceOf(owner.address);
+                expect(usdt_owner_after == usdt_owner_before);
+            });
+
+            it('test emergency in Strats', async () => {
+                let usdt_owner_before = await usdt.balanceOf(owner.address);
+                await usdt.connect(owner).transfer(zunami.address, parseUnits('500', 'mwei'));
+                await zunami.connect(owner).withdrawStuckToken(usdt.address);
+                let usdt_owner_after = await usdt.balanceOf(owner.address);
+                expect(usdt_owner_after == usdt_owner_before);
+                for (const strat of [strategy, strategy2, strategy2b, strategy4]) {
+                    let usdt_owner_before = await usdt.balanceOf(owner.address);
+                    let stratUsdtBalance = await usdt.balanceOf(strat.address);
+                    await strat.connect(owner).withdrawStuckToken(usdt.address);
+                    let usdt_owner_after = await usdt.balanceOf(owner.address);
+                    expect(usdt_owner_before == usdt_owner_after.add(stratUsdtBalance));
+                }
             });
 
             it('print balances', async () => {
