@@ -18,10 +18,19 @@ abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
+    struct Config {
+        address[3] tokens;
+        IERC20Metadata crv;
+        IConvexMinter cvx;
+        IUniswapRouter router;
+        IConvexBooster booster;
+        address[] cvxToUsdtPath;
+        address[] crvToUsdtPath;
+    }
+
+    Config internal _config;
+
     IZunami public zunami;
-    IERC20Metadata public crv;
-    IConvexMinter public cvx;
-    IUniswapRouter public router;
 
     uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
@@ -35,12 +44,7 @@ abstract contract CurveConvexStratBase is Ownable {
 
     uint256 public managementFees = 0;
 
-    address[] cvxToUsdtPath;
-    address[] crvToUsdtPath;
-    address[3] public tokens;
-
     IERC20Metadata public poolLP;
-    IConvexBooster public booster;
     IConvexRewards public cvxRewards;
     uint256 public cvxPoolPID;
 
@@ -57,30 +61,25 @@ abstract contract CurveConvexStratBase is Ownable {
     }
 
     constructor(
+        Config memory config,
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID
     ) {
-        crv = IERC20Metadata(Constants.CRV_ADDRESS);
-        cvx = IConvexMinter(Constants.CVX_ADDRESS);
-        router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
+        _config = config;
 
-        crvToUsdtPath = [Constants.CRV_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
-        cvxToUsdtPath = [Constants.CVX_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
-
-        tokens[ZUNAMI_DAI_TOKEN_ID] = Constants.DAI_ADDRESS;
-        tokens[ZUNAMI_USDC_TOKEN_ID] = Constants.USDC_ADDRESS;
-        tokens[ZUNAMI_USDT_TOKEN_ID] = Constants.USDT_ADDRESS;
         for (uint256 i; i < 3; i++) {
-            decimalsMultiplierS[i] = calcTokenDecimalsMultiplier(IERC20Metadata(tokens[i]));
+            decimalsMultiplierS[i] = calcTokenDecimalsMultiplier(IERC20Metadata(_config.tokens[i]));
         }
-
-        booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
 
         cvxPoolPID = poolPID;
         poolLP = IERC20Metadata(poolLPAddr);
         cvxRewards = IConvexRewards(rewardsAddr);
         feeDistributor = _msgSender();
+    }
+
+    function config() external view returns(Config memory) {
+        return _config;
     }
 
     function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
@@ -91,38 +90,38 @@ abstract contract CurveConvexStratBase is Ownable {
     }
 
     /**
-     * @dev anyone can sell rewards, func do nothing if crv&cvx balance is zero
+     * @dev anyone can sell rewards, func do nothing if _config.crv&cvx balance is zero
      */
     function sellCrvCvx() public {
-        uint256 cvxBalance = cvx.balanceOf(address(this));
-        uint256 crvBalance = crv.balanceOf(address(this));
+        uint256 cvxBalance = _config.cvx.balanceOf(address(this));
+        uint256 crvBalance = _config.crv.balanceOf(address(this));
         if (cvxBalance == 0 || crvBalance == 0) {
             return;
         }
-        cvx.safeApprove(address(router), cvxBalance);
-        crv.safeApprove(address(router), crvBalance);
+        _config.cvx.safeApprove(address(_config.router), cvxBalance);
+        _config.crv.safeApprove(address(_config.router), crvBalance);
 
-        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
+        uint256 usdtBalanceBefore = IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
             address(this)
         );
 
-        router.swapExactTokensForTokens(
+        _config.router.swapExactTokensForTokens(
             cvxBalance,
             0,
-            cvxToUsdtPath,
+            _config.cvxToUsdtPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
-        router.swapExactTokensForTokens(
+        _config.router.swapExactTokensForTokens(
             crvBalance,
             0,
-            crvToUsdtPath,
+            _config.crvToUsdtPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
-        uint256 usdtBalanceAfter = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
+        uint256 usdtBalanceAfter = IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
             address(this)
         );
 
@@ -132,7 +131,7 @@ abstract contract CurveConvexStratBase is Ownable {
 
     /**
      * @dev Returns total USD holdings in strategy.
-     * return amount is lpBalance x lpPrice + cvx x cvxPrice + crv * crvPrice.
+     * return amount is lpBalance x lpPrice + cvx x cvxPrice + _config.crv * crvPrice.
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual returns (uint256) {
@@ -141,21 +140,21 @@ abstract contract CurveConvexStratBase is Ownable {
 
         uint256 crvEarned = cvxRewards.earned(address(this));
 
-        uint256 cvxTotalCliffs = cvx.totalCliffs();
-        uint256 cvxRemainCliffs = cvxTotalCliffs - cvx.totalSupply() / cvx.reductionPerCliff();
+        uint256 cvxTotalCliffs = _config.cvx.totalCliffs();
+        uint256 cvxRemainCliffs = cvxTotalCliffs - _config.cvx.totalSupply() / _config.cvx.reductionPerCliff();
 
         uint256 amountIn = (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
-            cvx.balanceOf(address(this));
-        uint256 cvxEarningsUSDT = priceTokenByUniswap(amountIn, cvxToUsdtPath);
+            _config.cvx.balanceOf(address(this));
+        uint256 cvxEarningsUSDT = priceTokenByUniswap(amountIn, _config.cvxToUsdtPath);
 
-        amountIn = crvEarned + crv.balanceOf(address(this));
-        uint256 crvEarningsUSDT = priceTokenByUniswap(amountIn, crvToUsdtPath);
+        amountIn = crvEarned + _config.crv.balanceOf(address(this));
+        uint256 crvEarningsUSDT = priceTokenByUniswap(amountIn, _config.crvToUsdtPath);
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
             tokensHoldings +=
-                IERC20Metadata(tokens[i]).balanceOf(address(this)) *
+                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) *
                 decimalsMultiplierS[i];
         }
 
@@ -172,7 +171,7 @@ abstract contract CurveConvexStratBase is Ownable {
         returns (uint256)
     {
         if (amountIn == 0) return 0;
-        uint256[] memory amounts = router.getAmountsOut(amountIn, uniswapPath);
+        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, uniswapPath);
         return amounts[amounts.length - 1];
     }
 
@@ -185,10 +184,10 @@ abstract contract CurveConvexStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public {
-        uint256 usdtBalance = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
+        uint256 usdtBalance = IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
         uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
         if (transferBalance > 0) {
-            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).safeTransfer(
+            IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).safeTransfer(
                 feeDistributor,
                 transferBalance
             );

@@ -5,8 +5,9 @@ import '../utils/Constants.sol';
 import './CurveConvexStrat.sol';
 
 contract IronBankCurveConvex is CurveConvexStrat {
-    constructor()
+    constructor(Config memory config)
         CurveConvexStrat(
+            config,
             Constants.CRV_IRONBANK_ADDRESS,
             Constants.CRV_IRONBANK_LP_ADDRESS,
             Constants.CVX_IRONBANK_REWARDS_ADDRESS,
