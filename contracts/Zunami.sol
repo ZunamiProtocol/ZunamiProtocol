@@ -139,15 +139,6 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         return poolInfo.length;
     }
 
-//    /**
-//     * @dev Returns pool info by pool id
-//     * @param pid - pool id
-//     * @return pool info
-//     */
-//    function getPoolInfo(uint256 pid) external view returns (PoolInfo memory) {
-//        return poolInfo[pid];
-//    }
-
     /**
      * @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
      * @param amounts - array of deposit amounts by user
