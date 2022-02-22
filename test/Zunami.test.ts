@@ -152,6 +152,8 @@ describe('Zunami', function () {
                 await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await dai.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
             }
+
+            await zunami.launch();
         });
         describe('Test strategy - Aave', function () {
             it('should add pool from owner successful complete', async () => {

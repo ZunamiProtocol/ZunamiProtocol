@@ -149,6 +149,7 @@ describe(STRATEGY_NAME, function () {
             zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
             strategy.setZunami(zunami.address);
+            await zunami.launch();
         });
 
         it('Add pool from owner should be successful', async () => {
