@@ -107,8 +107,8 @@ describe('CurveConvexStrat2', () => {
     it('should created rightly', async () => {
         await expect(await strategy.zunami()).to.be.equal('0x0000000000000000000000000000000000000000');
         await expect(await strategy.cvxPoolPID()).to.be.equal(poolPID);
-        await expect(await strategy.poolLP()).to.be.equal(poolLP);
-        await expect(await strategy.cvxRewards()).to.be.equal(rewards);
+        await expect(await strategy.poolLP()).to.be.equal(poolLP.address);
+        await expect(await strategy.cvxRewards()).to.be.equal(rewards.address);
         await expect(await strategy.feeDistributor()).to.be.equal(owner.address);
 
         await expect(await strategy.token()).to.be.equal(token.address);
