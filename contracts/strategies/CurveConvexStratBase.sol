@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
@@ -11,7 +11,6 @@ import '../utils/Constants.sol';
 import '../interfaces/IUniswapRouter.sol';
 import '../interfaces/IConvexMinter.sol';
 import '../interfaces/IZunami.sol';
-import '../interfaces/IUniswapV2Pair.sol';
 import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexRewards.sol';
 
@@ -23,28 +22,24 @@ abstract contract CurveConvexStratBase is Ownable {
     IERC20Metadata public crv;
     IConvexMinter public cvx;
     IUniswapRouter public router;
-    address public zun;
 
-    uint256 public constant CURVE_USD_MULTIPLIER = 1e12;
+    uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
-    uint256 public minDepositAmount = 9975; // 99.75%
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
+    uint256 public constant ZUNAMI_DAI_TOKEN_ID = 0;
+    uint256 public constant ZUNAMI_USDC_TOKEN_ID = 1;
+    uint256 public constant ZUNAMI_USDT_TOKEN_ID = 2;
+
+    uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
 
-    uint256 public usdtPoolId = 2;
-    address public usdt;
     uint256 public managementFees = 0;
-    uint256 public buybackFee = 0;
 
     address[] cvxToUsdtPath;
     address[] crvToUsdtPath;
     address[3] public tokens;
-    address[] extraTokenSwapPath;
 
     IERC20Metadata public poolLP;
-    IUniswapV2Pair public crvweth;
-    IUniswapV2Pair public wethcvx;
-    IUniswapV2Pair public wethusdt;
     IConvexBooster public booster;
     IConvexRewards public cvxRewards;
     uint256 public cvxPoolPID;
@@ -69,20 +64,17 @@ abstract contract CurveConvexStratBase is Ownable {
         crv = IERC20Metadata(Constants.CRV_ADDRESS);
         cvx = IConvexMinter(Constants.CVX_ADDRESS);
         router = IUniswapRouter(Constants.SUSHI_ROUTER_ADDRESS);
-        usdt = Constants.USDT_ADDRESS;
+
         crvToUsdtPath = [Constants.CRV_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
         cvxToUsdtPath = [Constants.CVX_ADDRESS, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
 
-        tokens[0] = Constants.DAI_ADDRESS;
-        tokens[1] = Constants.USDC_ADDRESS;
-        tokens[2] = Constants.USDT_ADDRESS;
+        tokens[ZUNAMI_DAI_TOKEN_ID] = Constants.DAI_ADDRESS;
+        tokens[ZUNAMI_USDC_TOKEN_ID] = Constants.USDC_ADDRESS;
+        tokens[ZUNAMI_USDT_TOKEN_ID] = Constants.USDT_ADDRESS;
         for (uint256 i; i < 3; i++) {
             decimalsMultiplierS[i] = calcTokenDecimalsMultiplier(IERC20Metadata(tokens[i]));
         }
 
-        crvweth = IUniswapV2Pair(Constants.SUSHI_CRV_WETH_ADDRESS);
-        wethcvx = IUniswapV2Pair(Constants.SUSHI_WETH_CVX_ADDRESS);
-        wethusdt = IUniswapV2Pair(Constants.SUSHI_WETH_USDT_ADDRESS);
         booster = IConvexBooster(Constants.CVX_BOOSTER_ADDRESS);
 
         cvxPoolPID = poolPID;
@@ -110,7 +102,7 @@ abstract contract CurveConvexStratBase is Ownable {
         cvx.safeApprove(address(router), cvxBalance);
         crv.safeApprove(address(router), crvBalance);
 
-        uint256 usdtBalanceBefore = IERC20Metadata(usdt).balanceOf(address(this));
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
 
         router.swapExactTokensForTokens(
             cvxBalance,
@@ -128,7 +120,7 @@ abstract contract CurveConvexStratBase is Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
-        uint256 usdtBalanceAfter = IERC20Metadata(usdt).balanceOf(address(this));
+        uint256 usdtBalanceAfter = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
 
         managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
         emit SellRewards(cvxBalance, crvBalance, 0);
@@ -151,10 +143,10 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 amountIn = (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
             cvx.balanceOf(address(this));
-        uint256 cvxEarnings = priceTokenByUniswap(amountIn, cvxToUsdtPath);
+        uint256 cvxEarningsUSDT = priceTokenByUniswap(amountIn, cvxToUsdtPath);
 
         amountIn = crvEarned + crv.balanceOf(address(this));
-        uint256 crvEarnings = priceTokenByUniswap(amountIn, crvToUsdtPath);
+        uint256 crvEarningsUSDT = priceTokenByUniswap(amountIn, crvToUsdtPath);
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -163,7 +155,7 @@ abstract contract CurveConvexStratBase is Ownable {
                 decimalsMultiplierS[i];
         }
 
-        return tokensHoldings + crvLpHoldings + (cvxEarnings + crvEarnings) * CURVE_USD_MULTIPLIER;
+        return tokensHoldings + crvLpHoldings + (cvxEarningsUSDT + crvEarningsUSDT) * decimalsMultiplierS[ZUNAMI_USDT_TOKEN_ID];
     }
 
     function priceTokenByUniswap(uint256 amountIn, address[] memory uniswapPath)
@@ -185,30 +177,12 @@ abstract contract CurveConvexStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public {
-        uint256 stratBalance = IERC20Metadata(usdt).balanceOf(address(this));
-        uint256 transferBalance = managementFees > stratBalance ? stratBalance : managementFees;
+        uint256 usdtBalance = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
+        uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
         if (transferBalance > 0) {
-            IERC20Metadata(usdt).safeTransfer(feeDistributor, transferBalance);
+            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).safeTransfer(feeDistributor, transferBalance);
         }
         managementFees = 0;
-    }
-
-    /**
-     * @dev dev can update buybackFee but it can't be higher than DEPOSIT_DENOMINATOR (100%)
-     * if buybackFee > 0 activate ZUN token buyback in claimManagementFees
-     * @param _buybackFee - number min amount 0, max amount DEPOSIT_DENOMINATOR
-     */
-    function updateBuybackFee(uint256 _buybackFee) public onlyOwner {
-        require(_buybackFee <= DEPOSIT_DENOMINATOR, 'Wrong amount!');
-        buybackFee = _buybackFee;
-    }
-
-    /**
-     * @dev dev set ZUN token for buyback
-     * @param  _zun - address of Zun token (for buyback)
-     */
-    function setZunToken(address _zun) public onlyOwner {
-        zun = _zun;
     }
 
     /**

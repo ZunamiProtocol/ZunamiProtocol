@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 library Constants {
     bytes32 internal constant USDC_TICKER = 'usdc';

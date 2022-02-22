@@ -1,22 +1,15 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
 import '../interfaces/ICurvePool4.sol';
-import '../interfaces/IUniswapV2Pair.sol';
-import '../interfaces/IUniswapRouter.sol';
-import '../interfaces/IConvexBooster.sol';
-import '../interfaces/IConvexMinter.sol';
-import '../interfaces/IConvexRewards.sol';
-import '../interfaces/IZunami.sol';
 import './CurveConvexExtraStratBase.sol';
 
 contract CurveConvexStrat4 is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
-    using SafeERC20 for IConvexMinter;
 
     ICurvePool4 public pool;
 
@@ -62,20 +55,22 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
 
         uint256 amountsMin = (decAmounts * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
-        uint256 depositedLp = ICurvePool4(address(pool)).calc_token_amount(amounts4, true);
+        uint256 depositedLp = pool.calc_token_amount(amounts4, true);
 
-        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin) {
-            for (uint256 i = 0; i < 3; i++) {
-                IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
-            }
-            uint256 depositedAmount = ICurvePool4(address(pool)).calc_token_amount(amounts4, true);
-            ICurvePool4(address(pool)).add_liquidity(amounts4, 0);
-            poolLP.safeApprove(address(booster), poolLP.balanceOf(address(this)));
-            booster.depositAll(cvxPoolPID, true);
-            return ((depositedAmount * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR);
-        } else {
+        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
             return (0);
         }
+
+        for (uint256 i = 0; i < 3; i++) {
+            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
+        }
+        uint256 depositedAmount = pool.calc_token_amount(amounts4, true);
+        pool.add_liquidity(amounts4, 0);
+
+        poolLP.safeApprove(address(booster), poolLP.balanceOf(address(this)));
+        booster.depositAll(cvxPoolPID, true);
+
+        return (depositedAmount * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
     }
 
     /**
@@ -96,7 +91,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         for (uint256 i = 0; i < 3; i++) {
             minAmounts4[i] = minAmounts[i];
         }
-        uint256 crvRequiredLPs = ICurvePool4(address(pool)).calc_token_amount(minAmounts4, false);
+        uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
         uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
             strategyLpShares;
 
@@ -111,7 +106,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
             uint256[] memory prevBalances
         ) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
 
-        ICurvePool4(address(pool)).remove_liquidity(depositedShare, minAmounts4);
+        pool.remove_liquidity(depositedShare, minAmounts4);
 
         sellToken();
         transferUserAllTokens(withdrawer, userBalances, prevBalances);
@@ -126,14 +121,13 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
             token.safeApprove(address(pool), sellBal);
-            ICurvePool4(address(pool)).exchange_underlying(3, 2, sellBal, 0);
+            pool.exchange_underlying(3, 2, sellBal, 0);
         }
     }
 
     function withdrawAllSpecific() internal override {
-        uint256 lpBalance = poolLP.balanceOf(address(this));
         uint256[4] memory minAmounts;
-        ICurvePool4(address(pool)).remove_liquidity(lpBalance, minAmounts);
+        pool.remove_liquidity(poolLP.balanceOf(address(this)), minAmounts);
         sellToken();
     }
 }

@@ -147,12 +147,6 @@ describe('Zunami', function () {
             strategy4.setZunami(zunami.address);
             strategy2b.setZunami(zunami.address);
 
-            // set mock address for test buyback
-            strategy.setZunToken(usdc.address);
-            strategy2.setZunToken(usdc.address);
-            strategy4.setZunToken(usdc.address);
-            strategy2b.setZunToken(usdc.address);
-
             for (const user of [owner, alice, bob, carol, rosa]) {
                 await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
@@ -249,25 +243,6 @@ describe('Zunami', function () {
                 let calcManagementFee = await zunami.calcManagementFee(1000);
                 expect(parseFloat(calcManagementFee)).equal(20);
 
-                const newBuybackFee = 5000;
-                const buybackFeeEqual = '0.000000000000005';
-                expect(await strategy.updateBuybackFee(newBuybackFee)); // 50%
-                expect(await strategy2.updateBuybackFee(newBuybackFee)); // 50%
-                expect(await strategy2b.updateBuybackFee(newBuybackFee)); // 50%
-                expect(await strategy4.updateBuybackFee(newBuybackFee)); // 50%
-                expect(ethers.utils.formatUnits(await strategy.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-                expect(ethers.utils.formatUnits(await strategy2.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-                expect(ethers.utils.formatUnits(await strategy2b.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-                expect(ethers.utils.formatUnits(await strategy4.buybackFee())).equal(
-                    buybackFeeEqual
-                );
-
                 const newMinDepositAmount = 9970;
                 const minDepositAmountEqual = '0.00000000000000997';
                 await strategy.updateMinDepositAmount(newMinDepositAmount);
@@ -321,7 +296,7 @@ describe('Zunami', function () {
             });
 
             it('should withdraw after moveFunds successful complete', async () => {
-                expect(await zunami.moveFunds(1, 0));
+                expect(await zunami.moveFundsBatch([1], 0));
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
@@ -396,7 +371,7 @@ describe('Zunami', function () {
             });
         });
         describe('Test strategy4 - SUSD', function () {
-            it('should create new pool, delegate + complete Deposit, removePending, delegate&complete Withdrawals, Emergency, successful complete', async () => {
+            it('should create new pool, delegate + complete Deposit, removePending, delegate&complete Withdrawals, successful complete', async () => {
                 for (const user of [alice, bob, carol, rosa]) {
                     let usdt_balance = await usdt.balanceOf(user.address);
                     let usdc_balance = await usdc.balanceOf(user.address);
@@ -424,8 +399,7 @@ describe('Zunami', function () {
                 }
 
                 expect(await zunami.completeWithdrawals([alice.address, bob.address], 3));
-
-                expect(await zunami.emergencyWithdraw());
+                expect(await zunami.moveFundsBatch([1, 2, 3], 0))
             });
 
             it('should delegate & completeWithdrawals successful complete', async () => {
@@ -468,7 +442,7 @@ describe('Zunami', function () {
                 for (var i = 0; i < SKIP_TIMES; i++) {
                     await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
                 }
-                expect(await zunami.moveFunds(0, 1));
+                expect(await zunami.moveFundsBatch([0], 1));
                 expect(await zunami.moveFundsBatch([1, 2], 0));
 
                 for (const user of [alice, bob, rosa, carol]) {
