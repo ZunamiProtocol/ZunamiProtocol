@@ -11,11 +11,10 @@
         "test": "npx hardhat test",
         "test:coverage": "npx hardhat coverage  --testfiles 'test/*.ts'",
         "test:verbose": "npx hardhat test --verbose test/*.ts",
-        "deploy:mainnet": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:rinkeby": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:matic": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:polygon": "npx hardhat deploy --network polygon --tags Zunami --gasprice 1000000000",
-        "deploy:development": "npx hardhat deploy --network development --tags Zunami --gasprice 1000000000"
+        "deploy:mainnet": "npx hardhat run --network mainnet --tags Zunami ./scripts/deploy.js",
+        "deploy:rinkeby": "npx hardhat run --network rinkeby --tags Zunami --gasprice 1000000000 ./scripts/deploy.js",
+        "deploy:polygon": "npx hardhat run --network polygon --tags Zunami --gasprice 1000000000 ./scripts/deploy.js",
+        "deploy:development": "npx hardhat run --network development --tags Zunami ./scripts/deploy.js"
     },
     "repository": {
         "type": "git",
