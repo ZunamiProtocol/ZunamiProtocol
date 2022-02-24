@@ -7,6 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
+import '@openzeppelin/contracts/access/Roles.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
@@ -26,6 +27,9 @@ import './interfaces/IStrategy.sol';
 
 contract Zunami is Context, Ownable, ERC20, Pausable {
     using SafeERC20 for IERC20Metadata;
+    using Roles for Roles.Role;
+
+    Roles.Role private _operator;
 
     struct PendingWithdrawal {
         uint256 lpShares;
@@ -72,8 +76,14 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         _;
     }
 
+    modifier onlyOperator() {
+        require(_minters.has(_msgSender()), 'Zunami: DOES_NOT_HAVE_OPERATOR_ROLE');
+        _;
+    }
+
     constructor(address[POOL_ASSETS] memory _tokens) ERC20('ZunamiLP', 'ZLP') {
         tokens = _tokens;
+        _operator.add(_msgSender());
         for (uint256 i; i < POOL_ASSETS; i++) {
             uint256 decimals = IERC20Metadata(tokens[i]).decimals();
             if (decimals < 18) {
@@ -182,7 +192,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      */
     function completeDeposits(address[] memory userList, uint256 pid)
         external
-        onlyOwner
+        onlyOperator
         startedPool(pid)
     {
         IStrategy strategy = poolInfo[pid].strategy;
@@ -242,7 +252,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      */
     function completeWithdrawals(address[] memory userList, uint256 pid)
         external
-        onlyOwner
+        onlyOperator
         startedPool(pid)
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
