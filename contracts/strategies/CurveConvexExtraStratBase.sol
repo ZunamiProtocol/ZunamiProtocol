@@ -129,7 +129,9 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             return;
         }
 
-        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
+            address(this)
+        );
 
         extraToken.safeApprove(address(router), extraToken.balanceOf(address(this)));
         router.swapExactTokensForTokens(
@@ -141,7 +143,8 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         );
 
         managementFees += zunami.calcManagementFee(
-            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this)) - usdtBalanceBefore
+            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this)) -
+                usdtBalanceBefore
         );
 
         emit SellRewards(0, 0, extraBalance);

@@ -102,7 +102,9 @@ abstract contract CurveConvexStratBase is Ownable {
         cvx.safeApprove(address(router), cvxBalance);
         crv.safeApprove(address(router), crvBalance);
 
-        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
+        uint256 usdtBalanceBefore = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
+            address(this)
+        );
 
         router.swapExactTokensForTokens(
             cvxBalance,
@@ -120,7 +122,9 @@ abstract contract CurveConvexStratBase is Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
-        uint256 usdtBalanceAfter = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
+        uint256 usdtBalanceAfter = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
+            address(this)
+        );
 
         managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
         emit SellRewards(cvxBalance, crvBalance, 0);
@@ -155,7 +159,11 @@ abstract contract CurveConvexStratBase is Ownable {
                 decimalsMultiplierS[i];
         }
 
-        return tokensHoldings + crvLpHoldings + (cvxEarningsUSDT + crvEarningsUSDT) * decimalsMultiplierS[ZUNAMI_USDT_TOKEN_ID];
+        return
+            tokensHoldings +
+            crvLpHoldings +
+            (cvxEarningsUSDT + crvEarningsUSDT) *
+            decimalsMultiplierS[ZUNAMI_USDT_TOKEN_ID];
     }
 
     function priceTokenByUniswap(uint256 amountIn, address[] memory uniswapPath)
@@ -180,7 +188,10 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 usdtBalance = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
         uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
         if (transferBalance > 0) {
-            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).safeTransfer(feeDistributor, transferBalance);
+            IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).safeTransfer(
+                feeDistributor,
+                transferBalance
+            );
         }
         managementFees = 0;
     }
