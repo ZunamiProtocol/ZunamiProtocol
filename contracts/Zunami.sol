@@ -440,4 +440,12 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
     }
+
+    /**
+     * @dev governance can add new operator for complete pending deposits and withdrawals
+     * @param _newOperator - address that governance add in list of operators
+     */
+    function addOperator(address _newOperator) external onlyOwner {
+        _operator.add(_newOperator);
+    }
 }
