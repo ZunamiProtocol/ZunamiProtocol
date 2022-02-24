@@ -93,7 +93,7 @@ abstract contract CurveConvexStratBase is Ownable {
     /**
      * @dev anyone can sell rewards, func do nothing if crv&cvx balance is zero
      */
-    function sellCrvCvx() public virtual {
+    function sellCrvCvx() public {
         uint256 cvxBalance = cvx.balanceOf(address(this));
         uint256 crvBalance = crv.balanceOf(address(this));
         if (cvxBalance == 0 || crvBalance == 0) {
