@@ -401,7 +401,7 @@ describe('Zunami', function () {
                 }
 
                 expect(await zunami.completeWithdrawals([alice.address, bob.address], 3));
-                expect(await zunami.moveFundsBatch([1, 2, 3], 0))
+                expect(await zunami.moveFundsBatch([1, 2, 3], 0));
             });
 
             it('should delegate & completeWithdrawals successful complete', async () => {

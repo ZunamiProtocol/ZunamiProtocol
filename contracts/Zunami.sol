@@ -25,10 +25,10 @@ import './interfaces/IStrategy.sol';
  *
  */
 
-contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
+contract Zunami is Context, ERC20, Pausable, AccessControl {
     using SafeERC20 for IERC20Metadata;
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
 
     struct PendingWithdrawal {
         uint256 lpShares;
@@ -75,29 +75,25 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
         _;
     }
 
-    modifier onlyOperator() {
-        require(hasRole(OPERATOR_ROLE, _msgSender()), "Zunami: Caller is not a operator");
-        _;
-    }
-
     constructor(address[POOL_ASSETS] memory _tokens) ERC20('ZunamiLP', 'ZLP') {
         tokens = _tokens;
-        _setupRole(OPERATOR_ROLE, _msgSender());
-        for (uint256 i; i < POOL_ASSETS; i++) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(OPERATOR_ROLE, msg.sender);
+    for (uint256 i; i < POOL_ASSETS; i++) {
             uint256 decimals = IERC20Metadata(tokens[i]).decimals();
             if (decimals < 18) {
-                decimalsMultiplierS[i] = 10 ** (18 - decimals);
+                decimalsMultiplierS[i] = 10**(18 - decimals);
             } else {
                 decimalsMultiplierS[i] = 1;
             }
         }
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -105,7 +101,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @dev update managementFee, this is a Zunami commission from protocol profit
      * @param  newManagementFee - minAmount 0, maxAmount FEE_DENOMINATOR - 1
      */
-    function setManagementFee(uint256 newManagementFee) external onlyOwner {
+    function setManagementFee(uint256 newManagementFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newManagementFee < FEE_DENOMINATOR, 'Zunami: wrong fee');
         managementFee = newManagementFee;
     }
@@ -169,8 +165,8 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @param minAmounts - array of amounts stablecoins that user want minimum receive
      */
     function delegateWithdrawal(uint256 lpAmount, uint256[3] memory minAmounts)
-    external
-    whenNotPaused
+        external
+        whenNotPaused
     {
         PendingWithdrawal memory withdrawal;
         address userAddr = _msgSender();
@@ -190,9 +186,9 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @param pid - number of the pool to which the deposit goes
      */
     function completeDeposits(address[] memory userList, uint256 pid)
-    external
-    onlyOperator
-    startedPool(pid)
+        external
+        onlyRole(OPERATOR_ROLE)
+        startedPool(pid)
     {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256 currentTotalHoldings = totalHoldings();
@@ -250,9 +246,9 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @param pid - number of the pool from which the funds are withdrawn
      */
     function completeWithdrawals(address[] memory userList, uint256 pid)
-    external
-    onlyOperator
-    startedPool(pid)
+        external
+        onlyRole(OPERATOR_ROLE)
+        startedPool(pid)
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
@@ -267,13 +263,13 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
             if (balanceOf(user) >= withdrawal.lpShares) {
                 if (
                     !(
-                strategy.withdraw(
-                    user,
-                    withdrawal.lpShares,
-                    poolInfo[pid].lpShares,
-                    withdrawal.minAmounts
-                )
-                )
+                        strategy.withdraw(
+                            user,
+                            withdrawal.lpShares,
+                            poolInfo[pid].lpShares,
+                            withdrawal.minAmounts
+                        )
+                    )
                 ) {
                     emit FailedWithdrawal(user, withdrawal.minAmounts, withdrawal.lpShares);
                     delete pendingWithdrawals[user];
@@ -300,10 +296,10 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @param pid - number of the pool to which the deposit goes
      */
     function deposit(uint256[3] memory amounts, uint256 pid)
-    external
-    whenNotPaused
-    startedPool(pid)
-    returns (uint256)
+        external
+        whenNotPaused
+        startedPool(pid)
+        returns (uint256)
     {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256 holdings = totalHoldings();
@@ -368,16 +364,16 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @param _strategyAddr - the new pool strategy address
      */
 
-    function addPool(address _strategyAddr) external onlyOwner {
+    function addPool(address _strategyAddr) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_strategyAddr != address(0), 'Zunami: zero strategy addr');
         uint256 startTime = block.timestamp + (launched ? MIN_LOCK_TIME : 0);
         poolInfo.push(
-            PoolInfo({strategy : IStrategy(_strategyAddr), startTime : startTime, lpShares : 0})
+            PoolInfo({ strategy: IStrategy(_strategyAddr), startTime: startTime, lpShares: 0 })
         );
         emit AddedPool(poolInfo.length - 1, _strategyAddr, startTime);
     }
 
-    function launch() external onlyOwner {
+    function launch() external onlyRole(DEFAULT_ADMIN_ROLE) {
         launched = true;
     }
 
@@ -386,7 +382,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @param _from - array of strategy's, from which funds are withdrawn
      * @param _to - number strategy, to which funds are deposited
      */
-    function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyOwner {
+    function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 length = _from.length;
         uint256[3] memory amounts;
         uint256[3] memory amountsBefore;
@@ -425,17 +421,10 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
     }
 
     /**
-     * @dev disable renouncing of ownership for safety
-     */
-    function renounceOwnership() public view override onlyOwner {
-        revert('Zunami: must have an owner');
-    }
-
-    /**
      * @dev governance can withdraw all stuck funds in emergency case
      * @param _token - IERC20Metadata token that should be fully withdraw from Zunami
      */
-    function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
+    function withdrawStuckToken(IERC20Metadata _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
     }
@@ -444,7 +433,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable, AccessControl {
      * @dev governance can add new operator for complete pending deposits and withdrawals
      * @param _newOperator - address that governance add in list of operators
      */
-    function addOperator(address _newOperator) external onlyOwner {
+    function updateOperator(address _newOperator) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(OPERATOR_ROLE, _newOperator);
     }
 }
