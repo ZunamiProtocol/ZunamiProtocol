@@ -193,21 +193,21 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         IStrategy strategy = poolInfo[pid].strategy;
         uint256 currentTotalHoldings = totalHoldings();
 
-        uint256 completeAmount = 0;
+        uint256 newHoldings = 0;
         uint256[3] memory totalAmounts;
         uint256[] memory userCompleteHoldings = new uint256[](userList.length);
         for (uint256 i = 0; i < userList.length; i++) {
-            completeAmount = 0;
+            newHoldings = 0;
 
             for (uint256 x = 0; x < totalAmounts.length; x++) {
                 uint256 userTokenDeposit = pendingDeposits[userList[i]][x];
                 totalAmounts[x] += userTokenDeposit;
-                completeAmount += userTokenDeposit * decimalsMultiplierS[x];
+                newHoldings += userTokenDeposit * decimalsMultiplierS[x];
             }
-            userCompleteHoldings[i] = completeAmount;
+            userCompleteHoldings[i] = newHoldings;
         }
 
-        uint256 newHoldings = 0;
+        newHoldings = 0;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             uint256 totalTokenAmount = totalAmounts[y];
             if (totalTokenAmount > 0) {
@@ -220,11 +220,10 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         uint256 lpShares = 0;
         uint256 addedHoldings = 0;
         uint256 userDeposited = 0;
-        address userAddr;
 
         for (uint256 z = 0; z < userList.length; z++) {
             userDeposited = (totalDepositedNow * userCompleteHoldings[z]) / newHoldings;
-            userAddr = userList[z];
+            address userAddr = userList[z];
             if (totalSupply() == 0) {
                 lpShares = userDeposited;
             } else {
@@ -234,6 +233,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
             _mint(userAddr, lpShares);
             poolInfo[pid].lpShares += lpShares;
             emit Deposited(userAddr, pendingDeposits[userAddr], lpShares);
+
             // remove deposit from list
             delete pendingDeposits[userAddr];
         }
