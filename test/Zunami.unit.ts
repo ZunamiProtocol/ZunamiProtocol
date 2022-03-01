@@ -23,8 +23,8 @@ export const undecify = (value: any, decimals: any) =>
     bn(value.toString()).dividedBy(bn(10).pow(decimals));
 export const tokenify = (value: any) => decify(value, 18);
 
-async function stubToken(decimals: number, owner: SignerWithAddress) {
-    const StubToken = await ethers.getContractFactory('StubToken', owner);
+async function stubToken(decimals: number, admin: SignerWithAddress) {
+    const StubToken = await ethers.getContractFactory('StubToken', admin);
     const token = await StubToken.deploy('StubToken', 'StubToken', decimals);
     await token.deployed();
     return token;
@@ -39,7 +39,7 @@ const setTotalHoldings = async (strategy: MockContract, holdings: any) =>
     await strategy.mock.totalHoldings.returns(bn(holdings).toFixed());
 
 describe('Zunami', () => {
-    let owner: SignerWithAddress;
+    let admin: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
     let carol: SignerWithAddress;
@@ -70,13 +70,13 @@ describe('Zunami', () => {
     }
 
     beforeEach(async () => {
-        [owner, alice, bob, carol, rosa] = await ethers.getSigners();
+        [admin, alice, bob, carol, rosa] = await ethers.getSigners();
 
-        dai = await stubToken(18, owner);
-        usdc = await stubToken(6, owner);
-        usdt = await stubToken(6, owner);
+        dai = await stubToken(18, admin);
+        usdc = await stubToken(6, admin);
+        usdt = await stubToken(6, admin);
 
-        const Zunami = await ethers.getContractFactory('Zunami', owner);
+        const Zunami = await ethers.getContractFactory('Zunami', admin);
         zunami = await Zunami.deploy([dai.address, usdc.address, usdt.address]);
         await zunami.deployed();
         expect(zunami.address).to.properAddress;
@@ -109,12 +109,9 @@ describe('Zunami', () => {
         await expect(await zunami.managementFee()).to.be.equal(newManagementFee);
     });
 
-    it('should not be updatable management fee by wrong value and not by owner', async () => {
+    it('should not be updatable management fee by wrong value and not by admin', async () => {
         await expectRevert(zunami.setManagementFee(1001), 'Zunami: wrong fee');
-        await expectRevert(
-            zunami.connect(alice).setManagementFee(1000),
-            'Ownable: caller is not the owner'
-        );
+        await expectRevert.unspecified(zunami.connect(alice).setManagementFee(1000));
     });
 
     it('should calculate management fee value', async () => {
@@ -165,22 +162,22 @@ describe('Zunami', () => {
 
         await setTotalHoldings(strategy, 0);
 
-        let tokenBalances = await mintAndApproveTokens(owner, [1, 1, 1]);
+        let tokenBalances = await mintAndApproveTokens(admin, [1, 1, 1]);
 
         const timeAfterLock = (await time.latest()).add(MIN_LOCK_TIME).toNumber();
         await time.increaseTo(timeAfterLock);
 
         const depositedValue = tokenify(100);
         await strategy.mock.deposit.withArgs(tokenBalances).returns(depositedValue.toFixed());
-        await zunami.deposit(tokenBalances, pid);
+        await zunami.deposit(tokenBalances);
 
         const lpShares = depositedValue.toFixed();
         expect(await zunami.totalSupply()).to.be.equal(lpShares);
-        expect(await zunami.balanceOf(owner.address)).to.be.equal(lpShares);
+        expect(await zunami.balanceOf(admin.address)).to.be.equal(lpShares);
         expect((await zunami.poolInfo(pid)).lpShares).to.be.equal(lpShares);
         expect(await zunami.totalDeposited()).to.be.equal(depositedValue.toFixed());
 
-        tokenBalances = await mintAndApproveTokens(owner, [1, 1, 1]);
+        tokenBalances = await mintAndApproveTokens(admin, [1, 1, 1]);
 
         const newDepositedValue = tokenify(50);
         await strategy.mock.deposit.withArgs(tokenBalances).returns(newDepositedValue.toFixed());
@@ -190,7 +187,7 @@ describe('Zunami', () => {
         const extraHoldings = tokenify(10);
         const enlargedStrategyHoldings = depositedValue.plus(newDepositedValue).plus(extraHoldings);
         await setTotalHoldings(strategy, enlargedStrategyHoldings.toFixed());
-        await zunami.deposit(tokenBalances, pid);
+        await zunami.deposit(tokenBalances);
 
         const lpSharesExtra = totalSupply
             .multipliedBy(newDepositedValue)
@@ -198,7 +195,7 @@ describe('Zunami', () => {
             .toFixed();
         const lpSharesTotal = bn(lpShares).plus(lpSharesExtra).toFixed();
         expect(await zunami.totalSupply()).to.be.equal(lpSharesTotal);
-        expect(await zunami.balanceOf(owner.address)).to.be.equal(lpSharesTotal);
+        expect(await zunami.balanceOf(admin.address)).to.be.equal(lpSharesTotal);
         expect((await zunami.poolInfo(pid)).lpShares).to.be.equal(lpSharesTotal);
         expect(await zunami.totalDeposited()).to.be.equal(
             depositedValue.plus(newDepositedValue).toFixed()
@@ -207,11 +204,10 @@ describe('Zunami', () => {
 
     it('should not withdraw on zero use lpShares balance', async () => {
         const lpShares = tokenify(100);
-        const tokenBalances = await mintAndApproveTokens(owner, [1, 1, 1]);
-        const pid = 0;
+        const tokenBalances = await mintAndApproveTokens(admin, [1, 1, 1]);
 
         await expectRevert(
-            zunami.withdraw(lpShares.toString(), tokenBalances, pid),
+            zunami.withdraw(lpShares.toString(), tokenBalances),
             'Zunami: pool not existed!'
         );
 
@@ -222,7 +218,7 @@ describe('Zunami', () => {
         await time.increaseTo(timeAfterLock);
 
         await expectRevert(
-            zunami.withdraw(lpShares.toString(), tokenBalances, pid),
+            zunami.withdraw(lpShares.toString(), tokenBalances),
             'Zunami: not enough LP balance'
         );
     });
@@ -235,20 +231,20 @@ describe('Zunami', () => {
 
         await setTotalHoldings(strategy, 0);
 
-        const tokenBalances = await mintAndApproveTokens(owner, [1, 1, 1]);
+        const tokenBalances = await mintAndApproveTokens(admin, [1, 1, 1]);
 
         const timeAfterLock = (await time.latest()).add(MIN_LOCK_TIME).toNumber();
         await time.increaseTo(timeAfterLock);
 
         const depositedValue = tokenify(100);
         await strategy.mock.deposit.withArgs(tokenBalances).returns(depositedValue.toFixed());
-        await zunami.deposit(tokenBalances, pid);
+        await zunami.deposit(tokenBalances);
 
         const lpShares = depositedValue.dividedToIntegerBy(2).toFixed();
 
         await strategy.mock.withdraw
             .withArgs(
-                owner.address,
+                admin.address,
                 lpShares,
                 (await zunami.poolInfo(pid)).lpShares.toString(),
                 tokenBalances
@@ -258,11 +254,11 @@ describe('Zunami', () => {
         const totalSupply = bn((await zunami.totalSupply()).toString());
         const totalDeposited = bn((await zunami.totalDeposited()).toString());
 
-        await zunami.withdraw(lpShares, tokenBalances, pid);
+        await zunami.withdraw(lpShares, tokenBalances);
 
         const newTotalSupply = totalSupply.minus(lpShares).toFixed();
         expect(await zunami.totalSupply()).to.be.equal(newTotalSupply);
-        expect(await zunami.balanceOf(owner.address)).to.be.equal(newTotalSupply);
+        expect(await zunami.balanceOf(admin.address)).to.be.equal(newTotalSupply);
         expect((await zunami.poolInfo(pid)).lpShares).to.be.equal(newTotalSupply);
 
         const userDeposit = totalDeposited.multipliedBy(lpShares).dividedToIntegerBy(totalSupply);
@@ -271,32 +267,32 @@ describe('Zunami', () => {
 
         await strategy.mock.withdraw
             .withArgs(
-                owner.address,
+                admin.address,
                 lpShares,
                 (await zunami.poolInfo(pid)).lpShares.toString(),
                 tokenBalances
             )
             .returns(depositedValue.toFixed());
-        await zunami.withdraw(lpShares, tokenBalances, pid);
+        await zunami.withdraw(lpShares, tokenBalances);
 
         expect(await zunami.totalSupply()).to.be.equal(0);
-        expect(await zunami.balanceOf(owner.address)).to.be.equal(0);
+        expect(await zunami.balanceOf(admin.address)).to.be.equal(0);
         expect((await zunami.poolInfo(pid)).lpShares).to.be.equal(0);
         expect(await zunami.totalDeposited()).to.be.equal(0);
     });
 
     it('should delegate deposit', async () => {
-        const tokenBalances = await mintAndApproveTokens(owner, [1, 234234234, 123.123123123]);
+        const tokenBalances = await mintAndApproveTokens(admin, [1, 234234234, 123.123123123]);
 
         await zunami.delegateDeposit(tokenBalances);
 
-        const ownerAddress = owner.address;
-        expect(await zunami.pendingDeposits(ownerAddress, 0)).to.be.equal(tokenBalances[0]);
-        expect(await zunami.pendingDeposits(ownerAddress, 1)).to.be.equal(tokenBalances[1]);
-        expect(await zunami.pendingDeposits(ownerAddress, 2)).to.be.equal(tokenBalances[2]);
+        const adminAddress = admin.address;
+        expect(await zunami.pendingDeposits(adminAddress, 0)).to.be.equal(tokenBalances[0]);
+        expect(await zunami.pendingDeposits(adminAddress, 1)).to.be.equal(tokenBalances[1]);
+        expect(await zunami.pendingDeposits(adminAddress, 2)).to.be.equal(tokenBalances[2]);
 
         const tokenBalances2 = await mintAndApproveTokens(
-            owner,
+            admin,
             [123.123123123, 321134123123123123, 1]
         );
 
@@ -307,9 +303,9 @@ describe('Zunami', () => {
             bn(tokenBalances2[1]).plus(tokenBalances[1]).toFixed(),
             bn(tokenBalances2[2]).plus(tokenBalances[2]).toFixed(),
         ];
-        expect(await zunami.pendingDeposits(ownerAddress, 0)).to.be.equal(pendingTokenBalances[0]);
-        expect(await zunami.pendingDeposits(ownerAddress, 1)).to.be.equal(pendingTokenBalances[1]);
-        expect(await zunami.pendingDeposits(ownerAddress, 2)).to.be.equal(pendingTokenBalances[2]);
+        expect(await zunami.pendingDeposits(adminAddress, 0)).to.be.equal(pendingTokenBalances[0]);
+        expect(await zunami.pendingDeposits(adminAddress, 1)).to.be.equal(pendingTokenBalances[1]);
+        expect(await zunami.pendingDeposits(adminAddress, 2)).to.be.equal(pendingTokenBalances[2]);
     });
 
     it('should complete users pending deposits', async () => {
@@ -350,10 +346,7 @@ describe('Zunami', () => {
         await strategy.mock.deposit
             .withArgs(totalTokenBalances.map((token) => token.toFixed()))
             .returns(depositedValue.toFixed());
-        await zunami.completeDeposits(
-            users.map((user) => user.address),
-            pid
-        );
+        await zunami.completeDeposits(users.map((user) => user.address));
 
         let totalSupply = depositedValue.toFixed();
         expect(await zunami.totalSupply()).to.be.equal(totalSupply);
@@ -385,10 +378,7 @@ describe('Zunami', () => {
         await strategy.mock.deposit
             .withArgs(totalTokenBalances.map((token) => token.toFixed()))
             .returns(depositedValue.toFixed());
-        await zunami.completeDeposits(
-            users.map((user) => user.address),
-            pid
-        );
+        await zunami.completeDeposits(users.map((user) => user.address));
 
         totalSupply = depositedValue.multipliedBy(2).toFixed();
         expect(await zunami.totalSupply()).to.be.equal(totalSupply);
@@ -413,7 +403,7 @@ describe('Zunami', () => {
 
         await zunami.delegateWithdrawal(lpAmount, minTokenBalances);
 
-        const pendingWithdrawal = await zunami.pendingWithdrawals(owner.address);
+        const pendingWithdrawal = await zunami.pendingWithdrawals(admin.address);
         expect(pendingWithdrawal).to.be.equal(lpAmount);
         // expect(pendingWithdrawal.minAmounts[0]).to.be.equal(minTokenBalances[0]);
         // expect(pendingWithdrawal.minAmounts[1]).to.be.equal(minTokenBalances[1]);
@@ -442,7 +432,7 @@ describe('Zunami', () => {
             const depositedValue = tokenify(tokenBalance * totalTokenBalances.length);
             await strategy.mock.deposit.withArgs(tokenBalances).returns(depositedValue.toFixed());
             await setTotalHoldings(strategy, depositedValue.multipliedBy(i));
-            await zunami.connect(user).deposit(tokenBalances, pid);
+            await zunami.connect(user).deposit(tokenBalances);
             for (let i = 0; i < 3; i++) {
                 totalTokenBalances[i] = totalTokenBalances[i].plus(tokenBalances[i]);
             }
@@ -474,10 +464,7 @@ describe('Zunami', () => {
                 ])
                 .returns(true);
         }
-        await zunami.completeWithdrawals(
-            users.map((user) => user.address),
-            pid
-        );
+        await zunami.completeWithdrawals(users.map((user) => user.address));
 
         const supplyAfterWithdrawal = tokenify(
             tokenBalance * (totalTokenBalances.length - 1) * users.length
@@ -520,10 +507,7 @@ describe('Zunami', () => {
                 ])
                 .returns(true);
         }
-        await zunami.completeWithdrawals(
-            users.map((user) => user.address),
-            pid
-        );
+        await zunami.completeWithdrawals(users.map((user) => user.address));
 
         expect(await zunami.totalSupply()).to.be.equal(0);
         await Promise.all(

@@ -452,6 +452,6 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
      * @param _newOperator - address that governance add in list of operators
      */
     function updateOperator(address _newOperator) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(OPERATOR_ROLE, _newOperator);
+        _grantRole(OPERATOR_ROLE, _newOperator);
     }
 }
