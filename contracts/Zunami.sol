@@ -44,6 +44,8 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     uint8 private constant POOL_ASSETS = 3;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MIN_LOCK_TIME = 1 days;
+    uint256 public constant MAX_WITHDRAW_AMOUNT = type(uint256).max;
+    uint256 public constant FUNDS_DENOMINATOR = 10_000;
 
     PoolInfo[] public poolInfo;
     uint256 public defaultPoolId;
@@ -394,33 +396,75 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
 
     /**
      * @dev dev can transfer funds from few strategy's to one strategy for better APY
-     * @param _from - array of strategy's, from which funds are withdrawn
-     * @param _to - number strategy, to which funds are deposited
+     * @param _strategies - array of strategy's, from which funds are withdrawn
+     * @param _partialWithdrawals - A percentage of the funds that should be transfered
+     * @param _receiverStrategyId - number strategy, to which funds are deposited
      */
-    function moveFundsBatch(uint256[] memory _from, uint256 _to)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        uint256 length = _from.length;
-        uint256[3] memory amounts;
-        uint256[3] memory amountsBefore;
-        uint256 zunamiLp = 0;
+    function moveFundsBatch(
+        uint256[] memory _strategies,
+        uint256[] memory _partialWithdrawals,
+        uint256 _receiverStrategyId
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(
+            _strategies.length == _partialWithdrawals.length,
+            'Zunami: incorrect arguments for the moveFundsBatch'
+        );
+        require(_receiverStrategyId < poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
+
+        uint256[3] memory stablecoinsBalance;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            stablecoinsBalance[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
-        for (uint256 i = 0; i < length; i++) {
-            poolInfo[_from[i]].strategy.withdrawAll();
-            zunamiLp += poolInfo[_from[i]].lpShares;
-            poolInfo[_from[i]].lpShares = 0;
+
+        uint256 pid;
+        uint256 zunamiLp;
+        address strategyAddr = address(poolInfo[_receiverStrategyId].strategy);
+        for (uint256 i = 0; i < _strategies.length; i++) {
+            pid = _strategies[i];
+
+            _moveFunds(pid, _partialWithdrawals[i], strategyAddr);
+
+            zunamiLp += poolInfo[pid].lpShares;
+            poolInfo[pid].lpShares = 0;
         }
+
+        uint256[3] memory stablecoinsRemainder;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
-            if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
+            stablecoinsRemainder[y] =
+                IERC20Metadata(tokens[y]).balanceOf(address(this)) -
+                stablecoinsBalance[y];
+            if (stablecoinsRemainder[y] > 0) {
+                IERC20Metadata(tokens[y]).safeTransfer(
+                    address(poolInfo[_receiverStrategyId].strategy),
+                    stablecoinsRemainder[y]
+                );
             }
         }
-        poolInfo[_to].lpShares += zunamiLp;
-        require(poolInfo[_to].strategy.deposit(amounts) > 0, 'Zunami: Too low amount!');
+
+        poolInfo[_receiverStrategyId].lpShares += zunamiLp;
+        require(
+            poolInfo[_receiverStrategyId].strategy.deposit(stablecoinsRemainder) > 0,
+            'Zunami: Too low amount!'
+        );
+    }
+
+    function _moveFunds(
+        uint256 pid,
+        uint256 withdrawAmount,
+        address receiver
+    ) private {
+        if (withdrawAmount == MAX_WITHDRAW_AMOUNT) {
+            poolInfo[pid].strategy.withdrawAll();
+        } else {
+            uint256 strategyLpShares = poolInfo[pid].lpShares;
+            uint256 lpShares = (strategyLpShares * withdrawAmount) / FUNDS_DENOMINATOR;
+            uint256[3] memory minAmounts;
+            minAmounts[0] = 0;
+            minAmounts[1] = 0;
+            minAmounts[2] = 0;
+
+            poolInfo[pid].strategy.withdraw(receiver, lpShares, strategyLpShares, minAmounts);
+        }
     }
 
     /**
