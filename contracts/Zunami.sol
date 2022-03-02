@@ -46,7 +46,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     uint256 public constant MIN_LOCK_TIME = 1 days;
 
     PoolInfo[] public poolInfo;
-    uint256 public defaultPoolID;
+    uint256 public defaultPoolId;
 
     address[POOL_ASSETS] public tokens;
     uint256[POOL_ASSETS] public decimalsMultiplierS;
@@ -74,7 +74,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     modifier startedPool() {
         require(poolInfo.length != 0, 'Zunami: pool not existed!');
         require(
-            block.timestamp >= poolInfo[defaultPoolID].startTime,
+            block.timestamp >= poolInfo[defaultPoolId].startTime,
             'Zunami: pool not started yet!'
         );
         _;
@@ -197,7 +197,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         onlyRole(OPERATOR_ROLE)
         startedPool
     {
-        IStrategy strategy = poolInfo[defaultPoolID].strategy;
+        IStrategy strategy = poolInfo[defaultPoolId].strategy;
         uint256 currentTotalHoldings = totalHoldings();
 
         uint256 newHoldings = 0;
@@ -238,7 +238,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
             }
             addedHoldings += userDeposited;
             _mint(userAddr, lpShares);
-            poolInfo[defaultPoolID].lpShares += lpShares;
+            poolInfo[defaultPoolId].lpShares += lpShares;
             emit Deposited(userAddr, pendingDeposits[userAddr], lpShares);
 
             // remove deposit from list
@@ -258,7 +258,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
-        IStrategy strategy = poolInfo[defaultPoolID].strategy;
+        IStrategy strategy = poolInfo[defaultPoolId].strategy;
 
         address user;
         PendingWithdrawal memory withdrawal;
@@ -272,7 +272,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
                         strategy.withdraw(
                             user,
                             withdrawal.lpShares,
-                            poolInfo[defaultPoolID].lpShares,
+                            poolInfo[defaultPoolId].lpShares,
                             withdrawal.minAmounts
                         )
                     )
@@ -284,7 +284,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
 
                 uint256 userDeposit = (totalDeposited * withdrawal.lpShares) / totalSupply();
                 _burn(user, withdrawal.lpShares);
-                poolInfo[defaultPoolID].lpShares -= withdrawal.lpShares;
+                poolInfo[defaultPoolId].lpShares -= withdrawal.lpShares;
 
                 totalDeposited -= userDeposit;
 
@@ -306,7 +306,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         startedPool
         returns (uint256)
     {
-        IStrategy strategy = poolInfo[defaultPoolID].strategy;
+        IStrategy strategy = poolInfo[defaultPoolId].strategy;
         uint256 holdings = totalHoldings();
 
         for (uint256 i = 0; i < amounts.length; i++) {
@@ -328,7 +328,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
             lpShares = (totalSupply() * newDeposited) / holdings;
         }
         _mint(_msgSender(), lpShares);
-        poolInfo[defaultPoolID].lpShares += lpShares;
+        poolInfo[defaultPoolId].lpShares += lpShares;
         totalDeposited += newDeposited;
 
         emit Deposited(_msgSender(), amounts, lpShares);
@@ -345,18 +345,18 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         whenNotPaused
         startedPool
     {
-        IStrategy strategy = poolInfo[defaultPoolID].strategy;
+        IStrategy strategy = poolInfo[defaultPoolId].strategy;
         address userAddr = _msgSender();
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
-            strategy.withdraw(userAddr, lpShares, poolInfo[defaultPoolID].lpShares, minAmounts),
+            strategy.withdraw(userAddr, lpShares, poolInfo[defaultPoolId].lpShares, minAmounts),
             'Zunami: user lps share should be at least required'
         );
 
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
         _burn(userAddr, lpShares);
-        poolInfo[defaultPoolID].lpShares -= lpShares;
+        poolInfo[defaultPoolId].lpShares -= lpShares;
 
         totalDeposited -= userDeposit;
 
@@ -381,10 +381,10 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
      * @dev set a default pool for deposit and withdraw operations
      * @param _newPoolId - new pool id
      */
-    function setDefaultPoolID(uint256 _newPoolId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDefaultPoolId(uint256 _newPoolId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_newPoolId < poolInfo.length, 'Zunami: incorrect pool id');
 
-        defaultPoolID = _newPoolId;
+        defaultPoolId = _newPoolId;
         emit SetDefaultPool(_newPoolId);
     }
 
