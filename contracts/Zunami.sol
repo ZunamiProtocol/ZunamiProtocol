@@ -122,6 +122,15 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     }
 
     /**
+     * @dev Claims managementFee from all active strategys
+     */
+    function claimAllManagementFee() external {
+        for (uint256 i = 0; i < poolInfo.length; i++) {
+            poolInfo[i].strategy.claimManagementFees();
+        }
+    }
+
+    /**
      * @dev Returns total holdings for all pools (strategy's)
      * @return Returns sum holdings (USD) for all pools
      */
