@@ -44,8 +44,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     uint8 private constant POOL_ASSETS = 3;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MIN_LOCK_TIME = 1 days;
-    uint256 public constant MAX_WITHDRAW_AMOUNT = type(uint256).max;
-    uint256 public constant FUNDS_DENOMINATOR = 10_000;
+    uint256 public constant FUNDS_DENOMINATOR = 100;
 
     PoolInfo[] public poolInfo;
     uint256 public defaultPoolId;
@@ -418,14 +417,9 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
 
         uint256 pid;
         uint256 zunamiLp;
-        address strategyAddr = address(poolInfo[_receiverStrategyId].strategy);
         for (uint256 i = 0; i < _strategies.length; i++) {
             pid = _strategies[i];
-
-            _moveFunds(pid, _partialWithdrawals[i], strategyAddr);
-
-            zunamiLp += poolInfo[pid].lpShares;
-            poolInfo[pid].lpShares = 0;
+            zunamiLp += _moveFunds(pid, _partialWithdrawals[i]);
         }
 
         uint256[3] memory stablecoinsRemainder;
@@ -448,23 +442,28 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         );
     }
 
-    function _moveFunds(
-        uint256 pid,
-        uint256 withdrawAmount,
-        address receiver
-    ) private {
-        if (withdrawAmount == MAX_WITHDRAW_AMOUNT) {
-            poolInfo[pid].strategy.withdrawAll();
-        } else {
-            uint256 strategyLpShares = poolInfo[pid].lpShares;
-            uint256 lpShares = (strategyLpShares * withdrawAmount) / FUNDS_DENOMINATOR;
-            uint256[3] memory minAmounts;
-            minAmounts[0] = 0;
-            minAmounts[1] = 0;
-            minAmounts[2] = 0;
+    function _moveFunds(uint256 pid, uint256 withdrawAmount) private returns (uint256) {
+        uint256 currentLpAmount;
 
-            poolInfo[pid].strategy.withdraw(receiver, lpShares, strategyLpShares, minAmounts);
+        if (withdrawAmount == FUNDS_DENOMINATOR) {
+            poolInfo[pid].strategy.withdrawAll();
+
+            currentLpAmount = poolInfo[pid].lpShares;
+            poolInfo[pid].lpShares = 0;
+        } else {
+            currentLpAmount = (poolInfo[pid].lpShares * withdrawAmount) / FUNDS_DENOMINATOR;
+            uint256[3] memory minAmounts;
+
+            poolInfo[pid].strategy.withdraw(
+                address(this),
+                currentLpAmount,
+                poolInfo[pid].lpShares,
+                minAmounts
+            );
+            poolInfo[pid].lpShares = poolInfo[pid].lpShares - currentLpAmount;
         }
+
+        return currentLpAmount;
     }
 
     /**

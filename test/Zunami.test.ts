@@ -443,8 +443,16 @@ describe('Zunami', function () {
                 for (var i = 0; i < SKIP_TIMES; i++) {
                     await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
                 }
-                expect(await zunami.connect(admin).moveFundsBatch([0], 1));
-                expect(await zunami.connect(admin).moveFundsBatch([1, 2], 0));
+
+                const amount100percent = await zunami.FUNDS_DENOMINATOR();
+                const amount50percent = amount100percent / 2;
+                expect(await zunami.connect(admin).moveFundsBatch([0], [amount50percent], 1));
+                expect(await zunami.connect(admin).moveFundsBatch([0], [amount100percent], 1));
+                expect(
+                    await zunami
+                        .connect(admin)
+                        .moveFundsBatch([1, 2], [amount100percent, amount100percent], 0)
+                );
 
                 for (const user of [alice, bob, rosa, carol]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
