@@ -37,7 +37,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         }
         extraRewards = IConvexRewards(extraRewardsAddr);
 
-        decimalsMultiplierS[ZUNAMI_EXTRA_TOKEN_ID] = calcTokenDecimalsMultiplier(token);
+        decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID] = calcTokenDecimalsMultiplier(token);
     }
 
     /**
@@ -56,68 +56,15 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         return
             super.totalHoldings() +
             extraEarningsUSDT *
-            decimalsMultiplierS[ZUNAMI_USDT_TOKEN_ID] +
+            decimalsMultipliers[ZUNAMI_USDT_TOKEN_ID] +
             token.balanceOf(address(this)) *
-            decimalsMultiplierS[ZUNAMI_EXTRA_TOKEN_ID];
+            decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
 
-    /**
-     * @dev Returns deposited amount in USD.
-     * If deposit failed return zero
-     * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
-     */
-    function deposit(uint256[3] memory amounts) external virtual returns (uint256);
-
-    /**
-     * @dev Returns true if withdraw success and false if fail.
-     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
-     * @return Returns true if withdraw success and false if fail.
-     * @param withdrawer - address of user that deposit funds
-     * @param lpShares - amount of ZLP for withdraw
-     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
-     */
-    function withdraw(
-        address withdrawer,
-        uint256 lpShares,
-        uint256 strategyLpShares,
-        uint256[3] memory minAmounts
-    ) external virtual returns (bool);
-
-    function sellRewardsAndExtraToken(uint256 depositedShare) internal {
-        cvxRewards.withdrawAndUnwrap(depositedShare, true);
-        sellCrvCvx();
+    function sellRewards(uint256 depositedShare) internal override virtual {
+        super.sellRewards(depositedShare);
         if (address(extraToken) != address(0)) {
             sellExtraToken();
-        }
-    }
-
-    function getCurrentStratAndUserBalances(uint256 lpShares, uint256 strategyLpShares)
-        internal
-        view
-        returns (uint256[] memory userBalances, uint256[] memory prevBalances)
-    {
-        userBalances = new uint256[](3);
-        prevBalances = new uint256[](3);
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            prevBalances[i] = IERC20Metadata(_config.tokens[i]).balanceOf(address(this));
-            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
-        }
-    }
-
-    function transferUserAllTokens(
-        address withdrawer,
-        uint256[] memory userBalances,
-        uint256[] memory prevBalances
-    ) internal {
-        for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(_config.tokens[i]).safeTransfer(
-                withdrawer,
-                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) -
-                    prevBalances[i] +
-                    userBalances[i]
-            );
         }
     }
 
@@ -148,7 +95,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
                 usdtBalanceBefore
         );
 
-        emit SellRewards(0, 0, extraBalance);
+        emit SoldRewards(0, 0, extraBalance);
     }
 
     /**
@@ -158,19 +105,14 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
     function withdrawAll() external virtual onlyZunami {
         cvxRewards.withdrawAllAndUnwrap(true);
         sellCrvCvx();
+
         if (address(extraToken) != address(0)) {
             sellExtraToken();
         }
 
         withdrawAllSpecific();
 
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            IERC20Metadata(_config.tokens[i]).safeTransfer(
-                _msgSender(),
-                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) - managementFee
-            );
-        }
+        transferZunamiAllTokens();
     }
 
     function withdrawAllSpecific() internal virtual;

@@ -18,6 +18,8 @@ abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
+    enum WithdrawalType { Base, OneCoin, Imbalance }
+
     struct Config {
         address[3] tokens;
         IERC20Metadata crv;
@@ -48,9 +50,9 @@ abstract contract CurveConvexStratBase is Ownable {
     IConvexRewards public cvxRewards;
     uint256 public cvxPoolPID;
 
-    uint256[4] public decimalsMultiplierS;
+    uint256[4] public decimalsMultipliers;
 
-    event SellRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
+    event SoldRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
     /**
      * @dev Throws if called by any account other than the Zunami
@@ -61,15 +63,15 @@ abstract contract CurveConvexStratBase is Ownable {
     }
 
     constructor(
-        Config memory config,
+        Config memory config_,
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID
     ) {
-        _config = config;
+        _config = config_;
 
         for (uint256 i; i < 3; i++) {
-            decimalsMultiplierS[i] = calcTokenDecimalsMultiplier(IERC20Metadata(_config.tokens[i]));
+            decimalsMultipliers[i] = calcTokenDecimalsMultiplier(IERC20Metadata(_config.tokens[i]));
         }
 
         cvxPoolPID = poolPID;
@@ -81,6 +83,116 @@ abstract contract CurveConvexStratBase is Ownable {
     function config() external view returns(Config memory) {
         return _config;
     }
+
+    /**
+     * @dev Returns deposited amount in USD.
+     * If deposit failed return zero
+     * @return Returns deposited amount in USD.
+     * @param amounts - amounts in stablecoins that user deposit
+     */
+    function deposit(uint256[3] memory amounts) external virtual returns (uint256);
+
+    function sellRewards(uint256 depositedShare) internal virtual {
+        cvxRewards.withdrawAndUnwrap(depositedShare, true);
+        sellCrvCvx();
+    }
+
+    function snapshotTokensBalances(uint256 lpShareUserRation)
+        internal
+        view
+        returns (uint256[] memory userBalances, uint256[] memory prevBalances)
+    {
+        userBalances = new uint256[](3);
+        prevBalances = new uint256[](3);
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
+            prevBalances[i] = IERC20Metadata(_config.tokens[i]).balanceOf(address(this));
+            userBalances[i] = ((prevBalances[i] - managementFee) * lpShareUserRation) / 1e18;
+        }
+    }
+
+    function transferUserAllTokens(
+        address withdrawer,
+        uint256[] memory userBalances,
+        uint256[] memory prevBalances
+    ) internal {
+        for (uint256 i = 0; i < 3; i++) {
+            IERC20Metadata(_config.tokens[i]).safeTransfer(
+                withdrawer,
+                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) -
+                prevBalances[i] +
+                userBalances[i]
+            );
+        }
+    }
+
+    function transferZunamiAllTokens() internal {
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
+            IERC20Metadata(_config.tokens[i]).safeTransfer(
+                _msgSender(),
+                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) - managementFee
+            );
+        }
+    }
+
+    /**
+     * @dev Returns true if withdraw success and false if fail.
+     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
+     * @return Returns true if withdraw success and false if fail.
+     * @param withdrawer - address of user that deposit funds
+     * @param lpShareUserRation - user's ration of ZLP for withdraw
+     * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
+     */
+    function withdraw(
+        address withdrawer,
+        WithdrawalType withdrawalType,
+        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) external virtual onlyZunami returns (bool) {
+        (
+            bool success,
+            uint256 depositedShare,
+            uint[] memory tokenAmountsDynamic
+        ) = calcCurveDepositShares(withdrawalType, lpShareUserRation, tokenAmounts, tokenIndex);
+
+        if (!success) {
+            return false;
+        }
+
+        sellRewards(depositedShare);
+
+        (
+            uint256[] memory userBalances,
+            uint256[] memory prevBalances
+        ) = snapshotTokensBalances(lpShareUserRation);
+
+        removeCurveDepositShares(depositedShare, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
+
+        transferUserAllTokens(withdrawer, userBalances, prevBalances);
+
+        return true;
+    }
+
+    function calcCurveDepositShares(
+        WithdrawalType withdrawalType,
+        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal virtual returns(
+        bool success,
+        uint256 depositedShare,
+        uint[] memory tokenAmountsDynamic
+    );
+
+    function removeCurveDepositShares(
+        uint256 depositedShare,
+        uint[] memory tokenAmountsDynamic,
+        WithdrawalType withdrawalType,
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal virtual;
 
     function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
         uint8 decimals = token.decimals();
@@ -126,7 +238,7 @@ abstract contract CurveConvexStratBase is Ownable {
         );
 
         managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
-        emit SellRewards(cvxBalance, crvBalance, 0);
+        emit SoldRewards(cvxBalance, crvBalance, 0);
     }
 
     /**
@@ -155,14 +267,14 @@ abstract contract CurveConvexStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             tokensHoldings +=
                 IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) *
-                decimalsMultiplierS[i];
+                decimalsMultipliers[i];
         }
 
         return
             tokensHoldings +
             crvLpHoldings +
             (cvxEarningsUSDT + crvEarningsUSDT) *
-            decimalsMultiplierS[ZUNAMI_USDT_TOKEN_ID];
+            decimalsMultipliers[ZUNAMI_USDT_TOKEN_ID];
     }
 
     function priceTokenByUniswap(uint256 amountIn, address[] memory uniswapPath)
@@ -183,7 +295,7 @@ abstract contract CurveConvexStratBase is Ownable {
      * adminFeeAmount is amount for transfer to dev or governance.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public {
+    function claimManagementFees() public returns (uint256) {
         uint256 usdtBalance = IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
         uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
         if (transferBalance > 0) {
@@ -237,5 +349,44 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function changeFeeDistributor(address _feeDistributor) external onlyOwner {
         feeDistributor = _feeDistributor;
+    }
+
+    function toArr2(uint[] memory arrInf) internal pure returns(uint[2] memory arr) {
+        arr[0] = arrInf[0];
+        arr[1] = arrInf[1];
+    }
+
+    function fromArr2(uint[2] memory arr) internal pure returns(uint[] memory arrInf) {
+        arrInf = new uint256[](2);
+        arrInf[0] = arr[0];
+        arrInf[1] = arr[1];
+    }
+
+    function toArr3(uint[] memory arrInf) internal pure returns(uint[3] memory arr) {
+        arr[0] = arrInf[0];
+        arr[1] = arrInf[1];
+        arr[2] = arrInf[2];
+    }
+
+    function fromArr3(uint[3] memory arr) internal pure returns(uint[] memory arrInf) {
+        arrInf = new uint256[](3);
+        arrInf[0] = arr[0];
+        arrInf[1] = arr[1];
+        arrInf[2] = arr[2];
+    }
+
+    function toArr4(uint[] memory arrInf) internal pure returns(uint[4] memory arr) {
+        arr[0] = arrInf[0];
+        arr[1] = arrInf[1];
+        arr[2] = arrInf[2];
+        arr[3] = arrInf[3];
+    }
+
+    function fromArr4(uint[4] memory arr) internal pure returns(uint[] memory arrInf) {
+        arrInf = new uint256[](4);
+        arrInf[0] = arr[0];
+        arrInf[1] = arr[1];
+        arrInf[2] = arr[2];
+        arrInf[3] = arr[3];
     }
 }

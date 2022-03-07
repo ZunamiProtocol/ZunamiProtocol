@@ -11,9 +11,7 @@ import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 
-import { config as dotEnvConfig } from 'dotenv';
-
-dotEnvConfig();
+import 'dotenv/config'
 
 import { HardhatUserConfig } from 'hardhat/types';
 
