@@ -168,11 +168,8 @@ describe('Zunami', function () {
                 await expectRevert.unspecified(zunami.connect(alice).addPool(strategy.address));
                 await expect(await zunami.connect(admin).addPool(strategy.address));
 
-                const defaultDepositPoolId = await zunami.defaultDepositPoolId();
-                const defaultWithdrawPoolId = await zunami.defaultWithdrawPoolId();
-
-                expect(await zunami.connect(admin).setDefaultDepositPoolId(0));
-                expect(await zunami.connect(admin).setDefaultWithdrawPoolId(0));
+                expect(await zunami.connect(admin).setDefaultDepositPid(0));
+                expect(await zunami.connect(admin).setDefaultWithdrawPid(0));
             });
 
             it('should deposit after MIN_LOCK_TIME successful complete', async () => {
