@@ -1,8 +1,8 @@
-const constants = require('./constants.json');
+const config = require('../config.json');
 
 async function deployAndLinkStrategy(name, zunami) {
     const factory = await ethers.getContractFactory(name);
-    const strategy = await factory.deploy();
+    const strategy = await factory.deploy(config);
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
     await zunami.addPool(strategy.address);
@@ -14,11 +14,7 @@ async function deployAndLinkStrategy(name, zunami) {
 async function main() {
     console.log('Start deploy');
     const Zunami = await ethers.getContractFactory('Zunami');
-    const zunami = await Zunami.deploy([
-        constants.daiAddress,
-        constants.usdcAddress,
-        constants.usdtAddress,
-    ]);
+    const zunami = await Zunami.deploy(config.tokens);
 
     await zunami.deployed();
     console.log('Zunami deployed to:', zunami.address);

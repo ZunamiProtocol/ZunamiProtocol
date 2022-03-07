@@ -149,7 +149,7 @@ describe('Zunami', () => {
         await expect(await zunami.totalHoldings()).to.be.equal(totalHoldings);
     });
 
-    it.only('should move a part of the funds from one strategy to others', async () => {
+    it('should move a part of the funds from one strategy to others', async () => {
         const strategy1 = await mockStrategy();
         const strategy2 = await mockStrategy();
         await zunami.addPool(strategy1.address);

@@ -23,6 +23,8 @@ import {
 } from './constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
+import * as config from '../config.json';
+
 describe('Zunami', function () {
     let admin: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -132,10 +134,10 @@ describe('Zunami', function () {
             let SUSDCurveConvex: ContractFactory = await ethers.getContractFactory(
                 'SUSDCurveConvex'
             );
-            strategy = await AaveCurveConvex.deploy();
-            strategy2 = await OUSDCurveConvex.deploy();
-            strategy2b = await USDPCurveConvex.deploy();
-            strategy4 = await SUSDCurveConvex.deploy();
+            strategy = await AaveCurveConvex.deploy(config);
+            strategy2 = await OUSDCurveConvex.deploy(config);
+            strategy2b = await USDPCurveConvex.deploy(config);
+            strategy4 = await SUSDCurveConvex.deploy(config);
             await strategy.deployed();
             await strategy2.deployed();
             await strategy2b.deployed();
@@ -486,10 +488,7 @@ describe('Zunami', function () {
                 expect(ethers.utils.formatUnits(await strategy4.managementFees(), 6)).to.equal(
                     ethers.utils.formatUnits(await usdt.balanceOf(strategy4.address), 6)
                 );
-                expect(await strategy.claimManagementFees());
-                expect(await strategy2.claimManagementFees());
-                expect(await strategy2b.claimManagementFees());
-                expect(await strategy4.claimManagementFees());
+                expect(await zunami.claimAllManagementFee());
             });
 
             it('should 2 users deposit in diff blocks&pools, skip blocks, withdraw successful complete', async () => {

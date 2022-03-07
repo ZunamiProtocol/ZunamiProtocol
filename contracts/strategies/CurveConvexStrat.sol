@@ -16,11 +16,12 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
     ICurvePoolUnderlying public pool;
 
     constructor(
+        Config memory config,
         address poolAddr,
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID
-    ) CurveConvexStratBase(poolLPAddr, rewardsAddr, poolPID) {
+    ) CurveConvexStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
         pool = ICurvePoolUnderlying(poolAddr);
     }
 
@@ -47,12 +48,12 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         }
 
         for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
+            IERC20Metadata(_config.tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
         }
         uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
 
-        poolLP.safeApprove(address(booster), poolLPs);
-        booster.depositAll(cvxPoolPID, true);
+        poolLP.safeApprove(address(_config.booster), poolLPs);
+        _config.booster.depositAll(cvxPoolPID, true);
 
         return (poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
     }
@@ -86,16 +87,16 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         uint256[] memory prevBalances = new uint256[](3);
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
+            prevBalances[i] = IERC20Metadata(_config.tokens[i]).balanceOf(address(this));
             userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
         }
 
         pool.remove_liquidity(depositedShare, minAmounts, true);
 
         for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeTransfer(
+            IERC20Metadata(_config.tokens[i]).safeTransfer(
                 withdrawer,
-                IERC20Metadata(tokens[i]).balanceOf(address(this)) -
+                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) -
                     prevBalances[i] +
                     userBalances[i]
             );
@@ -118,9 +119,9 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
 
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            IERC20Metadata(tokens[i]).safeTransfer(
+            IERC20Metadata(_config.tokens[i]).safeTransfer(
                 _msgSender(),
-                IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee
+                IERC20Metadata(_config.tokens[i]).balanceOf(address(this)) - managementFee
             );
         }
     }

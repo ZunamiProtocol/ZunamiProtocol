@@ -5,8 +5,9 @@ import '../utils/Constants.sol';
 import './CurveConvexStrat.sol';
 
 contract AaveCurveConvex is CurveConvexStrat {
-    constructor()
+    constructor(Config memory config)
         CurveConvexStrat(
+            config,
             Constants.CRV_AAVE_ADDRESS,
             Constants.CRV_AAVE_LP_ADDRESS,
             Constants.CVX_AAVE_REWARDS_ADDRESS,
