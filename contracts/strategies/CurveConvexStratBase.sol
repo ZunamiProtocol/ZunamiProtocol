@@ -184,7 +184,7 @@ abstract contract CurveConvexStratBase is Ownable {
      * adminFeeAmount is amount for transfer to dev or governance.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public {
+    function claimManagementFees() public returns (uint256) {
         uint256 usdtBalance = IERC20Metadata(tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this));
         uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
         if (transferBalance > 0) {
@@ -194,6 +194,8 @@ abstract contract CurveConvexStratBase is Ownable {
             );
         }
         managementFees = 0;
+
+        return transferBalance;
     }
 
     /**
