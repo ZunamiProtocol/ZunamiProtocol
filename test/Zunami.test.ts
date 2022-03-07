@@ -479,6 +479,10 @@ describe('Zunami', function () {
                     ethers.utils.formatUnits(await usdt.balanceOf(strategy4.address), 6)
                 );
                 expect(await zunami.claimAllManagementFee());
+                await expect(zunami.claimAllManagementFee()).to.emit(
+                    zunami,
+                    'ClaimedAllManagementFee'
+                );
             });
 
             it('should 2 users deposit in diff blocks&pools, skip blocks, withdraw successful complete', async () => {

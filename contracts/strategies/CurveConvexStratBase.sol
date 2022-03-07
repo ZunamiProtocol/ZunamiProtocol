@@ -193,6 +193,8 @@ abstract contract CurveConvexStratBase is Ownable {
             );
         }
         managementFees = 0;
+
+        return transferBalance;
     }
 
     /**
