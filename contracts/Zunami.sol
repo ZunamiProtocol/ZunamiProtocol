@@ -70,7 +70,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     event FailedDeposit(address indexed depositor, uint256[3] amounts, uint256 lpShares);
     event FailedWithdrawal(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
     event SetDefaultPool(uint256 pid);
-    event ClaimAllManagementFee(uint256 feeAmount);
+    event ClaimedAllManagementFee(uint256 feeValue);
 
     modifier startedPool() {
         require(poolInfo.length != 0, 'Zunami: pool not existed!');
@@ -126,12 +126,12 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
      * @dev Claims managementFee from all active strategys
      */
     function claimAllManagementFee() external {
-        uint256 feeAmount;
+        uint256 feeTotalValue;
         for (uint256 i = 0; i < poolInfo.length; i++) {
-            feeAmount += poolInfo[i].strategy.claimManagementFees();
+            feeTotalValue += poolInfo[i].strategy.claimManagementFees();
         }
 
-        emit ClaimAllManagementFee(feeAmount);
+        emit ClaimedAllManagementFee(feeTotalValue);
     }
 
     /**

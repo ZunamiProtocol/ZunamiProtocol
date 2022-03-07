@@ -481,7 +481,7 @@ describe('Zunami', function () {
                 expect(await zunami.claimAllManagementFee());
                 await expect(zunami.claimAllManagementFee()).to.emit(
                     zunami,
-                    'ClaimAllManagementFee'
+                    'ClaimedAllManagementFee'
                 );
             });
 
