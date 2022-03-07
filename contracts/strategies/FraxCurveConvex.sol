@@ -5,8 +5,9 @@ import '../utils/Constants.sol';
 import './CurveConvexStrat2.sol';
 
 contract FraxCurveConvex is CurveConvexStrat2 {
-    constructor()
+    constructor(Config memory config)
         CurveConvexStrat2(
+            config,
             Constants.CRV_FRAX_ADDRESS,
             Constants.CRV_FRAX_LP_ADDRESS,
             Constants.CVX_FRAX_REWARDS_ADDRESS,
