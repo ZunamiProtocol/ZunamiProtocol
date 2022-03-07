@@ -165,13 +165,14 @@ describe('Zunami', function () {
 
         describe('Test strategy - Aave', function () {
             it('should add pool from admin successful complete', async () => {
-                const defaultPoolId = await zunami.defaultPoolId();
                 await expectRevert.unspecified(zunami.connect(alice).addPool(strategy.address));
                 await expect(await zunami.connect(admin).addPool(strategy.address));
 
-                const newPoolId = (await zunami.poolCount()) - 1;
-                expect(newPoolId > defaultPoolId, 'Set incorrect default pool id');
-                expect(await zunami.connect(admin).setDefaultPoolId(newPoolId));
+                const defaultDepositPoolId = await zunami.defaultDepositPoolId();
+                const defaultWithdrawPoolId = await zunami.defaultWithdrawPoolId();
+
+                expect(await zunami.connect(admin).setDefaultDepositPoolId(0));
+                expect(await zunami.connect(admin).setDefaultWithdrawPoolId(0));
             });
 
             it('should deposit after MIN_LOCK_TIME successful complete', async () => {
@@ -181,7 +182,7 @@ describe('Zunami', function () {
                         parseUnits('1000', 'mwei'),
                         parseUnits('1000', 'mwei'),
                     ]),
-                    'Zunami: pool not started yet!'
+                    'Zunami: default deposit pool not started yet!'
                 );
 
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
