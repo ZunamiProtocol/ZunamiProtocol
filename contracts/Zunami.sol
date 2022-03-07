@@ -44,7 +44,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     uint8 private constant POOL_ASSETS = 3;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MIN_LOCK_TIME = 1 days;
-    uint256 public constant FUNDS_DENOMINATOR = 100;
+    uint256 public constant FUNDS_DENOMINATOR = 10_000;
 
     PoolInfo[] public poolInfo;
     uint256 public defaultPoolId;
@@ -396,16 +396,16 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     /**
      * @dev dev can transfer funds from few strategy's to one strategy for better APY
      * @param _strategies - array of strategy's, from which funds are withdrawn
-     * @param _partialWithdrawals - A percentage of the funds that should be transfered
+     * @param withdrawalsPercents - A percentage of the funds that should be transfered
      * @param _receiverStrategyId - number strategy, to which funds are deposited
      */
     function moveFundsBatch(
         uint256[] memory _strategies,
-        uint256[] memory _partialWithdrawals,
+        uint256[] memory withdrawalsPercents,
         uint256 _receiverStrategyId
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(
-            _strategies.length == _partialWithdrawals.length,
+            _strategies.length == withdrawalsPercents.length,
             'Zunami: incorrect arguments for the moveFundsBatch'
         );
         require(_receiverStrategyId < poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
@@ -419,7 +419,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         uint256 zunamiLp;
         for (uint256 i = 0; i < _strategies.length; i++) {
             pid = _strategies[i];
-            zunamiLp += _moveFunds(pid, _partialWithdrawals[i]);
+            zunamiLp += _moveFunds(pid, withdrawalsPercents[i]);
         }
 
         uint256[3] memory stablecoinsRemainder;
