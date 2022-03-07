@@ -5,8 +5,9 @@ import '../utils/Constants.sol';
 import './CurveConvexStrat2.sol';
 
 contract MUSDCurveConvex is CurveConvexStrat2 {
-    constructor()
+    constructor(Config memory config)
         CurveConvexStrat2(
+            config,
             Constants.CRV_MUSD_ADDRESS,
             Constants.CRV_MUSD_LP_ADDRESS,
             Constants.CVX_MUSD_REWARDS_ADDRESS,

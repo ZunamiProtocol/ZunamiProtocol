@@ -17,6 +17,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     IERC20Metadata public pool3LP;
 
     constructor(
+        Config memory config,
         address poolAddr,
         address poolLPAddr,
         address rewardsAddr,
@@ -26,6 +27,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         address extraTokenAddr
     )
         CurveConvexExtraStratBase(
+            config,
             poolLPAddr,
             rewardsAddr,
             poolPID,
@@ -63,7 +65,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         }
 
         for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
+            IERC20Metadata(_config.tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
         }
         pool3.add_liquidity(amounts, 0);
 
@@ -72,8 +74,8 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         pool3LP.safeIncreaseAllowance(address(pool), amounts2[1]);
         uint256 poolLPs = pool.add_liquidity(amounts2, 0);
 
-        poolLP.safeApprove(address(booster), poolLPs);
-        booster.depositAll(cvxPoolPID, true);
+        poolLP.safeApprove(address(_config.booster), poolLPs);
+        _config.booster.depositAll(cvxPoolPID, true);
 
         return ((poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR);
     }

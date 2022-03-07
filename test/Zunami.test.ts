@@ -23,6 +23,8 @@ import {
 } from './constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
+import * as config from '../config.json';
+
 describe('Zunami', function () {
     let admin: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -132,10 +134,10 @@ describe('Zunami', function () {
             let SUSDCurveConvex: ContractFactory = await ethers.getContractFactory(
                 'SUSDCurveConvex'
             );
-            strategy = await AaveCurveConvex.deploy();
-            strategy2 = await OUSDCurveConvex.deploy();
-            strategy2b = await USDPCurveConvex.deploy();
-            strategy4 = await SUSDCurveConvex.deploy();
+            strategy = await AaveCurveConvex.deploy(config);
+            strategy2 = await OUSDCurveConvex.deploy(config);
+            strategy2b = await USDPCurveConvex.deploy(config);
+            strategy4 = await SUSDCurveConvex.deploy(config);
             await strategy.deployed();
             await strategy2.deployed();
             await strategy2b.deployed();

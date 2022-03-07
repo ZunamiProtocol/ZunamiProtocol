@@ -14,7 +14,7 @@ import chai from 'chai';
 
 const { expect } = chai;
 
-import { MIN_LOCK_TIME } from './../constants/TestConstants';
+import { MIN_LOCK_TIME } from './constants/TestConstants';
 
 export const bn = (num: string | number) => new BigNumber(num);
 export const decify = (value: any, decimals: any) =>
@@ -45,6 +45,12 @@ describe('CurveConvexStrat2', () => {
     let dai: Contract;
     let usdc: Contract;
     let usdt: Contract;
+    let weth: Contract;
+
+    let crv: MockContract;
+    let cvx: MockContract;
+    let router: MockContract;
+    let booster: MockContract;
 
     let pool: MockContract;
     let poolLP: Contract;
@@ -88,8 +94,26 @@ describe('CurveConvexStrat2', () => {
         extraRewards = await mockContract("IConvexRewards");
         extraToken = await stubToken(18, owner);
 
+        crv = await mockContract("IERC20Metadata");
+        cvx = await mockContract("IConvexMinter");
+        router = await mockContract("IUniswapRouter");
+        booster = await mockContract("IConvexBooster");
+
+        weth = await stubToken(18, owner);
+
+        const config = {
+            "tokens": [dai.address, usdc.address, usdt.address],
+            "crv": crv.address,
+            "cvx": cvx.address,
+            "router": router.address,
+            "booster": booster.address,
+            "cvxToUsdtPath": [cvx.address, weth.address, usdt.address],
+            "crvToUsdtPath": [crv.address, weth.address, usdt.address]
+        };
+
         const Strat = await ethers.getContractFactory('CurveConvexStrat2', owner);
         strategy = await Strat.deploy(
+            config,
             pool.address,
             poolLP.address,
             rewards.address,
@@ -118,5 +142,11 @@ describe('CurveConvexStrat2', () => {
         await expect(await strategy.pool()).to.be.equal(pool.address);
         await expect(await strategy.pool3()).to.properAddress;
         await expect(await strategy.pool3LP()).to.properAddress;
+
+        const config = await strategy.config();
+        await expect(config.crv).to.be.equal(crv.address);
+        await expect(config.cvx).to.be.equal(cvx.address);
+        await expect(config.router).to.be.equal(router.address);
+        await expect(config.booster).to.be.equal(booster.address);
     });
 });
