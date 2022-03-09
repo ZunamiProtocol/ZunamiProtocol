@@ -11,8 +11,6 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
-import "hardhat/console.sol";
-
 /**
  *
  * @title Zunami Protocol
@@ -425,9 +423,9 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         );
         require(_receiverStrategyId < _poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
 
-        uint256[3] memory stablecoinsBalance;
+        uint256[3] memory tokenBalance;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            stablecoinsBalance[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            tokenBalance[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
 
         uint256 pid;
@@ -437,22 +435,22 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
             zunamiLp += _moveFunds(pid, withdrawalsPercents[i]);
         }
 
-        uint256[3] memory stablecoinsRemainder;
+        uint256[3] memory tokensRemainder;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            stablecoinsRemainder[y] =
+            tokensRemainder[y] =
                 IERC20Metadata(tokens[y]).balanceOf(address(this)) -
-                stablecoinsBalance[y];
-            if (stablecoinsRemainder[y] > 0) {
+                tokenBalance[y];
+            if (tokensRemainder[y] > 0) {
                 IERC20Metadata(tokens[y]).safeTransfer(
                     address(_poolInfo[_receiverStrategyId].strategy),
-                    stablecoinsRemainder[y]
+                    tokensRemainder[y]
                 );
             }
         }
 
         _poolInfo[_receiverStrategyId].lpShares += zunamiLp;
         require(
-            _poolInfo[_receiverStrategyId].strategy.deposit(stablecoinsRemainder) > 0,
+            _poolInfo[_receiverStrategyId].strategy.deposit(tokensRemainder) > 0,
             'Zunami: Too low amount!'
         );
     }
@@ -468,13 +466,6 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         } else {
             currentLpAmount = (_poolInfo[pid].lpShares * withdrawAmount) / FUNDS_DENOMINATOR;
             uint256[3] memory minAmounts;
-
-            console.log(address(this));
-            console.log(currentLpAmount);
-            console.log(_poolInfo[pid].lpShares);
-            console.log(minAmounts[0]);
-            console.log(minAmounts[1]);
-            console.log(minAmounts[2]);
 
             _poolInfo[pid].strategy.withdraw(
                 address(this),

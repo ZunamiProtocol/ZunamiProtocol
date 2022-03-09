@@ -149,7 +149,7 @@ describe('Zunami', () => {
         await expect(await zunami.totalHoldings()).to.be.equal(totalHoldings);
     });
 
-    it('should move a part of the funds from one strategy to others', async () => {
+    it.only('should move a part of the funds from one strategy to others', async () => {
         const strategy1 = await mockStrategy();
         const strategy2 = await mockStrategy();
         await zunami.addPool(strategy1.address);
@@ -165,30 +165,28 @@ describe('Zunami', () => {
         const timeAfterLock = (await time.latest()).add(MIN_LOCK_TIME).toNumber();
         await time.increaseTo(timeAfterLock);
 
-        const depositedValue1 = 100;
-        const depositedValue2 = 200;
+        const depositedValue1 = tokenify(100);
+        const depositedValue2 = tokenify(200);
         await strategy1.mock.deposit.withArgs(tokenBalances).returns(depositedValue1.toFixed());
         await strategy2.mock.deposit.withArgs(tokenBalances).returns(depositedValue2.toFixed());
         await zunami.deposit(tokenBalances);
 
         const lpShares = ((await zunami.poolInfo(pid)).lpShares * 5_000) / 10_000;
 
-        console.log(zunami.address);
-        console.log(lpShares.toString());
-        console.log((await zunami.poolInfo(pid)).lpShares.toString());
-        console.log(0);
-        console.log(0);
-        console.log(0);
         await strategy1.mock.withdraw
             .withArgs(
                 zunami.address,
                 lpShares,
                 (await zunami.poolInfo(pid)).lpShares.toString(),
+
                 [0, 0, 0]
             )
-            .returns(depositedValue1 / 2);
+            .returns(depositedValue1.div(2));
 
         await zunami.connect(admin).moveFundsBatch([0], [5_000], 1);
+
+        await strategy2.mock.withdrawAll.returns();
+        await zunami.connect(admin).moveFundsBatch([1], [10_000], 0);
     });
 
     it('should deposit user funds', async () => {
