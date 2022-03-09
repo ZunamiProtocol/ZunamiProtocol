@@ -11,6 +11,8 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 import './utils/Constants.sol';
 import './interfaces/IStrategy.sol';
 
+import "hardhat/console.sol";
+
 /**
  *
  * @title Zunami Protocol
@@ -466,6 +468,13 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
         } else {
             currentLpAmount = (_poolInfo[pid].lpShares * withdrawAmount) / FUNDS_DENOMINATOR;
             uint256[3] memory minAmounts;
+
+            console.log(address(this));
+            console.log(currentLpAmount);
+            console.log(_poolInfo[pid].lpShares);
+            console.log(minAmounts[0]);
+            console.log(minAmounts[1]);
+            console.log(minAmounts[2]);
 
             _poolInfo[pid].strategy.withdraw(
                 address(this),

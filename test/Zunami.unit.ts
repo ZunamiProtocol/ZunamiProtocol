@@ -173,12 +173,18 @@ describe('Zunami', () => {
 
         const lpShares = ((await zunami.poolInfo(pid)).lpShares * 5_000) / 10_000;
 
+        console.log(zunami.address);
+        console.log(lpShares.toString());
+        console.log((await zunami.poolInfo(pid)).lpShares.toString());
+        console.log(0);
+        console.log(0);
+        console.log(0);
         await strategy1.mock.withdraw
             .withArgs(
                 zunami.address,
                 lpShares,
                 (await zunami.poolInfo(pid)).lpShares.toString(),
-                tokenBalances
+                [0, 0, 0]
             )
             .returns(depositedValue1 / 2);
 
