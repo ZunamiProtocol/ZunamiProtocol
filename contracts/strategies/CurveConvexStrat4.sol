@@ -75,49 +75,6 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         return (depositedAmount * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    /**
-     * @dev Returns true if withdraw success and false if fail.
-     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
-     * @return Returns true if withdraw success and false if fail.
-     * @param withdrawer - address of user that deposit funds
-     * @param lpShareUserRation - user's ration of ZLP for withdraw
-     * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
-     */
-    function withdraw(
-        address withdrawer,
-        WithdrawalType withdrawalType,
-        uint256 lpShareUserRation, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
-        uint128 tokenIndex
-    ) external override onlyZunami returns (bool) {
-        uint256[4] memory minAmounts4;
-        for (uint256 i = 0; i < 3; i++) {
-            minAmounts4[i] = tokenAmounts[i];
-        }
-        uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
-        uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShareUserRation) /
-            1e18;
-
-        if (depositedShare < crvRequiredLPs) {
-            return false;
-        }
-
-        sellRewards(depositedShare);
-
-        (
-            uint256[] memory userBalances,
-            uint256[] memory prevBalances
-        ) = snapshotTokensBalances(lpShareUserRation);
-
-        pool.remove_liquidity(depositedShare, minAmounts4);
-
-        sellToken();
-
-        transferUserAllTokens(withdrawer, userBalances, prevBalances);
-
-        return true;
-    }
-
     function calcCurveDepositShares(
         WithdrawalType withdrawalType,
         uint256 lpShareUserRation, // multiplied by 1e18

@@ -238,7 +238,7 @@ describe(STRATEGY_NAME, function () {
                 expect(
                     await zunami
                         .connect(user)
-                        .withdraw(0, await zunami.balanceOf(user.address), ['0', '0', '0'], 0)
+                        .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0)
                 );
             }
 
@@ -318,7 +318,7 @@ describe(STRATEGY_NAME, function () {
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
-                    .withdraw(0, await zunami.balanceOf(user.address), ['0', '0', '0'], 0);
+                    .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0);
             }
 
             for (const user of [alice, bob, carol, rosa]) {

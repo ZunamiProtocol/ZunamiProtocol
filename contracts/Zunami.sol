@@ -289,9 +289,9 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
                     !(
                         strategy.withdraw(
                             user,
-                            IStrategy.WithdrawalType.Base,
                             withdrawal.lpShares * 1e18 / _poolInfo[defaultPoolId].lpShares,
                             withdrawal.minAmounts,
+                            IStrategy.WithdrawalType.Base,
                             0
                         )
                     )
@@ -354,7 +354,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
         }
 
-        if( !strategy.withdraw(address(this), IStrategy.WithdrawalType.Base, lpSharesTotal * 1e18 / _poolInfo[pid].lpShares, minAmountsTotal, 0) ) {
+        if( !strategy.withdraw(address(this), lpSharesTotal * 1e18 / _poolInfo[pid].lpShares, minAmountsTotal, IStrategy.WithdrawalType.Base, 0) ) {
             //TODO: do we really need to remove delegated requests
             for (i = 0; i < userList.length; i++) {
                 user = userList[i];
@@ -439,9 +439,9 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
      * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
-        IStrategy.WithdrawalType withdrawalType,
         uint256 lpShares,
         uint256[3] memory tokenAmounts,
+        IStrategy.WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external whenNotPaused startedPool {
         IStrategy strategy = _poolInfo[defaultPoolId].strategy;
@@ -449,7 +449,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
-            strategy.withdraw(userAddr, withdrawalType, lpShares * 1e18 / _poolInfo[defaultPoolId].lpShares, tokenAmounts, tokenIndex),
+            strategy.withdraw(userAddr, lpShares * 1e18 / _poolInfo[defaultPoolId].lpShares, tokenAmounts, withdrawalType, tokenIndex),
             'Zunami: user lps share should be at least required'
         );
 

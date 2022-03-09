@@ -146,9 +146,9 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function withdraw(
         address withdrawer,
-        WithdrawalType withdrawalType,
         uint256 lpShareUserRation, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
+        WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
         (
