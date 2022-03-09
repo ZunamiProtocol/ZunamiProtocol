@@ -44,6 +44,7 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
     uint8 private constant POOL_ASSETS = 3;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MIN_LOCK_TIME = 1 days;
+    uint256 public constant FUNDS_DENOMINATOR = 10_000;
 
     PoolInfo[] internal _poolInfo;
     uint256 public defaultDepositPid;
@@ -433,36 +434,75 @@ contract Zunami is Context, ERC20, Pausable, AccessControl {
 
     /**
      * @dev dev can transfer funds from few strategy's to one strategy for better APY
-     * @param _from - array of strategy's, from which funds are withdrawn
-     * @param _to - number strategy, to which funds are deposited
+     * @param _strategies - array of strategy's, from which funds are withdrawn
+     * @param withdrawalsPercents - A percentage of the funds that should be transfered
+     * @param _receiverStrategyId - number strategy, to which funds are deposited
      */
-    function moveFundsBatch(uint256[] memory _from, uint256 _to)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        uint256 length = _from.length;
-        uint256[3] memory amounts;
-        uint256[3] memory amountsBefore;
-        uint256 zunamiLp = 0;
+    function moveFundsBatch(
+        uint256[] memory _strategies,
+        uint256[] memory withdrawalsPercents,
+        uint256 _receiverStrategyId
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(
+            _strategies.length == withdrawalsPercents.length,
+            'Zunami: incorrect arguments for the moveFundsBatch'
+        );
+        require(_receiverStrategyId < _poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
+
+        uint256[3] memory tokenBalance;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            tokenBalance[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
-        for (uint256 i = 0; i < length; i++) {
-            _poolInfo[_from[i]].strategy.withdrawAll();
-            zunamiLp += _poolInfo[_from[i]].lpShares;
-            _poolInfo[_from[i]].lpShares = 0;
+
+        uint256 pid;
+        uint256 zunamiLp;
+        for (uint256 i = 0; i < _strategies.length; i++) {
+            pid = _strategies[i];
+            zunamiLp += _moveFunds(pid, withdrawalsPercents[i]);
         }
+
+        uint256[3] memory tokensRemainder;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
-            if (amounts[y] > 0) {
+            tokensRemainder[y] =
+                IERC20Metadata(tokens[y]).balanceOf(address(this)) -
+                tokenBalance[y];
+            if (tokensRemainder[y] > 0) {
                 IERC20Metadata(tokens[y]).safeTransfer(
-                    address(_poolInfo[_to].strategy),
-                    amounts[y]
+                    address(_poolInfo[_receiverStrategyId].strategy),
+                    tokensRemainder[y]
                 );
             }
         }
-        _poolInfo[_to].lpShares += zunamiLp;
-        require(_poolInfo[_to].strategy.deposit(amounts) > 0, 'Zunami: Too low amount!');
+
+        _poolInfo[_receiverStrategyId].lpShares += zunamiLp;
+        require(
+            _poolInfo[_receiverStrategyId].strategy.deposit(tokensRemainder) > 0,
+            'Zunami: Too low amount!'
+        );
+    }
+
+    function _moveFunds(uint256 pid, uint256 withdrawAmount) private returns (uint256) {
+        uint256 currentLpAmount;
+
+        if (withdrawAmount == FUNDS_DENOMINATOR) {
+            _poolInfo[pid].strategy.withdrawAll();
+
+            currentLpAmount = _poolInfo[pid].lpShares;
+            _poolInfo[pid].lpShares = 0;
+        } else {
+            currentLpAmount = (_poolInfo[pid].lpShares * withdrawAmount) / FUNDS_DENOMINATOR;
+            uint256[3] memory minAmounts;
+
+            _poolInfo[pid].strategy.withdraw(
+                address(this),
+                currentLpAmount,
+                _poolInfo[pid].lpShares,
+                minAmounts
+            );
+            _poolInfo[pid].lpShares = _poolInfo[pid].lpShares - currentLpAmount;
+        }
+
+        return currentLpAmount;
     }
 
     /**
