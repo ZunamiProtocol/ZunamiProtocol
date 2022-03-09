@@ -1,20 +1,15 @@
 import { ethers, waffle, artifacts } from 'hardhat';
 import { Contract } from '@ethersproject/contracts';
 import { MockContract } from 'ethereum-waffle';
+import chai from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-
 import BigNumber from 'bignumber.js';
+import { MIN_LOCK_TIME } from './constants/TestConstants';
 
 const { deployMockContract, provider } = waffle;
 const [wallet, otherWallet] = provider.getWallets();
-
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
-
-import chai from 'chai';
-
 const { expect } = chai;
-
-import { MIN_LOCK_TIME } from './constants/TestConstants';
 
 export const bn = (num: string | number) => new BigNumber(num);
 export const decify = (value: any, decimals: any) =>
@@ -152,6 +147,46 @@ describe('Zunami', () => {
             .plus(strategyHoldings3)
             .toFixed();
         await expect(await zunami.totalHoldings()).to.be.equal(totalHoldings);
+    });
+
+    it.only('should move a part of the funds from one strategy to others', async () => {
+        const strategy1 = await mockStrategy();
+        const strategy2 = await mockStrategy();
+        await zunami.addPool(strategy1.address);
+        await zunami.addPool(strategy2.address);
+
+        const pid = 0;
+
+        await setTotalHoldings(strategy1, 0);
+        await setTotalHoldings(strategy2, 0);
+
+        const tokenBalances = await mintAndApproveTokens(admin, [1, 1, 1]);
+
+        const timeAfterLock = (await time.latest()).add(MIN_LOCK_TIME).toNumber();
+        await time.increaseTo(timeAfterLock);
+
+        const depositedValue1 = tokenify(100);
+        const depositedValue2 = tokenify(200);
+        await strategy1.mock.deposit.withArgs(tokenBalances).returns(depositedValue1.toFixed());
+        await strategy2.mock.deposit.withArgs(tokenBalances).returns(depositedValue2.toFixed());
+        await zunami.deposit(tokenBalances);
+
+        const lpShares = ((await zunami.poolInfo(pid)).lpShares * 5_000) / 10_000;
+
+        await strategy1.mock.withdraw
+            .withArgs(
+                zunami.address,
+                lpShares,
+                (await zunami.poolInfo(pid)).lpShares.toString(),
+
+                [0, 0, 0]
+            )
+            .returns(depositedValue1.div(2));
+
+        await zunami.connect(admin).moveFundsBatch([0], [5_000], 1);
+
+        await strategy2.mock.withdrawAll.returns();
+        await zunami.connect(admin).moveFundsBatch([1], [10_000], 0);
     });
 
     it('should deposit user funds', async () => {
