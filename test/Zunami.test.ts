@@ -221,7 +221,7 @@ describe('Zunami', function () {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'])
+                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0)
                     );
                 }
 
@@ -305,7 +305,7 @@ describe('Zunami', function () {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'])
+                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0)
                     );
                 }
 
@@ -520,7 +520,7 @@ describe('Zunami', function () {
                             '0',
                             '0',
                             '0',
-                        ])
+                        ], 0, 0)
                 );
                 expect(
                     await zunami
@@ -529,7 +529,7 @@ describe('Zunami', function () {
                             '0',
                             '0',
                             '0',
-                        ])
+                        ], 0, 0)
                 );
             });
 
