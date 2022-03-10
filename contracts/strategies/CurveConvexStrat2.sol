@@ -42,17 +42,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
     }
 
-    function getCurvePoolPrice() internal view override returns (uint256) {
-        return pool.get_virtual_price();
-    }
-
-    /**
-     * @dev Returns deposited amount in USD.
-     * If deposit failed return zero
-     * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
-     */
-    function deposit(uint256[3] memory amounts) external override onlyZunami returns (uint256) {
+    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
         uint256 amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
             amountsTotal += amounts[i] * decimalsMultipliers[i];
@@ -60,24 +50,27 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool3.get_virtual_price();
         uint256 depositedLp = pool3.calc_token_amount(amounts, true);
-        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
-            return (0);
-        }
 
+        return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
+    }
+
+    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
         for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(_config.tokens[i]).safeIncreaseAllowance(address(pool3), amounts[i]);
+            _config.tokens[i].safeIncreaseAllowance(address(pool3), amounts[i]);
         }
         pool3.add_liquidity(amounts, 0);
 
         uint256[2] memory amounts2;
         amounts2[1] = pool3LP.balanceOf(address(this));
         pool3LP.safeIncreaseAllowance(address(pool), amounts2[1]);
-        uint256 poolLPs = pool.add_liquidity(amounts2, 0);
+        poolLPs = pool.add_liquidity(amounts2, 0);
 
         poolLP.safeApprove(address(_config.booster), poolLPs);
         _config.booster.depositAll(cvxPoolPID, true);
+    }
 
-        return ((poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR);
+    function getCurvePoolPrice() internal view override returns (uint256) {
+        return pool.get_virtual_price();
     }
 
     function calcCurveDepositShares(

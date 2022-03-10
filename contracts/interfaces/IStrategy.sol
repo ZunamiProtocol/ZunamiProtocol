@@ -19,4 +19,6 @@ interface IStrategy {
     function totalHoldings() external view returns (uint256);
 
     function claimManagementFees() external returns (uint256);
+
+    function autoCompound() external;
 }

@@ -25,6 +25,8 @@ import { parseUnits } from 'ethers/lib/utils';
 
 import * as config from '../config.json';
 
+enum WithdrawalType { Base, OneCoin, Imbalance };
+
 describe('Zunami', function () {
     let admin: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -221,7 +223,11 @@ describe('Zunami', function () {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0)
+                            .withdraw(await zunami.balanceOf(user.address), [
+                                0, //parseUnits((1000 - 3).toString(), 'ether'),
+                                0, //parseUnits((1000 - 3).toString(), 'mwei'),
+                                0, //parseUnits((1000 - 3).toString(), 'mwei'),
+                            ], WithdrawalType.Base, 0) // WithdrawalType.Imbalance
                     );
                 }
 
@@ -305,7 +311,7 @@ describe('Zunami', function () {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0)
+                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], WithdrawalType.OneCoin, 2)
                     );
                 }
 
@@ -344,7 +350,7 @@ describe('Zunami', function () {
                 expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             });
 
-            it('should completeWithdrawals successful complete', async () => {
+            it('should completeWithdrawalsOptimized successful complete', async () => {
                 for (const user of [alice, bob, rosa]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
                     expect(
@@ -398,7 +404,7 @@ describe('Zunami', function () {
                 }
 
                 expect(
-                    await zunami.connect(admin).completeWithdrawals([alice.address, bob.address])
+                    await zunami.connect(admin).completeWithdrawalsOptimized([alice.address, bob.address])
                 );
                 // expect(await zunami.moveFundsBatch([1, 2, 3], 0));
             });
@@ -520,7 +526,7 @@ describe('Zunami', function () {
                             '0',
                             '0',
                             '0',
-                        ], 0, 0)
+                        ], WithdrawalType.Base, 0)
                 );
                 expect(
                     await zunami
@@ -529,7 +535,7 @@ describe('Zunami', function () {
                             '0',
                             '0',
                             '0',
-                        ], 0, 0)
+                        ], WithdrawalType.Base, 0)
                 );
             });
 

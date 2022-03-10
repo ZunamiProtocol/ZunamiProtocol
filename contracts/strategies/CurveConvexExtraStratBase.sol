@@ -61,8 +61,8 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
 
-    function sellRewards(uint256 depositedShare) internal override virtual {
-        super.sellRewards(depositedShare);
+    function sellRewards() internal override {
+        super.sellRewards();
         if (address(extraToken) != address(0)) {
             sellExtraToken();
         }
@@ -77,7 +77,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             return;
         }
 
-        uint256 usdtBalanceBefore = IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(
+        uint256 usdtBalanceBefore = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(
             address(this)
         );
 
@@ -91,7 +91,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         );
 
         managementFees += zunami.calcManagementFee(
-            IERC20Metadata(_config.tokens[ZUNAMI_USDT_TOKEN_ID]).balanceOf(address(this)) -
+            _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this)) -
                 usdtBalanceBefore
         );
 
@@ -104,11 +104,8 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      */
     function withdrawAll() external virtual onlyZunami {
         cvxRewards.withdrawAllAndUnwrap(true);
-        sellCrvCvx();
 
-        if (address(extraToken) != address(0)) {
-            sellExtraToken();
-        }
+        sellRewards();
 
         withdrawAllSpecific();
 
