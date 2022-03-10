@@ -6,6 +6,7 @@
 .vscode
 artifacts
 build
+bin
 cache
 client/src/contracts
 coverage
@@ -16,4 +17,3 @@ node_modules
 package-lock.json
 yarn.lock
 .DS_Store
-

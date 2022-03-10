@@ -26,6 +26,8 @@ import { parseUnits } from 'ethers/lib/utils';
 const STRAT = 'DUSD';
 const STRATEGY_NAME = `${STRAT}CurveConvex`;
 
+import * as config from '../../config.json';
+
 describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -144,7 +146,7 @@ describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
             let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
-            strategy = await deployedStrat.deploy();
+            strategy = await deployedStrat.deploy(config);
             await strategy.deployed();
             zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
@@ -176,14 +178,11 @@ describe(STRATEGY_NAME, function () {
 
         it('deposit after MIN_LOCK_TIME should be successful', async () => {
             await expect(
-                zunami.deposit(
-                    [
-                        parseUnits('1000', 'ether'),
-                        parseUnits('1000', 'mwei'),
-                        parseUnits('1000', 'mwei'),
-                    ],
-                    0
-                ),
+                zunami.deposit([
+                    parseUnits('1000', 'ether'),
+                    parseUnits('1000', 'mwei'),
+                    parseUnits('1000', 'mwei'),
+                ]),
                 'Zunami: pool not started yet!'
             ).to.be.reverted;
 
@@ -191,14 +190,11 @@ describe(STRATEGY_NAME, function () {
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
-                    .deposit(
-                        [
-                            parseUnits('1000', 'ether'),
-                            parseUnits('1000', 'mwei'),
-                            parseUnits('1000', 'mwei'),
-                        ],
-                        0
-                    );
+                    .deposit([
+                        parseUnits('1000', 'ether'),
+                        parseUnits('1000', 'mwei'),
+                        parseUnits('1000', 'mwei'),
+                    ]);
             }
 
             for (const user of [alice, bob, carol, rosa]) {
@@ -242,7 +238,7 @@ describe(STRATEGY_NAME, function () {
                 expect(
                     await zunami
                         .connect(user)
-                        .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0)
+                        .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0)
                 );
             }
 
@@ -274,12 +270,12 @@ describe(STRATEGY_NAME, function () {
             }
             expect(await zunami.connect(carol).pendingDepositRemove());
             expect(await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME)));
-            expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address], 0));
+            expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, rosa]) {
                 let zunami_balance = await zunami.balanceOf(user.address);
                 expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0]));
             }
-            expect(await zunami.completeWithdrawals([alice.address, bob.address, rosa.address], 0));
+            expect(await zunami.completeWithdrawals([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, carol, rosa]) {
                 expect(ethers.utils.formatUnits(await zunami.balanceOf(user.address), 18)).to.equal(
                     '0.0'
@@ -313,14 +309,16 @@ describe(STRATEGY_NAME, function () {
                     .connect(user)
                     .delegateDeposit([dai_balance, usdc_balance, usdt_balance]);
             }
-            await zunami.completeDeposits(
-                [alice.address, bob.address, carol.address, rosa.address],
-                0
-            );
+            await zunami.completeDeposits([
+                alice.address,
+                bob.address,
+                carol.address,
+                rosa.address,
+            ]);
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
-                    .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0);
+                    .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], 0, 0);
             }
 
             for (const user of [alice, bob, carol, rosa]) {

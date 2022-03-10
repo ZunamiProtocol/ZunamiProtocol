@@ -11,9 +11,7 @@ import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 
-import { config as dotEnvConfig } from 'dotenv';
-
-dotEnvConfig();
+import 'dotenv/config'
 
 import { HardhatUserConfig } from 'hardhat/types';
 
@@ -103,8 +101,10 @@ const config: HardhatUserConfig = {
             url: `${process.env.NODE_API_KEY}`,
             chainId: 1,
             gas: 'auto',
-            gasPrice: 70000000000,
+            gasMultiplier: 1.2,
+            gasPrice: 50000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
+            loggingEnabled: true,
         },
         rinkeby: {
             url: `${process.env.NODE_API_KEY}`,

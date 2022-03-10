@@ -1,6 +1,6 @@
 {
     "name": "zunami-protocol",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "",
     "scripts": {
         "lint": "npx prettier --write 'contracts/**/*.sol' && npx prettier --write 'scripts/**/*.js' && npx prettier --write 'test/**/*.ts'",
@@ -11,11 +11,10 @@
         "test": "npx hardhat test",
         "test:coverage": "npx hardhat coverage  --testfiles 'test/*.ts'",
         "test:verbose": "npx hardhat test --verbose test/*.ts",
-        "deploy:mainnet": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:rinkeby": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:matic": "npx hardhat deploy --network matic --tags Zunami --gasprice 1000000000",
-        "deploy:polygon": "npx hardhat deploy --network polygon --tags Zunami --gasprice 1000000000",
-        "deploy:development": "npx hardhat deploy --network development --tags Zunami --gasprice 1000000000"
+        "deploy:mainnet": "npx hardhat run --network mainnet --tags Zunami ./scripts/deploy.js",
+        "deploy:rinkeby": "npx hardhat run --network rinkeby --tags Zunami --gasprice 1000000000 ./scripts/deploy.js",
+        "deploy:polygon": "npx hardhat run --network polygon --tags Zunami --gasprice 1000000000 ./scripts/deploy.js",
+        "deploy:development": "npx hardhat run --network development --tags Zunami ./scripts/deploy.js"
     },
     "repository": {
         "type": "git",
@@ -31,10 +30,10 @@
     "devDependencies": {
         "@nomiclabs/buidler": "^1.4.8",
         "@nomiclabs/hardhat-ethers": "^2.0.5",
-        "@nomiclabs/hardhat-etherscan": "^3.0.1",
+        "@nomiclabs/hardhat-etherscan": "^3.0.3",
         "@nomiclabs/hardhat-ganache": "^2.0.1",
-        "@nomiclabs/hardhat-truffle5": "^2.0.4",
-        "@nomiclabs/hardhat-waffle": "^2.0.2",
+        "@nomiclabs/hardhat-truffle5": "^2.0.5",
+        "@nomiclabs/hardhat-waffle": "^2.0.3",
         "@nomiclabs/hardhat-web3": "^2.0.0",
         "@openzeppelin/contracts": "4.5.0",
         "@openzeppelin/test-helpers": "^0.5.15",
@@ -45,8 +44,8 @@
         "dotenv": "^16.0.0",
         "ethereum-waffle": "^3.4.0",
         "ethers": "^5.5.4",
-        "hardhat": "^2.8.4",
-        "hardhat-contract-sizer": "^2.4.0",
+        "hardhat": "^2.9.1",
+        "hardhat-contract-sizer": "^2.5.0",
         "hardhat-deploy": "^0.10.5",
         "hardhat-deploy-ethers": "^0.3.0-beta.13",
         "hardhat-gas-reporter": "^1.0.8",
@@ -55,8 +54,8 @@
         "prettier-plugin-solidity": "^1.0.0-beta.19",
         "solhint": "^3.3.7",
         "solidity-coverage": "^0.7.20",
-        "ts-node": "^10.5.0",
-        "typescript": "^4.5.5",
+        "ts-node": "^10.7.0",
+        "typescript": "^4.6.2",
         "waffle": "^0.0.4"
     }
 }

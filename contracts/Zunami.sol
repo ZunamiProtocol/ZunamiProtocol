@@ -1,13 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/Context.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
-import './utils/Constants.sol';
+import '@openzeppelin/contracts/access/AccessControl.sol';
 import './interfaces/IStrategy.sol';
 
 /**
@@ -24,8 +22,10 @@ import './interfaces/IStrategy.sol';
  *
  */
 
-contract Zunami is Context, Ownable, ERC20, Pausable {
+contract Zunami is ERC20, Pausable, AccessControl {
     using SafeERC20 for IERC20Metadata;
+
+    bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
 
     struct PendingWithdrawal {
         uint256 lpShares;
@@ -38,65 +38,96 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         uint256 lpShares;
     }
 
-    uint8 private constant POOL_ASSETS = 3;
+    uint8 public constant POOL_ASSETS = 3;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MIN_LOCK_TIME = 1 days;
+    uint256 public constant FUNDS_DENOMINATOR = 10_000;
+    uint8 public constant ALL_WITHDRAWAL_TYPES_MASK =  uint8(7); // Binary 111 = 2^0 + 2^1 + 2^2;
 
-    PoolInfo[] public poolInfo;
+    PoolInfo[] internal _poolInfo;
+    uint256 public defaultDepositPid;
+    uint256 public defaultWithdrawPid;
+    uint8 public availableWithdrawalTypes;
 
     address[POOL_ASSETS] public tokens;
-    uint256[POOL_ASSETS] public decimalsMultiplierS;
+    uint256[POOL_ASSETS] public decimalsMultipliers;
 
-    mapping(address => uint256[3]) public pendingDeposits;
+    mapping(address => uint256[POOL_ASSETS]) public pendingDeposits;
     mapping(address => PendingWithdrawal) public pendingWithdrawals;
 
     uint256 public totalDeposited = 0;
-    uint256 public managementFee = 10; // 1%
+    uint256 public managementFee = 100; // 10%
     bool public launched = false;
 
-    event CreatedPendingDeposit(address indexed depositor, uint256[3] amounts);
+    event CreatedPendingDeposit(address indexed depositor, uint256[POOL_ASSETS] amounts);
     event CreatedPendingWithdrawal(
         address indexed withdrawer,
-        uint256[3] amounts,
+        uint256[POOL_ASSETS] amounts,
         uint256 lpShares
     );
-    event Deposited(address indexed depositor, uint256[3] amounts, uint256 lpShares);
-    event Withdrawn(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
-    event AddedPool(uint256 pid, address strategyAddr, uint256 startTime);
-    event FailedDeposit(address indexed depositor, uint256[3] amounts, uint256 lpShares);
-    event FailedWithdrawal(address indexed withdrawer, uint256[3] amounts, uint256 lpShares);
+    event Deposited(address indexed depositor, uint256[POOL_ASSETS] amounts, uint256 lpShares);
+    event Withdrawn(address indexed withdrawer, IStrategy.WithdrawalType withdrawalType, uint256[POOL_ASSETS] tokenAmounts, uint256 lpShares, uint128 tokenIndex);
 
-    modifier startedPool(uint256 pid) {
-        require(poolInfo.length != 0 && pid < poolInfo.length, 'Zunami: pool not existed!');
-        require(block.timestamp >= poolInfo[pid].startTime, 'Zunami: pool not started yet!');
+    event AddedPool(uint256 pid, address strategyAddr, uint256 startTime);
+    event FailedDeposit(address indexed depositor, uint256[POOL_ASSETS] amounts, uint256 lpShares);
+    event FailedWithdrawal(address indexed withdrawer, uint256[POOL_ASSETS] amounts, uint256 lpShares);
+    event SetDefaultDepositPid(uint256 pid);
+    event SetDefaultWithdrawPid(uint256 pid);
+    event ClaimedAllManagementFee(uint256 feeValue);
+    event AutoCompoundAll();
+
+    modifier startedPool() {
+        require(_poolInfo.length != 0, 'Zunami: pool not existed!');
+        require(
+            block.timestamp >= _poolInfo[defaultDepositPid].startTime,
+            'Zunami: default deposit pool not started yet!'
+        );
+        require(
+            block.timestamp >= _poolInfo[defaultWithdrawPid].startTime,
+            'Zunami: default withdraw pool not started yet!'
+        );
         _;
     }
 
     constructor(address[POOL_ASSETS] memory _tokens) ERC20('ZunamiLP', 'ZLP') {
         tokens = _tokens;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(OPERATOR_ROLE, msg.sender);
+
         for (uint256 i; i < POOL_ASSETS; i++) {
             uint256 decimals = IERC20Metadata(tokens[i]).decimals();
             if (decimals < 18) {
-                decimalsMultiplierS[i] = 10**(18 - decimals);
+                decimalsMultipliers[i] = 10**(18 - decimals);
             } else {
-                decimalsMultiplierS[i] = 1;
+                decimalsMultipliers[i] = 1;
             }
         }
+
+        availableWithdrawalTypes = ALL_WITHDRAWAL_TYPES_MASK;
     }
 
-    function pause() external onlyOwner {
+    function poolInfo(uint256 pid) external view returns (PoolInfo memory) {
+        return _poolInfo[pid];
+    }
+
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    function setAvailableWithdrawalTypes(uint8 newAvailableWithdrawalTypes) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newAvailableWithdrawalTypes <= ALL_WITHDRAWAL_TYPES_MASK, 'Zunami: wrong available withdrawal types');
+        availableWithdrawalTypes = newAvailableWithdrawalTypes;
     }
 
     /**
      * @dev update managementFee, this is a Zunami commission from protocol profit
      * @param  newManagementFee - minAmount 0, maxAmount FEE_DENOMINATOR - 1
      */
-    function setManagementFee(uint256 newManagementFee) external onlyOwner {
+    function setManagementFee(uint256 newManagementFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newManagementFee < FEE_DENOMINATOR, 'Zunami: wrong fee');
         managementFee = newManagementFee;
     }
@@ -111,14 +142,33 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
+     * @dev Claims managementFee from all active strategies
+     */
+    function claimAllManagementFee() external {
+        uint256 feeTotalValue;
+        for (uint256 i = 0; i < _poolInfo.length; i++) {
+            feeTotalValue += _poolInfo[i].strategy.claimManagementFees();
+        }
+
+        emit ClaimedAllManagementFee(feeTotalValue);
+    }
+
+    function autoCompoundAll() external {
+        for (uint256 i = 0; i < _poolInfo.length; i++) {
+            _poolInfo[i].strategy.autoCompound();
+        }
+        emit AutoCompoundAll();
+    }
+
+    /**
      * @dev Returns total holdings for all pools (strategy's)
      * @return Returns sum holdings (USD) for all pools
      */
     function totalHoldings() public view returns (uint256) {
-        uint256 length = poolInfo.length;
+        uint256 length = _poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; pid++) {
-            totalHold += poolInfo[pid].strategy.totalHoldings();
+            totalHold += _poolInfo[pid].strategy.totalHoldings();
         }
         return totalHold;
     }
@@ -136,11 +186,12 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      * @return number of pools
      */
     function poolCount() external view returns (uint256) {
-        return poolInfo.length;
+        return _poolInfo.length;
     }
 
     /**
-     * @dev in this func user sends funds to the contract and then waits for the completion of the transaction for all users
+     * @dev in this func user sends funds to the contract and then waits for the completion
+     * of the transaction for all users
      * @param amounts - array of deposit amounts by user
      */
     function delegateDeposit(uint256[3] memory amounts) external whenNotPaused {
@@ -155,7 +206,8 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-     * @dev in this func user sends pending withdraw to the contract and then waits for the completion of the transaction for all users
+     * @dev in this func user sends pending withdraw to the contract and then waits
+     * for the completion of the transaction for all users
      * @param  lpAmount - amount of ZLP for withdraw
      * @param minAmounts - array of amounts stablecoins that user want minimum receive
      */
@@ -178,35 +230,34 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     /**
      * @dev Zunami protocol owner complete all active pending deposits of users
      * @param userList - dev send array of users from pending to complete
-     * @param pid - number of the pool to which the deposit goes
      */
-    function completeDeposits(address[] memory userList, uint256 pid)
+    function completeDeposits(address[] memory userList)
         external
-        onlyOwner
-        startedPool(pid)
+        onlyRole(OPERATOR_ROLE)
+        startedPool
     {
-        IStrategy strategy = poolInfo[pid].strategy;
+        IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
         uint256 currentTotalHoldings = totalHoldings();
 
-        uint256 completeAmount = 0;
+        uint256 newHoldings = 0;
         uint256[3] memory totalAmounts;
         uint256[] memory userCompleteHoldings = new uint256[](userList.length);
         for (uint256 i = 0; i < userList.length; i++) {
-            completeAmount = 0;
+            newHoldings = 0;
 
             for (uint256 x = 0; x < totalAmounts.length; x++) {
                 uint256 userTokenDeposit = pendingDeposits[userList[i]][x];
                 totalAmounts[x] += userTokenDeposit;
-                completeAmount += userTokenDeposit * decimalsMultiplierS[x];
+                newHoldings += userTokenDeposit * decimalsMultipliers[x];
             }
-            userCompleteHoldings[i] = completeAmount;
+            userCompleteHoldings[i] = newHoldings;
         }
 
-        uint256 newHoldings = 0;
+        newHoldings = 0;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             uint256 totalTokenAmount = totalAmounts[y];
             if (totalTokenAmount > 0) {
-                newHoldings += totalTokenAmount * decimalsMultiplierS[y];
+                newHoldings += totalTokenAmount * decimalsMultipliers[y];
                 IERC20Metadata(tokens[y]).safeTransfer(address(strategy), totalTokenAmount);
             }
         }
@@ -215,11 +266,10 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
         uint256 lpShares = 0;
         uint256 addedHoldings = 0;
         uint256 userDeposited = 0;
-        address userAddr;
 
         for (uint256 z = 0; z < userList.length; z++) {
             userDeposited = (totalDepositedNow * userCompleteHoldings[z]) / newHoldings;
-            userAddr = userList[z];
+            address userAddr = userList[z];
             if (totalSupply() == 0) {
                 lpShares = userDeposited;
             } else {
@@ -227,8 +277,9 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
             }
             addedHoldings += userDeposited;
             _mint(userAddr, lpShares);
-            poolInfo[pid].lpShares += lpShares;
+            _poolInfo[defaultDepositPid].lpShares += lpShares;
             emit Deposited(userAddr, pendingDeposits[userAddr], lpShares);
+
             // remove deposit from list
             delete pendingDeposits[userAddr];
         }
@@ -238,16 +289,15 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     /**
      * @dev Zunami protocol owner complete all active pending withdrawals of users
      * @param userList - array of users from pending withdraw to complete
-     * @param pid - number of the pool from which the funds are withdrawn
      */
-    function completeWithdrawals(address[] memory userList, uint256 pid)
+    function completeWithdrawals(address[] memory userList)
         external
-        onlyOwner
-        startedPool(pid)
+        onlyRole(OPERATOR_ROLE)
+        startedPool
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
-        IStrategy strategy = poolInfo[pid].strategy;
+        IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
 
         address user;
         PendingWithdrawal memory withdrawal;
@@ -260,9 +310,10 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
                     !(
                         strategy.withdraw(
                             user,
-                            withdrawal.lpShares,
-                            poolInfo[pid].lpShares,
-                            withdrawal.minAmounts
+                            withdrawal.lpShares * 1e18 / _poolInfo[defaultWithdrawPid].lpShares,
+                            withdrawal.minAmounts,
+                            IStrategy.WithdrawalType.Base,
+                            0
                         )
                     )
                 ) {
@@ -273,30 +324,106 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
 
                 uint256 userDeposit = (totalDeposited * withdrawal.lpShares) / totalSupply();
                 _burn(user, withdrawal.lpShares);
-                poolInfo[pid].lpShares -= withdrawal.lpShares;
-
+                _poolInfo[defaultWithdrawPid].lpShares -= withdrawal.lpShares;
                 totalDeposited -= userDeposit;
 
-                emit Withdrawn(user, withdrawal.minAmounts, withdrawal.lpShares);
+                emit Withdrawn(user, IStrategy.WithdrawalType.Base, withdrawal.minAmounts, withdrawal.lpShares, 0);
             }
 
             delete pendingWithdrawals[user];
         }
     }
 
+    function completeWithdrawalsOptimized(address[] memory userList)
+        external
+        onlyRole(OPERATOR_ROLE)
+        startedPool
+    {
+        require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
+
+        IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
+
+        uint256 lpSharesTotal;
+        uint256[POOL_ASSETS] memory minAmountsTotal;
+
+        uint256 i;
+        address user;
+        PendingWithdrawal memory withdrawal;
+        for (i = 0; i < userList.length; i++) {
+            user = userList[i];
+            withdrawal = pendingWithdrawals[user];
+
+            if (balanceOf(user) < withdrawal.lpShares) {
+                emit FailedWithdrawal(user, withdrawal.minAmounts, withdrawal.lpShares);
+                delete pendingWithdrawals[user];
+                continue;
+            }
+
+            lpSharesTotal += withdrawal.lpShares;
+            minAmountsTotal[0] += withdrawal.minAmounts[0];
+            minAmountsTotal[1] += withdrawal.minAmounts[1];
+            minAmountsTotal[2] += withdrawal.minAmounts[2];
+
+            emit Withdrawn(user, IStrategy.WithdrawalType.Base, withdrawal.minAmounts, withdrawal.lpShares, 0);
+        }
+
+        require( lpSharesTotal <= _poolInfo[defaultWithdrawPid].lpShares, "Zunami: Insufficient pool LP shares");
+
+        uint256[POOL_ASSETS] memory prevBalances;
+        for (i = 0; i < 3; i++) {
+            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
+        }
+
+        if( !strategy.withdraw(address(this), lpSharesTotal * 1e18 / _poolInfo[defaultWithdrawPid].lpShares, minAmountsTotal, IStrategy.WithdrawalType.Base, 0) ) {
+            //TODO: do we really need to remove delegated requests
+            for (i = 0; i < userList.length; i++) {
+                user = userList[i];
+                withdrawal = pendingWithdrawals[user];
+
+                emit FailedWithdrawal(user, withdrawal.minAmounts, withdrawal.lpShares);
+                delete pendingWithdrawals[user];
+            }
+            return;
+        }
+
+        uint256[POOL_ASSETS] memory diffBalances;
+        for (i = 0; i < 3; i++) {
+            diffBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this)) - prevBalances[i];
+        }
+
+        for (i = 0; i < userList.length; i++) {
+            user = userList[i];
+            withdrawal = pendingWithdrawals[user];
+
+            uint256 userDeposit = (totalDeposited * withdrawal.lpShares) / totalSupply();
+            _burn(user, withdrawal.lpShares);
+            _poolInfo[defaultWithdrawPid].lpShares -= withdrawal.lpShares;
+            totalDeposited -= userDeposit;
+
+            for (uint256 j = 0; j < 3; j++) {
+                IERC20Metadata(tokens[j]).safeTransfer(
+                    user,
+                    (diffBalances[j] * withdrawal.lpShares) / lpSharesTotal
+                );
+            }
+
+            delete pendingWithdrawals[user];
+        }
+
+    }
+
     /**
      * @dev deposit in one tx, without waiting complete by dev
      * @return Returns amount of lpShares minted for user
      * @param amounts - user send amounts of stablecoins to deposit
-     * @param pid - number of the pool to which the deposit goes
      */
-    function deposit(uint256[3] memory amounts, uint256 pid)
+    function deposit(uint256[POOL_ASSETS] memory amounts)
         external
         whenNotPaused
-        startedPool(pid)
+        startedPool
         returns (uint256)
     {
-        IStrategy strategy = poolInfo[pid].strategy;
+        IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
         uint256 holdings = totalHoldings();
 
         for (uint256 i = 0; i < amounts.length; i++) {
@@ -318,7 +445,7 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
             lpShares = (totalSupply() * newDeposited) / holdings;
         }
         _mint(_msgSender(), lpShares);
-        poolInfo[pid].lpShares += lpShares;
+        _poolInfo[defaultDepositPid].lpShares += lpShares;
         totalDeposited += newDeposited;
 
         emit Deposited(_msgSender(), amounts, lpShares);
@@ -328,30 +455,31 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     /**
      * @dev withdraw in one tx, without waiting complete by dev
      * @param lpShares - amount of ZLP for withdraw
-     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
-     * @param pid - number of the pool from which the funds are withdrawn
+     * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
         uint256 lpShares,
-        uint256[3] memory minAmounts,
-        uint256 pid
-    ) external whenNotPaused startedPool(pid) {
-        IStrategy strategy = poolInfo[pid].strategy;
+        uint256[POOL_ASSETS] memory tokenAmounts,
+        IStrategy.WithdrawalType withdrawalType,
+        uint128 tokenIndex
+    ) external whenNotPaused startedPool {
+        require( checkBit(availableWithdrawalTypes, uint8(withdrawalType)), 'Zunami: withdrawal type not available' );
+        IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
         address userAddr = _msgSender();
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
-            strategy.withdraw(userAddr, lpShares, poolInfo[pid].lpShares, minAmounts),
+            strategy.withdraw(userAddr, lpShares * 1e18 / _poolInfo[defaultWithdrawPid].lpShares, tokenAmounts, withdrawalType, tokenIndex),
             'Zunami: user lps share should be at least required'
         );
 
         uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
         _burn(userAddr, lpShares);
-        poolInfo[pid].lpShares -= lpShares;
+        _poolInfo[defaultWithdrawPid].lpShares -= lpShares;
 
         totalDeposited -= userDeposit;
 
-        emit Withdrawn(userAddr, minAmounts, lpShares);
+        emit Withdrawn(userAddr, withdrawalType, tokenAmounts, lpShares, tokenIndex);
     }
 
     /**
@@ -359,45 +487,114 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
      * @param _strategyAddr - the new pool strategy address
      */
 
-    function addPool(address _strategyAddr) external onlyOwner {
+    function addPool(address _strategyAddr) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_strategyAddr != address(0), 'Zunami: zero strategy addr');
         uint256 startTime = block.timestamp + (launched ? MIN_LOCK_TIME : 0);
-        poolInfo.push(
+        _poolInfo.push(
             PoolInfo({ strategy: IStrategy(_strategyAddr), startTime: startTime, lpShares: 0 })
         );
-        emit AddedPool(poolInfo.length - 1, _strategyAddr, startTime);
+        emit AddedPool(_poolInfo.length - 1, _strategyAddr, startTime);
     }
 
-    function launch() external onlyOwner {
+    /**
+     * @dev set a default pool for deposit funds
+     * @param _newPoolId - new pool id
+     */
+    function setDefaultDepositPid(uint256 _newPoolId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_newPoolId < _poolInfo.length, 'Zunami: incorrect default deposit pool id');
+
+        defaultDepositPid = _newPoolId;
+        emit SetDefaultDepositPid(_newPoolId);
+    }
+
+    /**
+     * @dev set a default pool for withdraw funds
+     * @param _newPoolId - new pool id
+     */
+    function setDefaultWithdrawPid(uint256 _newPoolId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_newPoolId < _poolInfo.length, 'Zunami: incorrect default withdraw pool id');
+
+        defaultWithdrawPid = _newPoolId;
+        emit SetDefaultWithdrawPid(_newPoolId);
+    }
+
+    function launch() external onlyRole(DEFAULT_ADMIN_ROLE) {
         launched = true;
     }
 
     /**
      * @dev dev can transfer funds from few strategy's to one strategy for better APY
-     * @param _from - array of strategy's, from which funds are withdrawn
-     * @param _to - number strategy, to which funds are deposited
+     * @param _strategies - array of strategy's, from which funds are withdrawn
+     * @param withdrawalsPercents - A percentage of the funds that should be transfered
+     * @param _receiverStrategyId - number strategy, to which funds are deposited
      */
-    function moveFundsBatch(uint256[] memory _from, uint256 _to) external onlyOwner {
-        uint256 length = _from.length;
-        uint256[3] memory amounts;
-        uint256[3] memory amountsBefore;
-        uint256 zunamiLp = 0;
+    function moveFundsBatch(
+        uint256[] memory _strategies,
+        uint256[] memory withdrawalsPercents,
+        uint256 _receiverStrategyId
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(
+            _strategies.length == withdrawalsPercents.length,
+            'Zunami: incorrect arguments for the moveFundsBatch'
+        );
+        require(_receiverStrategyId < _poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
+
+        uint256[POOL_ASSETS] memory tokenBalance;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amountsBefore[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
+            tokenBalance[y] = IERC20Metadata(tokens[y]).balanceOf(address(this));
         }
-        for (uint256 i = 0; i < length; i++) {
-            poolInfo[_from[i]].strategy.withdrawAll();
-            zunamiLp += poolInfo[_from[i]].lpShares;
-            poolInfo[_from[i]].lpShares = 0;
+
+        uint256 pid;
+        uint256 zunamiLp;
+        for (uint256 i = 0; i < _strategies.length; i++) {
+            pid = _strategies[i];
+            zunamiLp += _moveFunds(pid, withdrawalsPercents[i]);
         }
+
+        uint256[POOL_ASSETS] memory tokensRemainder;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            amounts[y] = IERC20Metadata(tokens[y]).balanceOf(address(this)) - amountsBefore[y];
-            if (amounts[y] > 0) {
-                IERC20Metadata(tokens[y]).safeTransfer(address(poolInfo[_to].strategy), amounts[y]);
+            tokensRemainder[y] =
+                IERC20Metadata(tokens[y]).balanceOf(address(this)) -
+                tokenBalance[y];
+            if (tokensRemainder[y] > 0) {
+                IERC20Metadata(tokens[y]).safeTransfer(
+                    address(_poolInfo[_receiverStrategyId].strategy),
+                    tokensRemainder[y]
+                );
             }
         }
-        poolInfo[_to].lpShares += zunamiLp;
-        require(poolInfo[_to].strategy.deposit(amounts) > 0, 'Zunami: Too low amount!');
+
+        _poolInfo[_receiverStrategyId].lpShares += zunamiLp;
+
+        require(
+            _poolInfo[_receiverStrategyId].strategy.deposit(tokensRemainder) > 0,
+            'Zunami: Too low amount!'
+        );
+    }
+
+    function _moveFunds(uint256 pid, uint256 withdrawAmount) private returns (uint256) {
+        uint256 currentLpAmount;
+
+        if (withdrawAmount == FUNDS_DENOMINATOR) {
+            _poolInfo[pid].strategy.withdrawAll();
+
+            currentLpAmount = _poolInfo[pid].lpShares;
+            _poolInfo[pid].lpShares = 0;
+        } else {
+            currentLpAmount = (_poolInfo[pid].lpShares * withdrawAmount) / FUNDS_DENOMINATOR;
+            uint256[POOL_ASSETS] memory minAmounts;
+
+            _poolInfo[pid].strategy.withdraw(
+                address(this),
+                currentLpAmount * 1e18 / _poolInfo[pid].lpShares,
+                minAmounts,
+                IStrategy.WithdrawalType.Base,
+                0
+            );
+            _poolInfo[pid].lpShares = _poolInfo[pid].lpShares - currentLpAmount;
+        }
+
+        return currentLpAmount;
     }
 
     /**
@@ -416,18 +613,24 @@ contract Zunami is Context, Ownable, ERC20, Pausable {
     }
 
     /**
-     * @dev disable renouncing of ownership for safety
-     */
-    function renounceOwnership() public view override onlyOwner {
-        revert('Zunami: must have an owner');
-    }
-
-    /**
      * @dev governance can withdraw all stuck funds in emergency case
      * @param _token - IERC20Metadata token that should be fully withdraw from Zunami
      */
-    function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
+    function withdrawStuckToken(IERC20Metadata _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 tokenBalance = _token.balanceOf(address(this));
         _token.safeTransfer(_msgSender(), tokenBalance);
+    }
+
+    /**
+     * @dev governance can add new operator for complete pending deposits and withdrawals
+     * @param _newOperator - address that governance add in list of operators
+     */
+    function updateOperator(address _newOperator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(OPERATOR_ROLE, _newOperator);
+    }
+
+    // Get bit value at position
+    function checkBit(uint8 mask, uint8 bit) internal returns (bool) {
+        return mask & (0x01 << bit) != 0;
     }
 }

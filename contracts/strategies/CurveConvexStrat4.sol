@@ -14,6 +14,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
     ICurvePool4 public pool;
 
     constructor(
+        Config memory config,
         address poolAddr,
         address poolLPAddr,
         address rewardsAddr,
@@ -23,6 +24,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         address extraTokenAddr
     )
         CurveConvexExtraStratBase(
+            config,
             poolLPAddr,
             rewardsAddr,
             poolPID,
@@ -34,22 +36,12 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         pool = ICurvePool4(poolAddr);
     }
 
-    function getCurvePoolPrice() internal view override returns (uint256) {
-        return pool.get_virtual_price();
-    }
-
-    /**
-     * @dev Returns deposited amount in USD.
-     * If deposit failed return zero
-     * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
-     */
-    function deposit(uint256[3] memory amounts) external override onlyZunami returns (uint256) {
+    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
         // check decimal amounts
         uint256 decAmounts = 0;
         uint256[4] memory amounts4;
         for (uint256 i = 0; i < 3; i++) {
-            decAmounts += amounts[i] * decimalsMultiplierS[i];
+            decAmounts += amounts[i] * decimalsMultipliers[i];
             amounts4[i] = amounts[i];
         }
 
@@ -57,61 +49,66 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts4, true);
 
-        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
-            return (0);
-        }
-
-        for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
-        }
-        uint256 depositedAmount = pool.calc_token_amount(amounts4, true);
-        pool.add_liquidity(amounts4, 0);
-
-        poolLP.safeApprove(address(booster), poolLP.balanceOf(address(this)));
-        booster.depositAll(cvxPoolPID, true);
-
-        return (depositedAmount * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
+        return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    /**
-     * @dev Returns true if withdraw success and false if fail.
-     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
-     * @return Returns true if withdraw success and false if fail.
-     * @param withdrawer - address of user that deposit funds
-     * @param lpShares - amount of ZLP for withdraw
-     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
-     */
-    function withdraw(
-        address withdrawer,
-        uint256 lpShares,
-        uint256 strategyLpShares,
-        uint256[3] memory minAmounts
-    ) external override onlyZunami returns (bool) {
+    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
+        uint256[4] memory amounts4;
+        for (uint256 i = 0; i < 3; i++) {
+            amounts4[i] = amounts[i];
+            _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
+        }
+        poolLPs = pool.add_liquidity(amounts4, 0);
+
+        poolLP.safeApprove(address(_config.booster), poolLP.balanceOf(address(this)));
+        _config.booster.depositAll(cvxPoolPID, true);
+    }
+
+    function getCurvePoolPrice() internal view override returns (uint256) {
+        return pool.get_virtual_price();
+    }
+
+    function calcCurveDepositShares(
+        WithdrawalType withdrawalType,
+        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal view override returns(
+        bool success,
+        uint256 depositedShare,
+        uint[] memory tokenAmountsDynamic
+    ) {
         uint256[4] memory minAmounts4;
         for (uint256 i = 0; i < 3; i++) {
-            minAmounts4[i] = minAmounts[i];
+            minAmounts4[i] = tokenAmounts[i];
         }
         uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
-        uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
-            strategyLpShares;
+        depositedShare = (cvxRewards.balanceOf(address(this)) * lpShareUserRation) /
+        1e18;
 
-        if (depositedShare < crvRequiredLPs) {
-            return false;
+        success = depositedShare >= crvRequiredLPs;
+
+        if(success && withdrawalType == WithdrawalType.OneCoin) {
+            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(depositedShare, int128(tokenIndex));
         }
 
-        sellRewardsAndExtraToken(depositedShare);
+        tokenAmountsDynamic = fromArr4(minAmounts4);
+    }
 
-        (
-            uint256[] memory userBalances,
-            uint256[] memory prevBalances
-        ) = getCurrentStratAndUserBalances(lpShares, strategyLpShares);
-
-        pool.remove_liquidity(depositedShare, minAmounts4);
-
-        sellToken();
-        transferUserAllTokens(withdrawer, userBalances, prevBalances);
-
-        return true;
+    function removeCurveDepositShares(
+        uint256 depositedShare,
+        uint[] memory tokenAmountsDynamic,
+        WithdrawalType withdrawalType,
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal override {
+        if(withdrawalType == WithdrawalType.Base) {
+            pool.remove_liquidity(depositedShare, toArr4(tokenAmountsDynamic));
+        } else if(withdrawalType == WithdrawalType.Imbalance) {
+            pool.remove_liquidity_imbalance(toArr4(tokenAmountsDynamic), depositedShare);
+        } else if(withdrawalType == WithdrawalType.OneCoin) {
+            pool.remove_liquidity_one_coin(depositedShare, int128(tokenIndex), tokenAmounts[tokenIndex]);
+        }
     }
 
     /**

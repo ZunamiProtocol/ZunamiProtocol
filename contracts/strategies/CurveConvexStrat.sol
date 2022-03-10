@@ -7,101 +7,87 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
-import '../interfaces/ICurvePoolUnderlying.sol';
+import '../interfaces/ICurveLandingPool.sol';
 import './CurveConvexStratBase.sol';
 
 contract CurveConvexStrat is Context, CurveConvexStratBase {
     using SafeERC20 for IERC20Metadata;
 
-    ICurvePoolUnderlying public pool;
+    ICurveLandingPool public pool;
 
     constructor(
+        Config memory config,
         address poolAddr,
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID
-    ) CurveConvexStratBase(poolLPAddr, rewardsAddr, poolPID) {
-        pool = ICurvePoolUnderlying(poolAddr);
+    ) CurveConvexStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
+        pool = ICurveLandingPool(poolAddr);
+    }
+
+    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
+        uint256 _amountsTotal;
+        for (uint256 i = 0; i < 3; i++) {
+            _amountsTotal += amounts[i] * decimalsMultipliers[i];
+        }
+        uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
+        uint256 lpPrice = pool.get_virtual_price();
+        uint256 depositedLp = pool.calc_token_amount(amounts, true);
+
+        return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
+    }
+
+    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
+        for (uint256 i = 0; i < 3; i++) {
+            _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
+        }
+
+        poolLPs = pool.add_liquidity(amounts, 0, true);
+
+        poolLP.safeApprove(address(_config.booster), poolLPs);
+        _config.booster.depositAll(cvxPoolPID, true);
     }
 
     function getCurvePoolPrice() internal view override returns (uint256) {
         return pool.get_virtual_price();
     }
 
-    /**
-     * @dev Returns deposited amount in USD.
-     * If deposit failed return zero
-     * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
-     */
-    function deposit(uint256[3] memory amounts) external virtual onlyZunami returns (uint256) {
-        uint256 _amountsTotal;
-        for (uint256 i = 0; i < 3; i++) {
-            _amountsTotal += amounts[i] * decimalsMultiplierS[i];
-        }
-        uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
-        uint256 lpPrice = pool.get_virtual_price();
-        uint256 depositedLp = pool.calc_token_amount(amounts, true);
-        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
-            return 0;
+    function calcCurveDepositShares(
+        WithdrawalType withdrawalType,
+        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal view override returns(
+        bool success,
+        uint256 depositedShare,
+        uint[] memory tokenAmountsDynamic
+    ) {
+        uint256 crvRequiredLPs = pool.calc_token_amount(tokenAmounts, false);
+        depositedShare = (cvxRewards.balanceOf(address(this)) * lpShareUserRation) /
+            1e18;
+        success = depositedShare >= crvRequiredLPs;
+
+        if(success && withdrawalType == WithdrawalType.OneCoin) {
+            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(depositedShare, int128(tokenIndex));
         }
 
-        for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
-        }
-        uint256 poolLPs = pool.add_liquidity(amounts, 0, true);
-
-        poolLP.safeApprove(address(booster), poolLPs);
-        booster.depositAll(cvxPoolPID, true);
-
-        return (poolLPs * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
+        tokenAmountsDynamic = fromArr3(tokenAmounts);
     }
 
-    /**
-     * @dev Returns true if withdraw success and false if fail.
-     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
-     * @return Returns true if withdraw success and false if fail.
-     * @param withdrawer - address of user that deposit funds
-     * @param lpShares - amount of ZLP for withdraw
-     * @param minAmounts -  array of amounts stablecoins that user want minimum receive
-     */
-    function withdraw(
-        address withdrawer,
-        uint256 lpShares,
-        uint256 strategyLpShares,
-        uint256[3] memory minAmounts
-    ) external virtual onlyZunami returns (bool) {
-        uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts, false);
-        uint256 depositedShare = (cvxRewards.balanceOf(address(this)) * lpShares) /
-            strategyLpShares;
-
-        if (depositedShare < crvRequiredLPs) {
-            return false;
+    function removeCurveDepositShares(
+        uint256 depositedShare,
+        uint[] memory tokenAmountsDynamic,
+        WithdrawalType withdrawalType,
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal override {
+        if(withdrawalType == WithdrawalType.Base) {
+            pool.remove_liquidity(depositedShare, tokenAmounts, true);
+        } else if(withdrawalType == WithdrawalType.Imbalance) {
+            pool.remove_liquidity_imbalance(tokenAmounts, depositedShare, true);
+        } else if(withdrawalType == WithdrawalType.OneCoin) {
+            pool.remove_liquidity_one_coin(depositedShare, int128(tokenIndex), tokenAmounts[tokenIndex], true);
         }
-
-        cvxRewards.withdrawAndUnwrap(depositedShare, true);
-        sellCrvCvx();
-
-        uint256[] memory userBalances = new uint256[](3);
-        uint256[] memory prevBalances = new uint256[](3);
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
-            userBalances[i] = ((prevBalances[i] - managementFee) * lpShares) / strategyLpShares;
-        }
-
-        pool.remove_liquidity(depositedShare, minAmounts, true);
-
-        for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(tokens[i]).safeTransfer(
-                withdrawer,
-                IERC20Metadata(tokens[i]).balanceOf(address(this)) -
-                    prevBalances[i] +
-                    userBalances[i]
-            );
-        }
-
-        return true;
     }
 
     /**
@@ -110,18 +96,12 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
      */
     function withdrawAll() external virtual onlyZunami {
         cvxRewards.withdrawAllAndUnwrap(true);
-        sellCrvCvx();
+        sellRewards();
 
         uint256 lpBalance = poolLP.balanceOf(address(this));
         uint256[3] memory minAmounts;
         pool.remove_liquidity(lpBalance, minAmounts, true);
 
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            IERC20Metadata(tokens[i]).safeTransfer(
-                _msgSender(),
-                IERC20Metadata(tokens[i]).balanceOf(address(this)) - managementFee
-            );
-        }
+        transferZunamiAllTokens();
     }
 }
