@@ -100,7 +100,7 @@ abstract contract CurveConvexStratBase is Ownable {
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal virtual returns (bool);
+   function checkDepositSuccessful(uint256[3] memory amounts) internal view virtual returns (bool);
 
     function depositPool(uint256[3] memory amounts) internal virtual returns (uint256);
 
