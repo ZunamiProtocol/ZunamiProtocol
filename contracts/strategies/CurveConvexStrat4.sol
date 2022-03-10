@@ -36,17 +36,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         pool = ICurvePool4(poolAddr);
     }
 
-    function getCurvePoolPrice() internal view override returns (uint256) {
-        return pool.get_virtual_price();
-    }
-
-    /**
-     * @dev Returns deposited amount in USD.
-     * If deposit failed return zero
-     * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
-     */
-    function deposit(uint256[3] memory amounts) external override onlyZunami returns (uint256) {
+    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
         // check decimal amounts
         uint256 decAmounts = 0;
         uint256[4] memory amounts4;
@@ -59,20 +49,23 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts4, true);
 
-        if ((depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR < amountsMin) {
-            return (0);
-        }
+        return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
+    }
 
+    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
+        uint256[4] memory amounts4;
         for (uint256 i = 0; i < 3; i++) {
-            IERC20Metadata(_config.tokens[i]).safeIncreaseAllowance(address(pool), amounts[i]);
+            amounts4[i] = amounts[i];
+            _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
         }
-        uint256 depositedAmount = pool.calc_token_amount(amounts4, true);
-        pool.add_liquidity(amounts4, 0);
+        poolLPs = pool.add_liquidity(amounts4, 0);
 
         poolLP.safeApprove(address(_config.booster), poolLP.balanceOf(address(this)));
         _config.booster.depositAll(cvxPoolPID, true);
+    }
 
-        return (depositedAmount * pool.get_virtual_price()) / CURVE_PRICE_DENOMINATOR;
+    function getCurvePoolPrice() internal view override returns (uint256) {
+        return pool.get_virtual_price();
     }
 
     function calcCurveDepositShares(

@@ -33,6 +33,8 @@ const mockStrategy = async () => mockContract('IStrategy');
 const setTotalHoldings = async (strategy: MockContract, holdings: any) =>
     await strategy.mock.totalHoldings.returns(bn(holdings).toFixed());
 
+enum WithdrawalType { Base, OneCoin, Imbalance };
+
 describe('Zunami', () => {
     let admin: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -89,16 +91,16 @@ describe('Zunami', () => {
         await expect(await zunami.launched()).to.be.equal(false);
 
         await expect(await zunami.FEE_DENOMINATOR()).to.be.equal(1000);
-        await expect(await zunami.managementFee()).to.be.equal(10);
+        await expect(await zunami.managementFee()).to.be.equal(100);
         await expect(await zunami.MIN_LOCK_TIME()).to.be.equal(time.duration.days(1).toString());
 
         await expect(await zunami.paused()).to.be.equal(false);
     });
 
     it('should be updatable management fee', async () => {
-        await expect(await zunami.managementFee()).to.be.equal(10);
+        await expect(await zunami.managementFee()).to.be.equal(100);
 
-        const newManagementFee = 20;
+        const newManagementFee = 200;
         await zunami.setManagementFee(newManagementFee);
 
         await expect(await zunami.managementFee()).to.be.equal(newManagementFee);
@@ -149,7 +151,7 @@ describe('Zunami', () => {
         await expect(await zunami.totalHoldings()).to.be.equal(totalHoldings);
     });
 
-    it.only('should move a part of the funds from one strategy to others', async () => {
+    it('should move a part of the funds from one strategy to others', async () => {
         const strategy1 = await mockStrategy();
         const strategy2 = await mockStrategy();
         await zunami.addPool(strategy1.address);
@@ -176,15 +178,17 @@ describe('Zunami', () => {
         await strategy1.mock.withdraw
             .withArgs(
                 zunami.address,
-                lpShares,
-                (await zunami.poolInfo(pid)).lpShares.toString(),
-
-                [0, 0, 0]
+                ethers.BigNumber.from(lpShares.toString()).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
+                [0, 0, 0],
+                WithdrawalType.Base,
+                0
             )
             .returns(depositedValue1.div(2));
 
+        await strategy2.mock.deposit.withArgs([0,0,0]).returns(depositedValue1.toFixed());
         await zunami.connect(admin).moveFundsBatch([0], [5_000], 1);
 
+        await strategy1.mock.deposit.withArgs([0,0,0]).returns(depositedValue2.toFixed());
         await strategy2.mock.withdrawAll.returns();
         await zunami.connect(admin).moveFundsBatch([1], [10_000], 0);
     });
@@ -242,7 +246,7 @@ describe('Zunami', () => {
         const tokenBalances = await mintAndApproveTokens(admin, [1, 1, 1]);
 
         await expectRevert(
-            zunami.withdraw(lpShares.toString(), tokenBalances, 0, 0),
+            zunami.withdraw(lpShares.toString(), tokenBalances, WithdrawalType.Base, 0),
             'Zunami: pool not existed!'
         );
 
@@ -253,7 +257,7 @@ describe('Zunami', () => {
         await time.increaseTo(timeAfterLock);
 
         await expectRevert(
-            zunami.withdraw(lpShares.toString(), tokenBalances, 0, 0),
+            zunami.withdraw(lpShares.toString(), tokenBalances, WithdrawalType.Base, 0),
             'Zunami: not enough LP balance'
         );
     });
@@ -277,12 +281,14 @@ describe('Zunami', () => {
 
         const lpShares = depositedValue.dividedToIntegerBy(2).toFixed();
 
+        await zunami.setAvailableWithdrawalTypes((1 + 4).toString()); // OneCoin method disabled
+
         await strategy.mock.withdraw
             .withArgs(
                 admin.address,
                 ethers.BigNumber.from(lpShares).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
                 tokenBalances,
-                0,
+                WithdrawalType.OneCoin,
                 0
             )
             .returns(depositedValue.toFixed());
@@ -290,7 +296,14 @@ describe('Zunami', () => {
         const totalSupply = bn((await zunami.totalSupply()).toString());
         const totalDeposited = bn((await zunami.totalDeposited()).toString());
 
-        await zunami.withdraw(lpShares, tokenBalances, 0, 0);
+        await expectRevert(
+            zunami.withdraw(lpShares, tokenBalances, WithdrawalType.OneCoin, 0),
+            'Zunami: withdrawal type not available'
+        );
+
+        await zunami.setAvailableWithdrawalTypes('2'); // OneCoin method enabled
+
+        await zunami.withdraw(lpShares, tokenBalances, WithdrawalType.OneCoin, 0)
 
         const newTotalSupply = totalSupply.minus(lpShares).toFixed();
         expect(await zunami.totalSupply()).to.be.equal(newTotalSupply);
@@ -301,16 +314,18 @@ describe('Zunami', () => {
         const newTotalDeposited = depositedValue.minus(userDeposit).toFixed();
         expect(await zunami.totalDeposited()).to.be.equal(newTotalDeposited);
 
+        await zunami.setAvailableWithdrawalTypes((2 + 4).toString()); // Base method enabled
+
         await strategy.mock.withdraw
             .withArgs(
                 admin.address,
                 ethers.BigNumber.from(lpShares).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
                 tokenBalances,
-                0,
+                WithdrawalType.Imbalance,
                 0
             )
             .returns(depositedValue.toFixed());
-        await zunami.withdraw(lpShares, tokenBalances, 0, 0);
+        await zunami.withdraw(lpShares, tokenBalances, WithdrawalType.Imbalance, 0);
 
         expect(await zunami.totalSupply()).to.be.equal(0);
         expect(await zunami.balanceOf(admin.address)).to.be.equal(0);
@@ -498,7 +513,7 @@ describe('Zunami', () => {
                     tokenify(lpSharesThird).toFixed(),
                     decify(lpSharesThird, 6).toFixed(),
                     decify(lpSharesThird, 6).toFixed(),
-                ], 0, 0)
+                ], WithdrawalType.Base, 0)
                 .returns(true);
         }
         await zunami.completeWithdrawals(users.map((user) => user.address));
@@ -537,11 +552,11 @@ describe('Zunami', () => {
                 .minus(lpShares.toString() * j)
                 .toFixed();
             await strategy.mock.withdraw
-                .withArgs(user.address, lpShares.mul(1e18).div(poolLpShares).toString(), [
+                .withArgs(user.address, lpShares.mul(1e18.toString()).div(poolLpShares).toString(), [
                     tokenify(lpSharesOther).toFixed(),
                     decify(lpSharesOther, 6).toFixed(),
                     decify(lpSharesOther, 6).toFixed(),
-                ], 0, 0)
+                ], WithdrawalType.Base, 0)
                 .returns(true);
         }
         await zunami.completeWithdrawals(users.map((user) => user.address));
