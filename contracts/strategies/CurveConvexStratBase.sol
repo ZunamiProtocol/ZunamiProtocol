@@ -257,9 +257,12 @@ abstract contract CurveConvexStratBase is Ownable {
     function autoCompound() public onlyZunami {
         sellRewards();
 
+        uint256 usdtBalance =  _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
+
         uint256[3] memory amounts;
-        amounts[ZUNAMI_USDT_TOKEN_ID] = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
-        depositPool(amounts);
+        amounts[ZUNAMI_USDT_TOKEN_ID] = usdtBalance;
+
+        if(usdtBalance > 0) depositPool(amounts);
     }
 
     /**

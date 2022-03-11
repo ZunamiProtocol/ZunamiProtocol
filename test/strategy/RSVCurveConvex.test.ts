@@ -268,7 +268,7 @@ describe(STRATEGY_NAME, function () {
                         .delegateDeposit([dai_balance, usdc_balance, usdt_balance])
                 );
             }
-            expect(await zunami.connect(carol).pendingDepositRemove());
+            expect(await zunami.connect(carol).removePendingDeposit());
             expect(await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME)));
             expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, rosa]) {

@@ -331,7 +331,7 @@ describe('Zunami', function () {
             });
         });
         describe('Test strategy2b - USDP', function () {
-            it('should delegate & completeDeposit in new pool, one user pendingDepositRemove successful complete', async () => {
+            it('should delegate & completeDeposit in new pool, one user removePendingDeposit successful complete', async () => {
                 for (const user of [alice, bob, carol, rosa]) {
                     let usdt_balance = await usdt.balanceOf(user.address);
                     let usdc_balance = await usdc.balanceOf(user.address);
@@ -343,7 +343,7 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.connect(carol).pendingDepositRemove());
+                expect(await zunami.connect(carol).removePendingDeposit());
 
                 expect(await zunami.addPool(strategy2b.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -390,7 +390,7 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.connect(carol).pendingDepositRemove());
+                expect(await zunami.connect(carol).removePendingDeposit());
 
                 expect(await zunami.connect(admin).addPool(strategy4.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
