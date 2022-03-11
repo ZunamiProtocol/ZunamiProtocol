@@ -630,7 +630,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     }
 
     // Get bit value at position
-    function checkBit(uint8 mask, uint8 bit) internal returns (bool) {
+    function checkBit(uint8 mask, uint8 bit) internal pure returns (bool) {
         return mask & (0x01 << bit) != 0;
     }
 }

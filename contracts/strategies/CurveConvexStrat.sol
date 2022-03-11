@@ -25,7 +25,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         pool = ICurveLandingPool(poolAddr);
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
+   function checkDepositSuccessful(uint256[3] memory amounts) internal view override returns (bool) {
         uint256 _amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
             _amountsTotal += amounts[i] * decimalsMultipliers[i];

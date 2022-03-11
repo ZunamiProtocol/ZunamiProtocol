@@ -42,7 +42,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
+   function checkDepositSuccessful(uint256[3] memory amounts) internal view override returns (bool) {
         uint256 amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
             amountsTotal += amounts[i] * decimalsMultipliers[i];

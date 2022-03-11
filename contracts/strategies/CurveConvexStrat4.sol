@@ -36,7 +36,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         pool = ICurvePool4(poolAddr);
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal override returns (bool) {
+   function checkDepositSuccessful(uint256[3] memory amounts) internal view override returns (bool) {
         // check decimal amounts
         uint256 decAmounts = 0;
         uint256[4] memory amounts4;
