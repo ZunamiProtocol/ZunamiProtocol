@@ -52,41 +52,48 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         return pool.get_virtual_price();
     }
 
-    function calcCurveDepositShares(
+    function calcWithdrawOneCoin(
+        uint256 userRatioOfCrvLps,
+        uint128 tokenIndex
+    ) external override view returns(uint256 tokenAmount) {
+        uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) /
+            1e18;
+        return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+    }
+
+    function calcCrvLps(
         WithdrawalType withdrawalType,
-        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal view override returns(
         bool success,
-        uint256 depositedShare,
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic
     ) {
-        uint256 crvRequiredLPs = pool.calc_token_amount(tokenAmounts, false);
-        depositedShare = (cvxRewards.balanceOf(address(this)) * lpShareUserRation) /
+        uint256 requiredCrvLPs = pool.calc_token_amount(tokenAmounts, false);
+        removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) /
             1e18;
-        success = depositedShare >= crvRequiredLPs;
+        success = removingCrvLps >= requiredCrvLPs;
 
         if(success && withdrawalType == WithdrawalType.OneCoin) {
-            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(depositedShare, int128(tokenIndex));
+            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
         }
 
         tokenAmountsDynamic = fromArr3(tokenAmounts);
     }
 
-    function removeCurveDepositShares(
-        uint256 depositedShare,
+    function removeCrvLps(
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic,
         WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
         if(withdrawalType == WithdrawalType.Base) {
-            pool.remove_liquidity(depositedShare, tokenAmounts, true);
-        } else if(withdrawalType == WithdrawalType.Imbalance) {
-            pool.remove_liquidity_imbalance(tokenAmounts, depositedShare, true);
+            pool.remove_liquidity(removingCrvLps, tokenAmounts, true);
         } else if(withdrawalType == WithdrawalType.OneCoin) {
-            pool.remove_liquidity_one_coin(depositedShare, int128(tokenIndex), tokenAmounts[tokenIndex], true);
+            pool.remove_liquidity_one_coin(removingCrvLps, int128(tokenIndex), tokenAmounts[tokenIndex], true);
         }
     }
 

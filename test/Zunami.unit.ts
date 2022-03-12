@@ -33,7 +33,7 @@ const mockStrategy = async () => mockContract('IStrategy');
 const setTotalHoldings = async (strategy: MockContract, holdings: any) =>
     await strategy.mock.totalHoldings.returns(bn(holdings).toFixed());
 
-enum WithdrawalType { Base, OneCoin, Imbalance };
+enum WithdrawalType { Base, OneCoin };
 
 describe('Zunami', () => {
     let admin: SignerWithAddress;
@@ -321,11 +321,11 @@ describe('Zunami', () => {
                 admin.address,
                 ethers.BigNumber.from(lpShares).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
                 tokenBalances,
-                WithdrawalType.Imbalance,
+                WithdrawalType.Base,
                 0
             )
             .returns(depositedValue.toFixed());
-        await zunami.withdraw(lpShares, tokenBalances, WithdrawalType.Imbalance, 0);
+        await zunami.withdraw(lpShares, tokenBalances, WithdrawalType.Base, 0);
 
         expect(await zunami.totalSupply()).to.be.equal(0);
         expect(await zunami.balanceOf(admin.address)).to.be.equal(0);

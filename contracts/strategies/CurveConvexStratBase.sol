@@ -18,7 +18,7 @@ abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    enum WithdrawalType { Base, OneCoin, Imbalance }
+    enum WithdrawalType { Base, OneCoin }
 
     struct Config {
         IERC20Metadata[3] tokens;
@@ -106,11 +106,11 @@ abstract contract CurveConvexStratBase is Ownable {
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
-    function withdrawCvx(uint256 depositedShare) internal virtual {
-        cvxRewards.withdrawAndUnwrap(depositedShare, true);
+    function withdrawCvx(uint256 removingCrvLps) internal virtual {
+        cvxRewards.withdrawAndUnwrap(removingCrvLps, true);
     }
 
-    function snapshotTokensBalances(uint256 lpShareUserRation)
+    function snapshotTokensBalances(uint256 userRatioOfCrvLps)
         internal
         view
         returns (uint256[] memory userBalances, uint256[] memory prevBalances)
@@ -120,7 +120,7 @@ abstract contract CurveConvexStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
             prevBalances[i] = _config.tokens[i].balanceOf(address(this));
-            userBalances[i] = ((prevBalances[i] - managementFee) * lpShareUserRation) / 1e18;
+            userBalances[i] = ((prevBalances[i] - managementFee) * userRatioOfCrvLps) / 1e18;
         }
     }
 
@@ -149,59 +149,64 @@ abstract contract CurveConvexStratBase is Ownable {
         }
     }
 
+    function calcWithdrawOneCoin(
+        uint256 sharesAmount,
+        uint128 tokenIndex
+    ) external virtual view returns(uint256 tokenAmount);
+
     /**
      * @dev Returns true if withdraw success and false if fail.
-     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
+     * Withdraw failed when user removingCrvLps < requiredCrvLPs (wrong minAmounts)
      * @return Returns true if withdraw success and false if fail.
      * @param withdrawer - address of user that deposit funds
-     * @param lpShareUserRation - user's ration of ZLP for withdraw
+     * @param userRatioOfCrvLps - user's Ratio of ZLP for withdraw
      * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
         address withdrawer,
-        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
-        require(lpShareUserRation > 0 && lpShareUserRation <= 1e18, "Wrong lp ration");
+        require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, "Wrong lp Ratio");
         (
             bool success,
-            uint256 depositedShare,
+            uint256 removingCrvLps,
             uint[] memory tokenAmountsDynamic
-        ) = calcCurveDepositShares(withdrawalType, lpShareUserRation, tokenAmounts, tokenIndex);
+        ) = calcCrvLps(withdrawalType, userRatioOfCrvLps, tokenAmounts, tokenIndex);
 
         if (!success) {
             return false;
         }
 
-        withdrawCvx(depositedShare);
+        withdrawCvx(removingCrvLps);
 
         (
             uint256[] memory userBalances,
             uint256[] memory prevBalances
-        ) = snapshotTokensBalances(lpShareUserRation);
+        ) = snapshotTokensBalances(userRatioOfCrvLps);
 
-        removeCurveDepositShares(depositedShare, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
+        removeCrvLps(removingCrvLps, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
 
         transferAllTokensOut(withdrawer, userBalances, prevBalances);
 
         return true;
     }
 
-    function calcCurveDepositShares(
+    function calcCrvLps(
         WithdrawalType withdrawalType,
-        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal virtual returns(
         bool success,
-        uint256 depositedShare,
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic
     );
 
-    function removeCurveDepositShares(
-        uint256 depositedShare,
+    function removeCrvLps(
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic,
         WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
