@@ -164,6 +164,7 @@ abstract contract CurveConvexStratBase is Ownable {
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
+        require(lpShareUserRation > 0 && lpShareUserRation <= 1e18, "Wrong lp ration");
         (
             bool success,
             uint256 depositedShare,
