@@ -39,6 +39,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     }
 
     uint8 public constant POOL_ASSETS = 3;
+    uint256 public constant LP_RATIO_MULTIPLIER = 1e18;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MIN_LOCK_TIME = 1 days;
     uint256 public constant FUNDS_DENOMINATOR = 10_000;
@@ -327,7 +328,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
                 !(
                     strategy.withdraw(
                         user,
-                        withdrawal.lpShares * 1e18 / _poolInfo[defaultWithdrawPid].lpShares,
+                        calcLpRationSafe(withdrawal.lpShares, _poolInfo[defaultWithdrawPid].lpShares),
                         withdrawal.tokenAmounts,
                         IStrategy.WithdrawalType.Base,
                         0
@@ -347,6 +348,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
             emit Withdrawn(user, IStrategy.WithdrawalType.Base, withdrawal.tokenAmounts, withdrawal.lpShares, 0);
             delete _pendingWithdrawals[user];
         }
+    }
+
+    function calcLpRationSafe(uint256 outLpShares, uint256 strategyLpShares) internal returns (uint256 lpShareRation) {
+        lpShareRation = outLpShares * LP_RATIO_MULTIPLIER / strategyLpShares;
+        require(lpShareRation > 0 && lpShareRation <= LP_RATIO_MULTIPLIER, "Zunami: Wrong out lp ration");
     }
 
     function completeWithdrawalsOptimized(address[] memory userList)
@@ -389,7 +395,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
             prevBalances[i] = IERC20Metadata(tokens[i]).balanceOf(address(this));
         }
 
-        if( !strategy.withdraw(address(this), lpSharesTotal * 1e18 / _poolInfo[defaultWithdrawPid].lpShares, minAmountsTotal, IStrategy.WithdrawalType.Base, 0) ) {
+        if( !strategy.withdraw(address(this), calcLpRationSafe(lpSharesTotal, _poolInfo[defaultWithdrawPid].lpShares), minAmountsTotal, IStrategy.WithdrawalType.Base, 0) ) {
             for (i = 0; i < userList.length; i++) {
                 user = userList[i];
                 withdrawal = _pendingWithdrawals[user];
@@ -482,7 +488,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
-            strategy.withdraw(userAddr, lpShares * 1e18 / _poolInfo[defaultWithdrawPid].lpShares, tokenAmounts, withdrawalType, tokenIndex),
+            strategy.withdraw(userAddr, calcLpRationSafe(lpShares, _poolInfo[defaultWithdrawPid].lpShares), tokenAmounts, withdrawalType, tokenIndex),
             'Zunami: incorrect withdraw params'
         );
 
@@ -599,7 +605,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
             _poolInfo[pid].strategy.withdraw(
                 address(this),
-                currentLpAmount * 1e18 / _poolInfo[pid].lpShares,
+                calcLpRationSafe(currentLpAmount, _poolInfo[pid].lpShares),
                 minAmounts,
                 IStrategy.WithdrawalType.Base,
                 0
