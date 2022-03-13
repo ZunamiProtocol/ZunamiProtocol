@@ -25,7 +25,7 @@ import { parseUnits } from 'ethers/lib/utils';
 
 import * as config from '../config.json';
 
-enum WithdrawalType { Base, OneCoin, Imbalance };
+enum WithdrawalType { Base, OneCoin };
 
 describe('Zunami', function () {
     let admin: SignerWithAddress;
@@ -224,10 +224,10 @@ describe('Zunami', function () {
                         await zunami
                             .connect(user)
                             .withdraw(await zunami.balanceOf(user.address), [
-                                0, //parseUnits((1000 - 3).toString(), 'ether'),
-                                0, //parseUnits((1000 - 3).toString(), 'mwei'),
-                                0, //parseUnits((1000 - 3).toString(), 'mwei'),
-                            ], WithdrawalType.Base, 0) // WithdrawalType.Imbalance
+                                0,
+                                0,
+                                0,
+                            ], WithdrawalType.Base, 0)
                     );
                 }
 
