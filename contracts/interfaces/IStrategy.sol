@@ -26,4 +26,9 @@ interface IStrategy {
         uint256 userRatioOfCrvLps,
         uint128 tokenIndex
     ) external view returns(uint256 tokenAmount);
+
+    function calcSharesAmount(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external view returns(uint256 sharesAmount);
 }

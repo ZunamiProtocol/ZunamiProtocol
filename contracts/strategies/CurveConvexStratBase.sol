@@ -154,6 +154,11 @@ abstract contract CurveConvexStratBase is Ownable {
         uint128 tokenIndex
     ) external virtual view returns(uint256 tokenAmount);
 
+    function calcSharesAmount(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external virtual view returns(uint256 sharesAmount);
+
     /**
      * @dev Returns true if withdraw success and false if fail.
      * Withdraw failed when user removingCrvLps < requiredCrvLPs (wrong minAmounts)
@@ -169,6 +174,7 @@ abstract contract CurveConvexStratBase is Ownable {
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
+
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, "Wrong lp Ratio");
         (
             bool success,
@@ -288,10 +294,10 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 amountIn = (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
             _config.cvx.balanceOf(address(this));
-        uint256 cvxEarningsUSDT = priceTokenByUniswap(amountIn, _config.cvxToUsdtPath);
+        uint256 cvxEarningsUSDT = priceTokenByExchange(amountIn, _config.cvxToUsdtPath);
 
         amountIn = crvEarned + _config.crv.balanceOf(address(this));
-        uint256 crvEarningsUSDT = priceTokenByUniswap(amountIn, _config.crvToUsdtPath);
+        uint256 crvEarningsUSDT = priceTokenByExchange(amountIn, _config.crvToUsdtPath);
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -307,13 +313,13 @@ abstract contract CurveConvexStratBase is Ownable {
             decimalsMultipliers[ZUNAMI_USDT_TOKEN_ID];
     }
 
-    function priceTokenByUniswap(uint256 amountIn, address[] memory uniswapPath)
+    function priceTokenByExchange(uint256 amountIn, address[] memory exchangePath)
         internal
         view
         returns (uint256)
     {
         if (amountIn == 0) return 0;
-        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, uniswapPath);
+        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, exchangePath);
         return amounts[amounts.length - 1];
     }
 

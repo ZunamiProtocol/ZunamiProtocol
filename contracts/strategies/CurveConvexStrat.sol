@@ -61,6 +61,13 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
     }
 
+    function calcSharesAmount(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external override view returns(uint256 sharesAmount) {
+        return pool.calc_token_amount(tokenAmounts, isDeposit);
+    }
+
     function calcCrvLps(
         WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
