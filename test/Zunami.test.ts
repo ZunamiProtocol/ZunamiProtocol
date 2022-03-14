@@ -279,6 +279,8 @@ describe('Zunami', function () {
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
                 expect(await strategy.claimManagementFees());
                 expect(await zunami.addPool(strategy2.address));
+                expect(await zunami.setDefaultDepositPid(1));
+                expect(await zunami.setDefaultWithdrawPid(1));
                 expect(parseInt(await zunami.poolCount())).equal(2);
                 // expect().equal(2);
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -316,10 +318,7 @@ describe('Zunami', function () {
                 // Imbalance onecoin withdraw
                 const coins = 100 * 1e6;
                 let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
-                const lpAmount = await zunami
-                    .connect(alice)
-                    .calcSharesAmount([0, 0, coins], false);
-
+                const lpAmount = await zunami.connect(alice).calcSharesAmount([0, 0, coins], false);
                 console.log(`calcSharesAmount: calc -- ${lpAmount}`);
 
                 await zunami
@@ -327,8 +326,11 @@ describe('Zunami', function () {
                     .withdraw(lpAmount, minAmount, withdrawalType, usdtIndex);
 
                 let usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
+                console.log(`Alexey: usdtUserBalanceAfter -- ${usdtUserBalanceAfter}`);
 
-                console.log(`calcSharesAmount: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+                console.log(
+                    `calcSharesAmount: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
+                );
 
                 expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(coins);
 
@@ -341,14 +343,18 @@ describe('Zunami', function () {
                     .connect(alice)
                     .calcWithdrawOneCoin(userLpRation, usdtIndex);
 
-                console.log(`calcWithdrawOneCoin calc -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+                console.log(
+                    `calcWithdrawOneCoin calc -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
+                );
                 await zunami
                     .connect(alice)
                     .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex);
                 usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
 
                 expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(usdtAmountProbe);
-                console.log(`calcWithdrawOneCoin result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+                console.log(
+                    `calcWithdrawOneCoin result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
+                );
             });
 
             it('should withdraw after moveFunds successful complete', async () => {
