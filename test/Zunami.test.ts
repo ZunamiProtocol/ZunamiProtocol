@@ -25,7 +25,10 @@ import { parseUnits } from 'ethers/lib/utils';
 
 import * as config from '../config.json';
 
-enum WithdrawalType { Base, OneCoin };
+enum WithdrawalType {
+    Base,
+    OneCoin,
+}
 
 describe('Zunami', function () {
     let admin: SignerWithAddress;
@@ -223,11 +226,12 @@ describe('Zunami', function () {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), [
-                                0,
-                                0,
-                                0,
-                            ], WithdrawalType.Base, 0)
+                            .withdraw(
+                                await zunami.balanceOf(user.address),
+                                [0, 0, 0],
+                                WithdrawalType.Base,
+                                0
+                            )
                     );
                 }
 
@@ -304,14 +308,59 @@ describe('Zunami', function () {
                 expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
             });
 
+            it('should withdraw in one coin successfully', async () => {
+                const minAmount = ['0', '0', '0'];
+                const withdrawalType = WithdrawalType.OneCoin;
+                const usdtIndex = 2;
+                let userBalance;
+
+                // Imbalance onecoin withdraw
+                const coins = 10;
+                let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
+                const lpAmount = await zunami
+                    .connect(alice)
+                    ['calcWithdrawOneCoin(uint256[3],bool)']([0, 0, coins], false);
+
+                console.log(`Alexey: lpAmount -- ${lpAmount}`);
+
+                await zunami
+                    .connect(alice)
+                    .withdraw(lpAmount, minAmount, withdrawalType, usdtIndex);
+                let usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
+
+                console.log(`Alexey: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+                expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(coins);
+
+                // Base onecoin withdraw
+                userBalance = 100;
+                usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
+
+                const usdtAmountProbe = await zunami
+                    .connect(alice)
+                    ['calcWithdrawOneCoin(uint256,uint128)'](userBalance, usdtIndex);
+
+                await zunami
+                    .connect(alice)
+                    .withdraw(userBalance, minAmount, withdrawalType, usdtIndex);
+                usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
+
+                expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(usdtAmountProbe);
+                console.log(`Alexey: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+            });
+
             it('should withdraw after moveFunds successful complete', async () => {
-                // expect(await zunami.moveFundsBatch([1], 0));
+                const usdtIndex = 2;
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], WithdrawalType.OneCoin, 2)
+                            .withdraw(
+                                await zunami.balanceOf(user.address),
+                                ['0', '0', '0'],
+                                WithdrawalType.OneCoin,
+                                usdtIndex
+                            )
                     );
                 }
 
@@ -404,7 +453,9 @@ describe('Zunami', function () {
                 }
 
                 expect(
-                    await zunami.connect(admin).completeWithdrawalsOptimized([alice.address, bob.address])
+                    await zunami
+                        .connect(admin)
+                        .completeWithdrawalsOptimized([alice.address, bob.address])
                 );
                 // expect(await zunami.moveFundsBatch([1, 2, 3], 0));
             });
@@ -522,20 +573,22 @@ describe('Zunami', function () {
                 expect(
                     await zunami
                         .connect(alice)
-                        .withdraw(aliceBalance < bobBalance ? aliceBalance : bobBalance, [
-                            '0',
-                            '0',
-                            '0',
-                        ], WithdrawalType.Base, 0)
+                        .withdraw(
+                            aliceBalance < bobBalance ? aliceBalance : bobBalance,
+                            ['0', '0', '0'],
+                            WithdrawalType.Base,
+                            0
+                        )
                 );
                 expect(
                     await zunami
                         .connect(bob)
-                        .withdraw(bobBalance < aliceBalance ? bobBalance : aliceBalance, [
-                            '0',
-                            '0',
-                            '0',
-                        ], WithdrawalType.Base, 0)
+                        .withdraw(
+                            bobBalance < aliceBalance ? bobBalance : aliceBalance,
+                            ['0', '0', '0'],
+                            WithdrawalType.Base,
+                            0
+                        )
                 );
             });
 
