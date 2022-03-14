@@ -58,9 +58,10 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
             amounts4[i] = amounts[i];
             _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
         }
-        poolLPs = pool.add_liquidity(amounts4, 0);
 
-        poolLP.safeApprove(address(_config.booster), poolLP.balanceOf(address(this)));
+        pool.add_liquidity(amounts4, 0);
+        poolLPs = poolLP.balanceOf(address(this));
+        poolLP.safeApprove(address(_config.booster), poolLPs);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 
@@ -72,9 +73,10 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         uint256 userRatioOfCrvLps,
         uint128 tokenIndex
     ) external override view returns(uint256 tokenAmount) {
-        uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) /
-            1e18;
-        return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+//        uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) /
+//            1e18;
+//        return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+        revert('Not supported');
     }
 
     function calcSharesAmount(
@@ -109,7 +111,8 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         success = removingCrvLps >= requiredCrvLPs;
 
         if(success && withdrawalType == WithdrawalType.OneCoin) {
-            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+//            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+            revert('Not supported');
         }
 
         tokenAmountsDynamic = fromArr4(minAmounts4);
@@ -125,7 +128,8 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         if(withdrawalType == WithdrawalType.Base) {
             pool.remove_liquidity(removingCrvLps, toArr4(tokenAmountsDynamic));
         } else if(withdrawalType == WithdrawalType.OneCoin) {
-            pool.remove_liquidity_one_coin(removingCrvLps, int128(tokenIndex), tokenAmounts[tokenIndex]);
+//            pool.remove_liquidity_one_coin(removingCrvLps, int128(tokenIndex), tokenAmounts[tokenIndex]);
+            revert('Not supported');
         }
     }
 
