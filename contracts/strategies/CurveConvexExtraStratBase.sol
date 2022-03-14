@@ -50,7 +50,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         if (address(extraToken) != address(0)) {
             uint256 amountIn = extraRewards.earned(address(this)) +
                 extraToken.balanceOf(address(this));
-            extraEarningsUSDT = priceTokenByUniswap(amountIn, extraTokenSwapPath);
+            extraEarningsUSDT = priceTokenByExchange(amountIn, extraTokenSwapPath);
         }
 
         return

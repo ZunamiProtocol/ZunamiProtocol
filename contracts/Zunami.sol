@@ -486,21 +486,19 @@ contract Zunami is ERC20, Pausable, AccessControl {
         IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
         address userAddr = _msgSender();
 
-        uint256 userLpBefore = balanceOf(userAddr);
-        require(userLpBefore >= lpShares, 'Zunami: not enough LP balance');
+        require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
         require(
             strategy.withdraw(userAddr, calcLpRatioSafe(lpShares, _poolInfo[defaultWithdrawPid].lpShares), tokenAmounts, withdrawalType, tokenIndex),
             'Zunami: incorrect withdraw params'
         );
-        uint256 userLpWithdrawn = userLpBefore - balanceOf(userAddr);
 
-        uint256 userDeposit = (totalDeposited * userLpWithdrawn) / totalSupply();
-        _burn(userAddr, userLpWithdrawn);
-        _poolInfo[defaultWithdrawPid].lpShares -= userLpWithdrawn;
+        uint256 userDeposit = (totalDeposited * lpShares) / totalSupply();
+        _burn(userAddr, lpShares);
+        _poolInfo[defaultWithdrawPid].lpShares -= lpShares;
 
         totalDeposited -= userDeposit;
 
-        emit Withdrawn(userAddr, withdrawalType, tokenAmounts, userLpWithdrawn, tokenIndex);
+        emit Withdrawn(userAddr, withdrawalType, tokenAmounts, lpShares, tokenIndex);
     }
 
     function calcWithdrawOneCoin(
@@ -511,6 +509,13 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
         uint256 lpShareRatio = calcLpRatioSafe(lpShares, _poolInfo[defaultWithdrawPid].lpShares);
         return _poolInfo[defaultWithdrawPid].strategy.calcWithdrawOneCoin(lpShareRatio, tokenIndex);
+    }
+
+    function calcWithdrawOneCoin(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external view returns(uint256 lpShares) {
+        return _poolInfo[defaultWithdrawPid].strategy.calcSharesAmount(tokenAmounts, isDeposit);
     }
 
     /**

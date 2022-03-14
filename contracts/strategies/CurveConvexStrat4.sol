@@ -77,6 +77,17 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
     }
 
+    function calcSharesAmount(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external override view returns(uint256 sharesAmount) {
+        uint256[4] memory tokenAmounts4;
+        for (uint256 i = 0; i < 3; i++) {
+            tokenAmounts4[i] = tokenAmounts[i];
+        }
+        return pool.calc_token_amount(tokenAmounts4, isDeposit);
+    }
+
     function calcCrvLps(
         WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
