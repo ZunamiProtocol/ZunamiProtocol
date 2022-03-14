@@ -115,6 +115,10 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return _pendingDeposits[user];
     }
 
+    function pendingDepositsToken(address user, uint256 tokenIndex) external view returns (uint256) {
+        return _pendingDeposits[user][tokenIndex];
+    }
+
     function pendingWithdrawals(address user) external view returns (PendingWithdrawal memory) {
         return _pendingWithdrawals[user];
     }
