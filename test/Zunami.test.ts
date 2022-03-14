@@ -335,13 +335,12 @@ describe('Zunami', function () {
                 expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(coins);
 
                 // Base onecoin withdraw
-                let userLpRation = (0.5 * 1e18).toString();
                 let userLpBalance = (100 * 1e18).toString();
                 usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
 
                 const usdtAmountProbe = await zunami
                     .connect(alice)
-                    .calcWithdrawOneCoin(userLpRation, usdtIndex);
+                    .calcWithdrawOneCoin(userLpBalance, usdtIndex);
 
                 console.log(
                     `calcWithdrawOneCoin calc -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
