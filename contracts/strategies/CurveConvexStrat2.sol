@@ -170,7 +170,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
             token.safeApprove(address(pool), sellBal);
-            pool.exchange_underlying(0, 1, sellBal, 0);
+            pool.exchange_underlying(0, 3, sellBal, 0);
         }
     }
 
