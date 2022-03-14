@@ -315,7 +315,7 @@ describe('Zunami', function () {
                 let userBalance;
 
                 // Imbalance onecoin withdraw
-                const coins = 10;
+                const coins = 100 * 1e6;
                 let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
                 const lpAmount = await zunami
                     .connect(alice)
