@@ -312,40 +312,42 @@ describe('Zunami', function () {
                 const minAmount = ['0', '0', '0'];
                 const withdrawalType = WithdrawalType.OneCoin;
                 const usdtIndex = 2;
-                let userBalance;
 
                 // Imbalance onecoin withdraw
                 const coins = 100 * 1e6;
                 let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
                 const lpAmount = await zunami
                     .connect(alice)
-                    ['calcWithdrawOneCoin(uint256[3],bool)']([0, 0, coins], false);
+                    .calcSharesAmount([0, 0, coins], false);
 
-                console.log(`Alexey: lpAmount -- ${lpAmount}`);
+                console.log(`calcSharesAmount: calc -- ${lpAmount}`);
 
                 await zunami
                     .connect(alice)
                     .withdraw(lpAmount, minAmount, withdrawalType, usdtIndex);
+
                 let usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
 
-                console.log(`Alexey: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+                console.log(`calcSharesAmount: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+
                 expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(coins);
 
                 // Base onecoin withdraw
-                userBalance = 100;
+                let userLpBalance = (100 * 1e18).toString();
                 usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
 
                 const usdtAmountProbe = await zunami
                     .connect(alice)
-                    ['calcWithdrawOneCoin(uint256,uint128)'](userBalance, usdtIndex);
+                    .calcWithdrawOneCoin(userLpBalance, usdtIndex);
 
+                console.log(`calcWithdrawOneCoin calc -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
                 await zunami
                     .connect(alice)
-                    .withdraw(userBalance, minAmount, withdrawalType, usdtIndex);
+                    .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex);
                 usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
 
                 expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(usdtAmountProbe);
-                console.log(`Alexey: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
+                console.log(`calcWithdrawOneCoin result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`);
             });
 
             it('should withdraw after moveFunds successful complete', async () => {
