@@ -567,7 +567,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return _poolInfo[defaultWithdrawPid].strategy.calcWithdrawOneCoin(lpShareRatio, tokenIndex);
     }
 
-    function calcWithdrawOneCoin(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
         external
         view
         returns (uint256 lpShares)
