@@ -319,20 +319,16 @@ describe('Zunami', function () {
                 const coins = 100 * 1e6;
                 let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
                 const lpAmount = await zunami.connect(alice).calcSharesAmount([0, 0, coins], false);
-                console.log(`calcSharesAmount: calc -- ${lpAmount}`);
 
                 await zunami
                     .connect(alice)
                     .withdraw(lpAmount, minAmount, withdrawalType, usdtIndex);
 
                 let usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
-                console.log(`Alexey: usdtUserBalanceAfter -- ${usdtUserBalanceAfter}`);
 
-                console.log(
-                    `calcSharesAmount: result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
-                );
-
-                expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(coins);
+                const result = 1 - (usdtUserBalanceAfter - usdtUserBalanceBefore) / coins;
+                const maxSlippage = 0.005;
+                expect(+result.toFixed(3)).to.be.lt(maxSlippage);
 
                 // Base onecoin withdraw
                 let userLpBalance = (100 * 1e18).toString();
@@ -342,18 +338,12 @@ describe('Zunami', function () {
                     .connect(alice)
                     .calcWithdrawOneCoin(userLpBalance, usdtIndex);
 
-                console.log(
-                    `calcWithdrawOneCoin calc -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
-                );
                 await zunami
                     .connect(alice)
                     .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex);
                 usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
 
                 expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(usdtAmountProbe);
-                console.log(
-                    `calcWithdrawOneCoin result -- ${usdtUserBalanceAfter - usdtUserBalanceBefore}`
-                );
             });
 
             it('should withdraw after moveFunds successful complete', async () => {
@@ -511,12 +501,12 @@ describe('Zunami', function () {
 
                 const amount100percent = await zunami.FUNDS_DENOMINATOR();
                 const amount50percent = amount100percent / 2;
-                expect(await zunami.connect(admin).moveFundsBatch([0], [amount50percent], 1));
-                expect(await zunami.connect(admin).moveFundsBatch([0], [amount100percent], 1));
+                expect(await zunami.connect(admin).moveFundsBatch([1], [amount50percent], 0));
+                expect(await zunami.connect(admin).moveFundsBatch([1], [amount100percent], 0));
                 expect(
                     await zunami
                         .connect(admin)
-                        .moveFundsBatch([1, 2], [amount100percent, amount100percent], 0)
+                        .moveFundsBatch([0, 2], [amount100percent, amount100percent], 1)
                 );
 
                 for (const user of [alice, bob, rosa, carol]) {

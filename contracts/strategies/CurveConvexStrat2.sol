@@ -99,11 +99,7 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     {
         uint256[2] memory tokenAmounts2;
         tokenAmounts2[1] = pool3.calc_token_amount(tokenAmounts, isDeposit);
-        console.log('Alexey: tokenAmounts2[1] = %s', tokenAmounts2[1]);
-        uint256 result = pool.calc_token_amount(tokenAmounts2, isDeposit);
-        console.log('Alexey: result = %s', result);
-        return result;
-        // return pool.calc_token_amount(tokenAmounts2, isDeposit);
+        return pool.calc_token_amount(tokenAmounts2, isDeposit);
     }
 
     function calcCrvLps(
