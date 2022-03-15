@@ -313,14 +313,14 @@ describe('Zunami', function () {
             it('should withdraw in one coin successfully', async () => {
                 const minAmount = ['0', '0', '0'];
                 const withdrawalType = WithdrawalType.OneCoin;
-                const tokenIndex = 1;
+                const tokenIndex = 0;
 
                 const multiplyTokenAmount = (tokenIndex: number) => tokenIndex === 0 ? 1e18 : 1e6;
                 const tokenByIndex = (tokenIndex: number) => tokenIndex === 0 ? dai : (tokenIndex === 1 ? usdc : usdt);
                 // Imbalance onecoin withdraw
-                const coins = 100 * multiplyTokenAmount(tokenIndex);
+                const coins = (100 * multiplyTokenAmount(tokenIndex)).toString();
                 let tokenUserBalanceBefore = await tokenByIndex(tokenIndex).balanceOf(alice.address);
-                const tokenAmounts = [0, 0, 0];
+                const tokenAmounts = ["0", "0", "0"];
                 tokenAmounts[tokenIndex] = coins;
                 const lpAmount = await zunami.connect(alice).calcSharesAmount(tokenAmounts, false);
 
@@ -330,7 +330,7 @@ describe('Zunami', function () {
 
                 let tokenUserBalanceAfter = await tokenByIndex(tokenIndex).balanceOf(alice.address);
 
-                const result = 1 - (tokenUserBalanceAfter - tokenUserBalanceBefore) / coins;
+                const result = 1 - (tokenUserBalanceAfter - tokenUserBalanceBefore) / Number(coins);
                 const maxSlippage = 0.005;
                 expect(+result.toFixed(3)).to.be.lt(maxSlippage);
 
