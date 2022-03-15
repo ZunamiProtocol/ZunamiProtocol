@@ -58,9 +58,10 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
             amounts4[i] = amounts[i];
             _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
         }
-        poolLPs = pool.add_liquidity(amounts4, 0);
 
-        poolLP.safeApprove(address(_config.booster), poolLP.balanceOf(address(this)));
+        pool.add_liquidity(amounts4, 0);
+        poolLPs = poolLP.balanceOf(address(this));
+        poolLP.safeApprove(address(_config.booster), poolLPs);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 
@@ -68,53 +69,74 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         return pool.get_virtual_price();
     }
 
-    function calcCurveDepositShares(
+    function calcWithdrawOneCoin(
+        uint256 userRatioOfCrvLps,
+        uint128 tokenIndex
+    ) external override view returns(uint256 tokenAmount) {
+//        uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) /
+//            1e18;
+//        return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+        revert('Not supported');
+    }
+
+    function calcSharesAmount(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external override view returns(uint256 sharesAmount) {
+        uint256[4] memory tokenAmounts4;
+        for (uint256 i = 0; i < 3; i++) {
+            tokenAmounts4[i] = tokenAmounts[i];
+        }
+        return pool.calc_token_amount(tokenAmounts4, isDeposit);
+    }
+
+    function calcCrvLps(
         WithdrawalType withdrawalType,
-        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal view override returns(
         bool success,
-        uint256 depositedShare,
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic
     ) {
         uint256[4] memory minAmounts4;
         for (uint256 i = 0; i < 3; i++) {
             minAmounts4[i] = tokenAmounts[i];
         }
-        uint256 crvRequiredLPs = pool.calc_token_amount(minAmounts4, false);
-        depositedShare = (cvxRewards.balanceOf(address(this)) * lpShareUserRation) /
+        uint256 requiredCrvLPs = pool.calc_token_amount(minAmounts4, false);
+        removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) /
         1e18;
 
-        success = depositedShare >= crvRequiredLPs;
+        success = removingCrvLps >= requiredCrvLPs;
 
         if(success && withdrawalType == WithdrawalType.OneCoin) {
-            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(depositedShare, int128(tokenIndex));
+//            success = tokenAmounts[tokenIndex] <= pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
+            revert('Not supported');
         }
 
         tokenAmountsDynamic = fromArr4(minAmounts4);
     }
 
-    function removeCurveDepositShares(
-        uint256 depositedShare,
+    function removeCrvLps(
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic,
         WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
         if(withdrawalType == WithdrawalType.Base) {
-            pool.remove_liquidity(depositedShare, toArr4(tokenAmountsDynamic));
-        } else if(withdrawalType == WithdrawalType.Imbalance) {
-            pool.remove_liquidity_imbalance(toArr4(tokenAmountsDynamic), depositedShare);
+            pool.remove_liquidity(removingCrvLps, toArr4(tokenAmountsDynamic));
         } else if(withdrawalType == WithdrawalType.OneCoin) {
-            pool.remove_liquidity_one_coin(depositedShare, int128(tokenIndex), tokenAmounts[tokenIndex]);
+//            pool.remove_liquidity_one_coin(removingCrvLps, int128(tokenIndex), tokenAmounts[tokenIndex]);
+            revert('Not supported');
         }
     }
 
     /**
      * @dev sell base token on strategy can be called by anyone
      */
-    function sellToken() public virtual {
+    function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
             token.safeApprove(address(pool), sellBal);

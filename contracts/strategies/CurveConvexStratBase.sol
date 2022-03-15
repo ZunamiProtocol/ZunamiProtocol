@@ -18,7 +18,7 @@ abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    enum WithdrawalType { Base, OneCoin, Imbalance }
+    enum WithdrawalType { Base, OneCoin }
 
     struct Config {
         IERC20Metadata[3] tokens;
@@ -106,11 +106,11 @@ abstract contract CurveConvexStratBase is Ownable {
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
-    function withdrawCvx(uint256 depositedShare) internal virtual {
-        cvxRewards.withdrawAndUnwrap(depositedShare, true);
+    function withdrawCvx(uint256 removingCrvLps) internal virtual {
+        cvxRewards.withdrawAndUnwrap(removingCrvLps, true);
     }
 
-    function snapshotTokensBalances(uint256 lpShareUserRation)
+    function snapshotTokensBalances(uint256 userRatioOfCrvLps)
         internal
         view
         returns (uint256[] memory userBalances, uint256[] memory prevBalances)
@@ -120,7 +120,7 @@ abstract contract CurveConvexStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
             prevBalances[i] = _config.tokens[i].balanceOf(address(this));
-            userBalances[i] = ((prevBalances[i] - managementFee) * lpShareUserRation) / 1e18;
+            userBalances[i] = ((prevBalances[i] - managementFee) * userRatioOfCrvLps) / 1e18;
         }
     }
 
@@ -149,58 +149,70 @@ abstract contract CurveConvexStratBase is Ownable {
         }
     }
 
+    function calcWithdrawOneCoin(
+        uint256 sharesAmount,
+        uint128 tokenIndex
+    ) external virtual view returns(uint256 tokenAmount);
+
+    function calcSharesAmount(
+        uint256[3] memory tokenAmounts,
+        bool isDeposit
+    ) external virtual view returns(uint256 sharesAmount);
+
     /**
      * @dev Returns true if withdraw success and false if fail.
-     * Withdraw failed when user depositedShare < crvRequiredLPs (wrong minAmounts)
+     * Withdraw failed when user removingCrvLps < requiredCrvLPs (wrong minAmounts)
      * @return Returns true if withdraw success and false if fail.
      * @param withdrawer - address of user that deposit funds
-     * @param lpShareUserRation - user's ration of ZLP for withdraw
+     * @param userRatioOfCrvLps - user's Ratio of ZLP for withdraw
      * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
         address withdrawer,
-        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
+
+        require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, "Wrong lp Ratio");
         (
             bool success,
-            uint256 depositedShare,
+            uint256 removingCrvLps,
             uint[] memory tokenAmountsDynamic
-        ) = calcCurveDepositShares(withdrawalType, lpShareUserRation, tokenAmounts, tokenIndex);
+        ) = calcCrvLps(withdrawalType, userRatioOfCrvLps, tokenAmounts, tokenIndex);
 
         if (!success) {
             return false;
         }
 
-        withdrawCvx(depositedShare);
+        withdrawCvx(removingCrvLps);
 
         (
             uint256[] memory userBalances,
             uint256[] memory prevBalances
-        ) = snapshotTokensBalances(lpShareUserRation);
+        ) = snapshotTokensBalances(userRatioOfCrvLps);
 
-        removeCurveDepositShares(depositedShare, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
+        removeCrvLps(removingCrvLps, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
 
         transferAllTokensOut(withdrawer, userBalances, prevBalances);
 
         return true;
     }
 
-    function calcCurveDepositShares(
+    function calcCrvLps(
         WithdrawalType withdrawalType,
-        uint256 lpShareUserRation, // multiplied by 1e18
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal virtual returns(
         bool success,
-        uint256 depositedShare,
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic
     );
 
-    function removeCurveDepositShares(
-        uint256 depositedShare,
+    function removeCrvLps(
+        uint256 removingCrvLps,
         uint[] memory tokenAmountsDynamic,
         WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
@@ -257,9 +269,12 @@ abstract contract CurveConvexStratBase is Ownable {
     function autoCompound() public onlyZunami {
         sellRewards();
 
+        uint256 usdtBalance =  _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
+
         uint256[3] memory amounts;
-        amounts[ZUNAMI_USDT_TOKEN_ID] = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
-        depositPool(amounts);
+        amounts[ZUNAMI_USDT_TOKEN_ID] = usdtBalance;
+
+        if(usdtBalance > 0) depositPool(amounts);
     }
 
     /**
@@ -279,10 +294,10 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 amountIn = (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
             _config.cvx.balanceOf(address(this));
-        uint256 cvxEarningsUSDT = priceTokenByUniswap(amountIn, _config.cvxToUsdtPath);
+        uint256 cvxEarningsUSDT = priceTokenByExchange(amountIn, _config.cvxToUsdtPath);
 
         amountIn = crvEarned + _config.crv.balanceOf(address(this));
-        uint256 crvEarningsUSDT = priceTokenByUniswap(amountIn, _config.crvToUsdtPath);
+        uint256 crvEarningsUSDT = priceTokenByExchange(amountIn, _config.crvToUsdtPath);
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -298,13 +313,13 @@ abstract contract CurveConvexStratBase is Ownable {
             decimalsMultipliers[ZUNAMI_USDT_TOKEN_ID];
     }
 
-    function priceTokenByUniswap(uint256 amountIn, address[] memory uniswapPath)
+    function priceTokenByExchange(uint256 amountIn, address[] memory exchangePath)
         internal
         view
         returns (uint256)
     {
         if (amountIn == 0) return 0;
-        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, uniswapPath);
+        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, exchangePath);
         return amounts[amounts.length - 1];
     }
 

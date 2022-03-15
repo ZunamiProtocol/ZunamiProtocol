@@ -25,7 +25,10 @@ import { parseUnits } from 'ethers/lib/utils';
 
 import * as config from '../config.json';
 
-enum WithdrawalType { Base, OneCoin, Imbalance };
+enum WithdrawalType {
+    Base,
+    OneCoin,
+}
 
 describe('Zunami', function () {
     let admin: SignerWithAddress;
@@ -223,11 +226,12 @@ describe('Zunami', function () {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), [
-                                0, //parseUnits((1000 - 3).toString(), 'ether'),
-                                0, //parseUnits((1000 - 3).toString(), 'mwei'),
-                                0, //parseUnits((1000 - 3).toString(), 'mwei'),
-                            ], WithdrawalType.Base, 0) // WithdrawalType.Imbalance
+                            .withdraw(
+                                await zunami.balanceOf(user.address),
+                                [0, 0, 0],
+                                WithdrawalType.Base,
+                                0
+                            )
                     );
                 }
 
@@ -275,6 +279,8 @@ describe('Zunami', function () {
             it('should claimManagementFees, add one more pool and users deposit to it successful complete', async () => {
                 expect(await strategy.claimManagementFees());
                 expect(await zunami.addPool(strategy2.address));
+                expect(await zunami.setDefaultDepositPid(1));
+                expect(await zunami.setDefaultWithdrawPid(1));
                 expect(parseInt(await zunami.poolCount())).equal(2);
                 // expect().equal(2);
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -304,14 +310,54 @@ describe('Zunami', function () {
                 expect(parseFloat(ethers.utils.formatUnits(lpPrice, 18))).to.gt(0.99);
             });
 
+            it('should withdraw in one coin successfully', async () => {
+                const minAmount = ['0', '0', '0'];
+                const withdrawalType = WithdrawalType.OneCoin;
+                const usdtIndex = 2;
+
+                // Imbalance onecoin withdraw
+                const coins = 100 * 1e6;
+                let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
+                const lpAmount = await zunami.connect(alice).calcSharesAmount([0, 0, coins], false);
+
+                await zunami
+                    .connect(alice)
+                    .withdraw(lpAmount, minAmount, withdrawalType, usdtIndex);
+
+                let usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
+
+                const result = 1 - (usdtUserBalanceAfter - usdtUserBalanceBefore) / coins;
+                const maxSlippage = 0.005;
+                expect(+result.toFixed(3)).to.be.lt(maxSlippage);
+
+                // Base onecoin withdraw
+                let userLpBalance = (100 * 1e18).toString();
+                usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
+
+                const usdtAmountProbe = await zunami
+                    .connect(alice)
+                    .calcWithdrawOneCoin(userLpBalance, usdtIndex);
+
+                expect(
+                    await zunami
+                        .connect(alice)
+                        .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex)
+                );
+            });
+
             it('should withdraw after moveFunds successful complete', async () => {
-                // expect(await zunami.moveFundsBatch([1], 0));
+                const usdtIndex = 2;
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
                         await zunami
                             .connect(user)
-                            .withdraw(await zunami.balanceOf(user.address), ['0', '0', '0'], WithdrawalType.OneCoin, 2)
+                            .withdraw(
+                                await zunami.balanceOf(user.address),
+                                ['0', '0', '0'],
+                                WithdrawalType.OneCoin,
+                                usdtIndex
+                            )
                     );
                 }
 
@@ -331,7 +377,7 @@ describe('Zunami', function () {
             });
         });
         describe('Test strategy2b - USDP', function () {
-            it('should delegate & completeDeposit in new pool, one user pendingDepositRemove successful complete', async () => {
+            it('should delegate & completeDeposit in new pool, one user removePendingDeposit successful complete', async () => {
                 for (const user of [alice, bob, carol, rosa]) {
                     let usdt_balance = await usdt.balanceOf(user.address);
                     let usdc_balance = await usdc.balanceOf(user.address);
@@ -343,7 +389,7 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.connect(carol).pendingDepositRemove());
+                expect(await zunami.connect(carol).removePendingDeposit());
 
                 expect(await zunami.addPool(strategy2b.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -390,7 +436,7 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.connect(carol).pendingDepositRemove());
+                expect(await zunami.connect(carol).removePendingDeposit());
 
                 expect(await zunami.connect(admin).addPool(strategy4.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
@@ -404,7 +450,9 @@ describe('Zunami', function () {
                 }
 
                 expect(
-                    await zunami.connect(admin).completeWithdrawalsOptimized([alice.address, bob.address])
+                    await zunami
+                        .connect(admin)
+                        .completeWithdrawalsOptimized([alice.address, bob.address])
                 );
                 // expect(await zunami.moveFundsBatch([1, 2, 3], 0));
             });
@@ -452,12 +500,12 @@ describe('Zunami', function () {
 
                 const amount100percent = await zunami.FUNDS_DENOMINATOR();
                 const amount50percent = amount100percent / 2;
-                expect(await zunami.connect(admin).moveFundsBatch([0], [amount50percent], 1));
-                expect(await zunami.connect(admin).moveFundsBatch([0], [amount100percent], 1));
+                expect(await zunami.connect(admin).moveFundsBatch([1], [amount50percent], 0));
+                expect(await zunami.connect(admin).moveFundsBatch([1], [amount100percent], 0));
                 expect(
                     await zunami
                         .connect(admin)
-                        .moveFundsBatch([1, 2], [amount100percent, amount100percent], 0)
+                        .moveFundsBatch([0, 2], [amount100percent, amount100percent], 1)
                 );
 
                 for (const user of [alice, bob, rosa, carol]) {
@@ -522,20 +570,22 @@ describe('Zunami', function () {
                 expect(
                     await zunami
                         .connect(alice)
-                        .withdraw(aliceBalance < bobBalance ? aliceBalance : bobBalance, [
-                            '0',
-                            '0',
-                            '0',
-                        ], WithdrawalType.Base, 0)
+                        .withdraw(
+                            aliceBalance < bobBalance ? aliceBalance : bobBalance,
+                            ['0', '0', '0'],
+                            WithdrawalType.Base,
+                            0
+                        )
                 );
                 expect(
                     await zunami
                         .connect(bob)
-                        .withdraw(bobBalance < aliceBalance ? bobBalance : aliceBalance, [
-                            '0',
-                            '0',
-                            '0',
-                        ], WithdrawalType.Base, 0)
+                        .withdraw(
+                            bobBalance < aliceBalance ? bobBalance : aliceBalance,
+                            ['0', '0', '0'],
+                            WithdrawalType.Base,
+                            0
+                        )
                 );
             });
 
