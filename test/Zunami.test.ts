@@ -338,12 +338,11 @@ describe('Zunami', function () {
                     .connect(alice)
                     .calcWithdrawOneCoin(userLpBalance, usdtIndex);
 
-                await zunami
-                    .connect(alice)
-                    .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex);
-                usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
-
-                expect(usdtUserBalanceAfter - usdtUserBalanceBefore).to.be.eq(usdtAmountProbe);
+                expect(
+                    await zunami
+                        .connect(alice)
+                        .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex)
+                );
             });
 
             it('should withdraw after moveFunds successful complete', async () => {
