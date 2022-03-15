@@ -9,8 +9,6 @@ import '../interfaces/ICurvePool.sol';
 import '../interfaces/ICurvePool2.sol';
 import './CurveConvexExtraStratBase.sol';
 
-import 'hardhat/console.sol';
-
 contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
 
