@@ -313,35 +313,39 @@ describe('Zunami', function () {
             it('should withdraw in one coin successfully', async () => {
                 const minAmount = ['0', '0', '0'];
                 const withdrawalType = WithdrawalType.OneCoin;
-                const usdtIndex = 2;
+                const tokenIndex = 0;
 
+                const multiplyTokenAmount = (tokenIndex: number) => tokenIndex === 0 ? 1e18 : 1e6;
+                const tokenByIndex = (tokenIndex: number) => tokenIndex === 0 ? dai : (tokenIndex === 1 ? usdc : usdt);
                 // Imbalance onecoin withdraw
-                const coins = 100 * 1e6;
-                let usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
-                const lpAmount = await zunami.connect(alice).calcSharesAmount([0, 0, coins], false);
+                const coins = (100 * multiplyTokenAmount(tokenIndex)).toString();
+                let tokenUserBalanceBefore = await tokenByIndex(tokenIndex).balanceOf(alice.address);
+                const tokenAmounts = ["0", "0", "0"];
+                tokenAmounts[tokenIndex] = coins;
+                const lpAmount = await zunami.connect(alice).calcSharesAmount(tokenAmounts, false);
 
                 await zunami
                     .connect(alice)
-                    .withdraw(lpAmount, minAmount, withdrawalType, usdtIndex);
+                    .withdraw(lpAmount, minAmount, withdrawalType, tokenIndex);
 
-                let usdtUserBalanceAfter = await usdt.balanceOf(alice.address);
+                let tokenUserBalanceAfter = await tokenByIndex(tokenIndex).balanceOf(alice.address);
 
-                const result = 1 - (usdtUserBalanceAfter - usdtUserBalanceBefore) / coins;
+                const result = 1 - (tokenUserBalanceAfter - tokenUserBalanceBefore) / Number(coins);
                 const maxSlippage = 0.005;
                 expect(+result.toFixed(3)).to.be.lt(maxSlippage);
 
                 // Base onecoin withdraw
                 let userLpBalance = (100 * 1e18).toString();
-                usdtUserBalanceBefore = await usdt.balanceOf(alice.address);
+                tokenUserBalanceBefore = await tokenByIndex(tokenIndex).balanceOf(alice.address);
 
                 const usdtAmountProbe = await zunami
                     .connect(alice)
-                    .calcWithdrawOneCoin(userLpBalance, usdtIndex);
+                    .calcWithdrawOneCoin(userLpBalance, tokenIndex);
 
                 expect(
                     await zunami
                         .connect(alice)
-                        .withdraw(userLpBalance, minAmount, withdrawalType, usdtIndex)
+                        .withdraw(userLpBalance, minAmount, withdrawalType, tokenIndex)
                 );
             });
 
