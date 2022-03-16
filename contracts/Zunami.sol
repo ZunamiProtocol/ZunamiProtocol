@@ -470,11 +470,15 @@ contract Zunami is ERC20, Pausable, AccessControl {
             _poolInfo[defaultWithdrawPid].lpShares -= withdrawal.lpShares;
             totalDeposited -= userDeposit;
 
+            uint256 transferAmount;
             for (uint256 j = 0; j < 3; j++) {
-                IERC20Metadata(tokens[j]).safeTransfer(
-                    user,
-                    (diffBalances[j] * withdrawal.lpShares) / lpSharesTotal
-                );
+                transferAmount = (diffBalances[j] * withdrawal.lpShares) / lpSharesTotal;
+                if(transferAmount > 0) {
+                    IERC20Metadata(tokens[j]).safeTransfer(
+                        user,
+                        transferAmount
+                    );
+                }
             }
 
             delete _pendingWithdrawals[user];
@@ -719,7 +723,9 @@ contract Zunami is ERC20, Pausable, AccessControl {
      */
     function withdrawStuckToken(IERC20Metadata _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 tokenBalance = _token.balanceOf(address(this));
-        _token.safeTransfer(_msgSender(), tokenBalance);
+        if(tokenBalance > 0) {
+            _token.safeTransfer(_msgSender(), tokenBalance);
+        }
     }
 
     /**
