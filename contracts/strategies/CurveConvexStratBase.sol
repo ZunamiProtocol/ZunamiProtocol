@@ -129,23 +129,29 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256[] memory userBalances,
         uint256[] memory prevBalances
     ) internal {
+        uint256 transferAmount;
         for (uint256 i = 0; i < 3; i++) {
-            _config.tokens[i].safeTransfer(
-                withdrawer,
-                _config.tokens[i].balanceOf(address(this)) -
-                prevBalances[i] +
-                userBalances[i]
-            );
+            transferAmount = _config.tokens[i].balanceOf(address(this)) - prevBalances[i] + userBalances[i];
+            if(transferAmount > 0) {
+                _config.tokens[i].safeTransfer(
+                    withdrawer,
+                    transferAmount
+                );
+            }
         }
     }
 
     function transferZunamiAllTokens() internal {
+        uint256 transferAmount;
         for (uint256 i = 0; i < 3; i++) {
             uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            _config.tokens[i].safeTransfer(
-                _msgSender(),
-                _config.tokens[i].balanceOf(address(this)) - managementFee
-            );
+            transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFee;
+            if(transferAmount > 0) {
+                _config.tokens[i].safeTransfer(
+                    _msgSender(),
+                    transferAmount
+                );
+            }
         }
     }
 
@@ -374,7 +380,9 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = _token.balanceOf(address(this));
-        _token.safeTransfer(_msgSender(), tokenBalance);
+        if(tokenBalance > 0) {
+            _token.safeTransfer(_msgSender(), tokenBalance);
+        }
     }
 
     /**
