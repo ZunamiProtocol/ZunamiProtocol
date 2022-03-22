@@ -126,7 +126,10 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
         success = removingCrvLps >= pool.calc_token_amount(minAmounts2, false);
 
         if (success && withdrawalType == WithdrawalType.OneCoin) {
-            uint256 pool3Lps = pool.calc_withdraw_one_coin(removingCrvLps, CURVE_3POOL_LP_TOKEN_ID_INT);
+            uint256 pool3Lps = pool.calc_withdraw_one_coin(
+                removingCrvLps,
+                CURVE_3POOL_LP_TOKEN_ID_INT
+            );
             success =
                 tokenAmounts[tokenIndex] <=
                 pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));

@@ -2,7 +2,10 @@
 pragma solidity ^0.8.0;
 
 interface IStrategy {
-    enum WithdrawalType { Base, OneCoin }
+    enum WithdrawalType {
+        Base,
+        OneCoin
+    }
 
     function deposit(uint256[3] memory amounts) external returns (uint256);
 
@@ -22,13 +25,13 @@ interface IStrategy {
 
     function autoCompound() external;
 
-    function calcWithdrawOneCoin(
-        uint256 userRatioOfCrvLps,
-        uint128 tokenIndex
-    ) external view returns(uint256 tokenAmount);
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
+        external
+        view
+        returns (uint256 tokenAmount);
 
-    function calcSharesAmount(
-        uint256[3] memory tokenAmounts,
-        bool isDeposit
-    ) external view returns(uint256 sharesAmount);
+    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+        external
+        view
+        returns (uint256 sharesAmount);
 }

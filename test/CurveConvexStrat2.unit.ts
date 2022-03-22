@@ -33,7 +33,6 @@ async function stubToken(decimals: number, owner: SignerWithAddress) {
 const mockContract = async (name: string) =>
     deployMockContract(wallet, (await artifacts.readArtifact(name)).abi);
 
-
 describe('CurveConvexStrat2', () => {
     let owner: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -86,29 +85,29 @@ describe('CurveConvexStrat2', () => {
         usdc = await stubToken(6, owner);
         usdt = await stubToken(6, owner);
 
-        pool = await mockContract("ICurvePool2");
+        pool = await mockContract('ICurvePool2');
         poolLP = await stubToken(18, owner);
-        rewards = await mockContract("IConvexRewards");
+        rewards = await mockContract('IConvexRewards');
         poolPID = 2;
         token = await stubToken(18, owner);
-        extraRewards = await mockContract("IConvexRewards");
+        extraRewards = await mockContract('IConvexRewards');
         extraToken = await stubToken(18, owner);
 
-        crv = await mockContract("IERC20Metadata");
-        cvx = await mockContract("IConvexMinter");
-        router = await mockContract("IUniswapRouter");
-        booster = await mockContract("IConvexBooster");
+        crv = await mockContract('IERC20Metadata');
+        cvx = await mockContract('IConvexMinter');
+        router = await mockContract('IUniswapRouter');
+        booster = await mockContract('IConvexBooster');
 
         weth = await stubToken(18, owner);
 
         const config = {
-            "tokens": [dai.address, usdc.address, usdt.address],
-            "crv": crv.address,
-            "cvx": cvx.address,
-            "router": router.address,
-            "booster": booster.address,
-            "cvxToUsdtPath": [cvx.address, weth.address, usdt.address],
-            "crvToUsdtPath": [crv.address, weth.address, usdt.address]
+            tokens: [dai.address, usdc.address, usdt.address],
+            crv: crv.address,
+            cvx: cvx.address,
+            router: router.address,
+            booster: booster.address,
+            cvxToUsdtPath: [cvx.address, weth.address, usdt.address],
+            crvToUsdtPath: [crv.address, weth.address, usdt.address],
         };
 
         const Strat = await ethers.getContractFactory('CurveConvexStrat2', owner);
@@ -120,16 +119,16 @@ describe('CurveConvexStrat2', () => {
             poolPID,
             token.address,
             extraRewards.address,
-            extraToken.address,
+            extraToken.address
         );
-        await strategy.deployed(
-
-        );
+        await strategy.deployed();
         expect(strategy.address).to.properAddress;
     });
 
     it('should created rightly', async () => {
-        await expect(await strategy.zunami()).to.be.equal('0x0000000000000000000000000000000000000000');
+        await expect(await strategy.zunami()).to.be.equal(
+            '0x0000000000000000000000000000000000000000'
+        );
         await expect(await strategy.cvxPoolPID()).to.be.equal(poolPID);
         await expect(await strategy.poolLP()).to.be.equal(poolLP.address);
         await expect(await strategy.cvxRewards()).to.be.equal(rewards.address);

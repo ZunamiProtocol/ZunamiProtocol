@@ -13,4 +13,6 @@ interface IConvexRewards {
     function withdrawAllAndUnwrap(bool claim) external;
 
     function withdrawAndUnwrap(uint256 amount, bool claim) external;
+
+    function getReward() external returns (bool);
 }

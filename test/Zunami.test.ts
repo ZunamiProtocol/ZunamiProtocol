@@ -315,12 +315,15 @@ describe('Zunami', function () {
                 const withdrawalType = WithdrawalType.OneCoin;
                 const tokenIndex = 0;
 
-                const multiplyTokenAmount = (tokenIndex: number) => tokenIndex === 0 ? 1e18 : 1e6;
-                const tokenByIndex = (tokenIndex: number) => tokenIndex === 0 ? dai : (tokenIndex === 1 ? usdc : usdt);
+                const multiplyTokenAmount = (tokenIndex: number) => (tokenIndex === 0 ? 1e18 : 1e6);
+                const tokenByIndex = (tokenIndex: number) =>
+                    tokenIndex === 0 ? dai : tokenIndex === 1 ? usdc : usdt;
                 // Imbalance onecoin withdraw
                 const coins = (100 * multiplyTokenAmount(tokenIndex)).toString();
-                let tokenUserBalanceBefore = await tokenByIndex(tokenIndex).balanceOf(alice.address);
-                const tokenAmounts = ["0", "0", "0"];
+                let tokenUserBalanceBefore = await tokenByIndex(tokenIndex).balanceOf(
+                    alice.address
+                );
+                const tokenAmounts = ['0', '0', '0'];
                 tokenAmounts[tokenIndex] = coins;
                 const lpAmount = await zunami.connect(alice).calcSharesAmount(tokenAmounts, false);
 
