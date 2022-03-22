@@ -8,9 +8,14 @@ interface ICurvePool is ICurvePoolPricable {
 
     function remove_liquidity(uint256 burn_amount, uint256[3] memory min_amounts) external;
 
-    function remove_liquidity_imbalance( uint256[3] memory amounts, uint256 max_burn_amount) external;
+    function remove_liquidity_imbalance(uint256[3] memory amounts, uint256 max_burn_amount)
+        external;
 
-    function remove_liquidity_one_coin(uint256 burn_amount, int128 i, uint256 min_received) external;
+    function remove_liquidity_one_coin(
+        uint256 burn_amount,
+        int128 i,
+        uint256 min_received
+    ) external;
 
     function exchange(
         int128 i,
@@ -24,8 +29,5 @@ interface ICurvePool is ICurvePoolPricable {
         view
         returns (uint256);
 
-    function calc_withdraw_one_coin(uint256 burn_amount, int128 i)
-        external
-        view
-        returns (uint256);
+    function calc_withdraw_one_coin(uint256 burn_amount, int128 i) external view returns (uint256);
 }

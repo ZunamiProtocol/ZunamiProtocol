@@ -33,7 +33,10 @@ const mockStrategy = async () => mockContract('IStrategy');
 const setTotalHoldings = async (strategy: MockContract, holdings: any) =>
     await strategy.mock.totalHoldings.returns(bn(holdings).toFixed());
 
-enum WithdrawalType { Base, OneCoin };
+enum WithdrawalType {
+    Base,
+    OneCoin,
+}
 
 describe('Zunami', () => {
     let admin: SignerWithAddress;
@@ -178,17 +181,20 @@ describe('Zunami', () => {
         await strategy1.mock.withdraw
             .withArgs(
                 zunami.address,
-                ethers.BigNumber.from(lpShares.toString()).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
+                ethers.BigNumber.from(lpShares.toString())
+                    .mul((1e18).toString())
+                    .div((await zunami.poolInfo(pid)).lpShares.toString())
+                    .toString(),
                 [0, 0, 0],
                 WithdrawalType.Base,
                 0
             )
             .returns(depositedValue1.div(2));
 
-        await strategy2.mock.deposit.withArgs([0,0,0]).returns(depositedValue1.toFixed());
+        await strategy2.mock.deposit.withArgs([0, 0, 0]).returns(depositedValue1.toFixed());
         await zunami.connect(admin).moveFundsBatch([0], [5_000], 1);
 
-        await strategy1.mock.deposit.withArgs([0,0,0]).returns(depositedValue2.toFixed());
+        await strategy1.mock.deposit.withArgs([0, 0, 0]).returns(depositedValue2.toFixed());
         await strategy2.mock.withdrawAll.returns();
         await zunami.connect(admin).moveFundsBatch([1], [10_000], 0);
     });
@@ -286,7 +292,10 @@ describe('Zunami', () => {
         await strategy.mock.withdraw
             .withArgs(
                 admin.address,
-                ethers.BigNumber.from(lpShares).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
+                ethers.BigNumber.from(lpShares)
+                    .mul((1e18).toString())
+                    .div((await zunami.poolInfo(pid)).lpShares.toString())
+                    .toString(),
                 tokenBalances,
                 WithdrawalType.OneCoin,
                 0
@@ -303,7 +312,7 @@ describe('Zunami', () => {
 
         await zunami.setAvailableWithdrawalTypes('2'); // OneCoin method enabled
 
-        await zunami.withdraw(lpShares, tokenBalances, WithdrawalType.OneCoin, 0)
+        await zunami.withdraw(lpShares, tokenBalances, WithdrawalType.OneCoin, 0);
 
         const newTotalSupply = totalSupply.minus(lpShares).toFixed();
         expect(await zunami.totalSupply()).to.be.equal(newTotalSupply);
@@ -319,7 +328,10 @@ describe('Zunami', () => {
         await strategy.mock.withdraw
             .withArgs(
                 admin.address,
-                ethers.BigNumber.from(lpShares).mul(1e18.toString()).div((await zunami.poolInfo(pid)).lpShares.toString()).toString(),
+                ethers.BigNumber.from(lpShares)
+                    .mul((1e18).toString())
+                    .div((await zunami.poolInfo(pid)).lpShares.toString())
+                    .toString(),
                 tokenBalances,
                 WithdrawalType.Base,
                 0
@@ -355,9 +367,15 @@ describe('Zunami', () => {
             bn(tokenBalances2[1]).plus(tokenBalances[1]).toFixed(),
             bn(tokenBalances2[2]).plus(tokenBalances[2]).toFixed(),
         ];
-        expect(await zunami.pendingDepositsToken(adminAddress, 0)).to.be.equal(pendingTokenBalances[0]);
-        expect(await zunami.pendingDepositsToken(adminAddress, 1)).to.be.equal(pendingTokenBalances[1]);
-        expect(await zunami.pendingDepositsToken(adminAddress, 2)).to.be.equal(pendingTokenBalances[2]);
+        expect(await zunami.pendingDepositsToken(adminAddress, 0)).to.be.equal(
+            pendingTokenBalances[0]
+        );
+        expect(await zunami.pendingDepositsToken(adminAddress, 1)).to.be.equal(
+            pendingTokenBalances[1]
+        );
+        expect(await zunami.pendingDepositsToken(adminAddress, 2)).to.be.equal(
+            pendingTokenBalances[2]
+        );
     });
 
     it('should complete users pending deposits', async () => {
@@ -509,11 +527,17 @@ describe('Zunami', () => {
                 .minus(lpShares.toString() * j)
                 .toFixed();
             await strategy.mock.withdraw
-                .withArgs(user.address, lpShares.mul(1e18.toString()).div(poolLpShares).toString(), [
-                    tokenify(lpSharesThird).toFixed(),
-                    decify(lpSharesThird, 6).toFixed(),
-                    decify(lpSharesThird, 6).toFixed(),
-                ], WithdrawalType.Base, 0)
+                .withArgs(
+                    user.address,
+                    lpShares.mul((1e18).toString()).div(poolLpShares).toString(),
+                    [
+                        tokenify(lpSharesThird).toFixed(),
+                        decify(lpSharesThird, 6).toFixed(),
+                        decify(lpSharesThird, 6).toFixed(),
+                    ],
+                    WithdrawalType.Base,
+                    0
+                )
                 .returns(true);
         }
         await zunami.completeWithdrawals(users.map((user) => user.address));
@@ -552,11 +576,17 @@ describe('Zunami', () => {
                 .minus(lpShares.toString() * j)
                 .toFixed();
             await strategy.mock.withdraw
-                .withArgs(user.address, lpShares.mul(1e18.toString()).div(poolLpShares).toString(), [
-                    tokenify(lpSharesOther).toFixed(),
-                    decify(lpSharesOther, 6).toFixed(),
-                    decify(lpSharesOther, 6).toFixed(),
-                ], WithdrawalType.Base, 0)
+                .withArgs(
+                    user.address,
+                    lpShares.mul((1e18).toString()).div(poolLpShares).toString(),
+                    [
+                        tokenify(lpSharesOther).toFixed(),
+                        decify(lpSharesOther, 6).toFixed(),
+                        decify(lpSharesOther, 6).toFixed(),
+                    ],
+                    WithdrawalType.Base,
+                    0
+                )
                 .returns(true);
         }
         await zunami.completeWithdrawals(users.map((user) => user.address));

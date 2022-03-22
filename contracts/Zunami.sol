@@ -125,7 +125,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return _pendingDeposits[user];
     }
 
-    function pendingDepositsToken(address user, uint256 tokenIndex) external view returns (uint256) {
+    function pendingDepositsToken(address user, uint256 tokenIndex)
+        external
+        view
+        returns (uint256)
+    {
         return _pendingDeposits[user][tokenIndex];
     }
 
@@ -473,11 +477,8 @@ contract Zunami is ERC20, Pausable, AccessControl {
             uint256 transferAmount;
             for (uint256 j = 0; j < 3; j++) {
                 transferAmount = (diffBalances[j] * withdrawal.lpShares) / lpSharesTotal;
-                if(transferAmount > 0) {
-                    IERC20Metadata(tokens[j]).safeTransfer(
-                        user,
-                        transferAmount
-                    );
+                if (transferAmount > 0) {
+                    IERC20Metadata(tokens[j]).safeTransfer(user, transferAmount);
                 }
             }
 
@@ -723,7 +724,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
      */
     function withdrawStuckToken(IERC20Metadata _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 tokenBalance = _token.balanceOf(address(this));
-        if(tokenBalance > 0) {
+        if (tokenBalance > 0) {
             _token.safeTransfer(_msgSender(), tokenBalance);
         }
     }
