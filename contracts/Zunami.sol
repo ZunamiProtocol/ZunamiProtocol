@@ -67,6 +67,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256[POOL_ASSETS] tokenAmounts
     );
     event Deposited(address indexed depositor, uint256[POOL_ASSETS] amounts, uint256 lpShares);
+    event RemovedDeposit(address indexed depositor);
     event Withdrawn(
         address indexed withdrawer,
         IStrategy.WithdrawalType withdrawalType,
@@ -76,7 +77,6 @@ contract Zunami is ERC20, Pausable, AccessControl {
     );
 
     event AddedPool(uint256 pid, address strategyAddr, uint256 startTime);
-    event FailedDeposit(address indexed depositor, uint256[POOL_ASSETS] amounts, uint256 lpShares);
     event FailedWithdrawal(
         address indexed withdrawer,
         uint256[POOL_ASSETS] amounts,
@@ -711,6 +711,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
             }
         }
         delete _pendingDeposits[_msgSender()];
+        emit RemovedDeposit(_msgSender());
     }
 
     function removePendingWithdrawal() external {
