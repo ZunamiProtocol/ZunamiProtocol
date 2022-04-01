@@ -179,9 +179,7 @@ abstract contract CurveConvexStratBase is Ownable {
                 ((i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0);
         }
 
-        cvxRewards.withdrawAndUnwrap(removingCrvLps, true);
-
-        sellRewards();
+        cvxRewards.withdrawAndUnwrap(removingCrvLps, false);
 
         removeCrvLps(removingCrvLps, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
 
