@@ -36,9 +36,9 @@ contract AnchorStratBase is Ownable {
     uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
 
-    uint256 public managementFees = 0;
+    uint256[3] public managementFees;
 
-    uint256[4] public decimalsMultipliers;
+    uint256[3] public decimalsMultipliers;
 
     event SoldRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
 
@@ -78,9 +78,11 @@ contract AnchorStratBase is Ownable {
     function transferAllTokensOut(address withdrawer) internal {
         uint256 transferAmount;
         for (uint256 i = 0; i < 3; i++) {
-            transferAmount =
-                _config.tokens[i].balanceOf(address(this)) -
-                ((i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0);
+            uint256 tokenStratBalance = _config.tokens[i].balanceOf(address(this));
+            require( tokenStratBalance > managementFees[i], "Zunami: Not enough strategy balance");
+            unchecked {
+                transferAmount = tokenStratBalance - managementFees[i];
+            }
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(withdrawer, transferAmount);
             }
@@ -90,8 +92,7 @@ contract AnchorStratBase is Ownable {
     function transferZunamiAllTokens() internal {
         uint256 transferAmount;
         for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
-            transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFee;
+            transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFees[i];
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(_msgSender(), transferAmount);
             }
@@ -160,21 +161,28 @@ contract AnchorStratBase is Ownable {
         return tokensHoldings;
     }
 
+    function accrueManagementFees(uint256[3] memory newManagementFees) public onlyOwner {
+        for (uint256 i = 0; i < 3; i++) {
+            managementFees[i] += newManagementFees[i];
+        }
+    }
+
     /**
      * @dev dev claim managementFees from strategy.
-     * zunBuybackAmount goes to buyback ZUN token if buybackFee > 0 && ZUN address not a zero.
-     * adminFeeAmount is amount for transfer to dev or governance.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public returns (uint256) {
-        uint256 usdtBalance = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
-        uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
-        if (transferBalance > 0) {
-            _config.tokens[ZUNAMI_USDT_TOKEN_ID].safeTransfer(feeDistributor, transferBalance);
+    function claimManagementFees() public returns (uint256 totalClaimedFees) {
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 tokenBalance = _config.tokens[i].balanceOf(address(this));
+            uint256 transferBalance = managementFees[i] > tokenBalance ? tokenBalance : managementFees[i];
+            totalClaimedFees += transferBalance * decimalsMultipliers[i];
+            if (transferBalance > 0) {
+                _config.tokens[i].safeTransfer(feeDistributor, transferBalance);
+            }
+            managementFees[i] = 0;
         }
-        managementFees = 0;
 
-        return transferBalance;
+        return totalClaimedFees;
     }
 
     /**

@@ -315,8 +315,6 @@ abstract contract CurveConvexStratBase is Ownable {
 
     /**
      * @dev dev claim managementFees from strategy.
-     * zunBuybackAmount goes to buyback ZUN token if buybackFee > 0 && ZUN address not a zero.
-     * adminFeeAmount is amount for transfer to dev or governance.
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public returns (uint256) {
