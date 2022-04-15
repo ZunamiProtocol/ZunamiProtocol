@@ -40,7 +40,7 @@ contract AnchorStratBase is Ownable {
 
     uint256[3] public decimalsMultipliers;
 
-    event SoldRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
+    event AccruedManagementFees(uint256[3] managementFees);
 
     /**
      * @dev Throws if called by any account other than the Zunami
@@ -67,12 +67,41 @@ contract AnchorStratBase is Ownable {
      * @param amounts - amounts in stablecoins that user deposit
      */
     function deposit(uint256[3] memory amounts) external returns (uint256) {
+        uint256 addedHoldings;
         for (uint256 i = 0; i < 3; i++) {
+            if(amounts[i] == 0) continue;
+
+            uint256 beforeATokenBalance = _config.aTokens[i].balanceOf(address(this));
+
             _config.tokens[i].safeIncreaseAllowance(address(_config.aTokenPools[i]), amounts[i]);
             _config.aTokenPools[i].deposit(amounts[i]);
+
+            IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
+            uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), false);
+            addedHoldings += ((_config.aTokens[i].balanceOf(address(this)) - beforeATokenBalance) * pER) / 1e18;
         }
 
-        return totalHoldings();
+        return addedHoldings;
+    }
+
+    function initWithdrawAll() external onlyOwner {
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 aTokenBalance = _config.aTokens[i].balanceOf(address(this));
+            _config.aTokens[i].safeIncreaseAllowance(
+                address(_config.aTokenPools[i]),
+                aTokenBalance
+            );
+            _config.aTokenPools[i].redeem(aTokenBalance, 0);
+        }
+    }
+
+    /**
+     * @dev can be called by Zunami contract.
+     * This function need for moveFunds between strategys.
+     */
+    function withdrawAll() external onlyZunami {
+        // initWithdrawAll has to be called before
+        transferAllTokensOut(address(zunami));
     }
 
     function transferAllTokensOut(address withdrawer) internal {
@@ -85,16 +114,6 @@ contract AnchorStratBase is Ownable {
             }
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(withdrawer, transferAmount);
-            }
-        }
-    }
-
-    function transferZunamiAllTokens() internal {
-        uint256 transferAmount;
-        for (uint256 i = 0; i < 3; i++) {
-            transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFees[i];
-            if (transferAmount > 0) {
-                _config.tokens[i].safeTransfer(_msgSender(), transferAmount);
             }
         }
     }
@@ -120,14 +139,22 @@ contract AnchorStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             uint256 removingATokenBalance = (_config.aTokens[i].balanceOf(address(this)) *
                 userRatioOfCrvLps) / 1e18;
+
             _config.aTokens[i].safeIncreaseAllowance(
                 address(_config.aTokenPools[i]),
                 removingATokenBalance
             );
-            _config.aTokenPools[i].redeem(removingATokenBalance, tokenAmounts[i]);
-        }
 
-        transferAllTokensOut(withdrawer);
+            _config.aTokenPools[i].redeem(removingATokenBalance, tokenAmounts[i]);
+
+            IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
+            uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), true);
+
+            uint256 transferAmount = (removingATokenBalance * pER) / 1e18;
+            if (transferAmount > 0) {
+                _config.tokens[i].safeTransfer(withdrawer, transferAmount);
+            }
+        }
 
         return true;
     }
@@ -153,11 +180,8 @@ contract AnchorStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
             uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), false);
-            tokensHoldings +=
-                ((_config.aTokens[i].balanceOf(address(this)) * pER) / 1e18) *
-                decimalsMultipliers[i];
+            tokensHoldings += (_config.aTokens[i].balanceOf(address(this)) * pER) / 1e18;
         }
-
         return tokensHoldings;
     }
 
@@ -165,6 +189,7 @@ contract AnchorStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             managementFees[i] += newManagementFees[i];
         }
+        emit AccruedManagementFees(newManagementFees);
     }
 
     /**
@@ -227,5 +252,21 @@ contract AnchorStratBase is Ownable {
      */
     function changeFeeDistributor(address _feeDistributor) external onlyOwner {
         feeDistributor = _feeDistributor;
+    }
+
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
+    external
+    view
+    returns (uint256 tokenAmount){
+        //Don't support
+        return 0;
+    }
+
+    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    external
+    view
+    returns (uint256 sharesAmount) {
+        //Don't support
+        return 0;
     }
 }
