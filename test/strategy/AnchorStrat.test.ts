@@ -230,6 +230,11 @@ describe(STRATEGY_NAME, function () {
         it('claimManagementFees should be successful', async () => {});
 
         it('users withdraw from zunami after claim should be successful', async () => {
+            // Add withdraw reserver
+            await usdt.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await usdc.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await dai.connect(owner).transfer(strategy.address, parseUnits('15000', 'ether'));
+
             expect(await strategy.claimManagementFees());
 
             for (const user of [alice, bob, carol, rosa]) {
@@ -253,9 +258,20 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
+
+
+            // Remove withdraw reserver
+            await strategy.withdrawStuckToken(usdt.address);
+            await strategy.withdrawStuckToken(usdc.address);
+            await strategy.withdrawStuckToken(dai.address);
         });
 
         it('deposit, remove user from it, complete, withdraw should be successful', async () => {
+            // Add withdraw reserver
+            await usdt.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await usdc.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await dai.connect(owner).transfer(strategy.address, parseUnits('15000', 'ether'));
+
             for (const user of [alice, bob, carol, rosa]) {
                 let usdt_balance = await usdt.balanceOf(user.address);
                 let usdc_balance = await usdc.balanceOf(user.address);
@@ -287,9 +303,19 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
+
+            // Remove withdraw reserver
+            await strategy.withdrawStuckToken(usdt.address);
+            await strategy.withdrawStuckToken(usdc.address);
+            await strategy.withdrawStuckToken(dai.address);
         });
 
         it('Users double delegateDeposit, deposit, withdraw should be successful', async () => {
+            // Add withdraw reserver
+            await usdt.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await usdc.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await dai.connect(owner).transfer(strategy.address, parseUnits('15000', 'ether'));
+
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
@@ -332,6 +358,11 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
+
+            // Remove withdraw reserver
+            await strategy.withdrawStuckToken(usdt.address);
+            await strategy.withdrawStuckToken(usdc.address);
+            await strategy.withdrawStuckToken(dai.address);
         });
     });
 });
