@@ -150,7 +150,7 @@ contract AnchorStratBase is Ownable {
             IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
             uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), true);
 
-            uint256 transferAmount = (removingATokenBalance * pER) / 1e18;
+            uint256 transferAmount = (removingATokenBalance * pER) / 1e18 / decimalsMultipliers[i];
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(withdrawer, transferAmount);
             }
