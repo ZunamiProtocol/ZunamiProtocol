@@ -263,8 +263,8 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
 
-    function autoCompound() public onlyZunami {
-        if (address(stakingVault) == address(0)) return;
+    function autoCompound() public onlyZunami returns(uint256) {
+        if (address(stakingVault) == address(0)) return 0;
 
         try stakingVault.getReward(true) {} catch {
             stakingVault.getReward(false);
@@ -280,6 +280,8 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         amounts[feeTokenId_] = feeTokenBalance;
 
         if (feeTokenBalance > 0) depositPool(amounts);
+
+        return feeTokenBalance * decimalsMultipliers[feeTokenId];
     }
 
     /**

@@ -262,7 +262,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
     function sellRewardsExtra() internal virtual {}
 
-    function autoCompound() public onlyZunami {
+    function autoCompound() public onlyZunami returns(uint256) {
         vault.liquidityGauge().claim_rewards();
 
         sellRewards();

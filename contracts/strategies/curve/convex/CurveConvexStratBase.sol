@@ -255,7 +255,7 @@ abstract contract CurveConvexStratBase is Ownable {
 
     function sellRewardsExtra() internal virtual {}
 
-    function autoCompound() public onlyZunami {
+    function autoCompound() public onlyZunami returns(uint256) {
         cvxRewards.getReward();
 
         sellRewards();
@@ -267,6 +267,8 @@ abstract contract CurveConvexStratBase is Ownable {
         amounts[feeTokenId] = feeTokenBalance;
 
         if (feeTokenBalance > 0) depositPool(amounts);
+
+        return feeTokenBalance * decimalsMultipliers[feeTokenId];
     }
 
     /**

@@ -115,7 +115,7 @@ contract RebalancingStrat is Ownable {
         }
     }
 
-    function autoCompound() public onlyZunami {}
+    function autoCompound() public onlyZunami returns(uint256) {}
 
     /**
      * @dev Returns total USD holdings in strategy.

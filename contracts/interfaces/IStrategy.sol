@@ -23,7 +23,7 @@ interface IStrategy {
 
     function claimManagementFees() external returns (uint256);
 
-    function autoCompound() external;
+    function autoCompound() external returns (uint256);
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
         external
