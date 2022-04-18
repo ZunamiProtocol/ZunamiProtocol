@@ -85,7 +85,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     event SetDefaultDepositPid(uint256 pid);
     event SetDefaultWithdrawPid(uint256 pid);
     event ClaimedAllManagementFee(uint256 feeValue);
-    event AutoCompoundAll();
+    event AutoCompoundAll(uint256 compoundedValue);
 
     modifier startedPool() {
         require(_poolInfo.length != 0, 'Zunami: pool not existed!');
@@ -187,10 +187,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
     }
 
     function autoCompoundAll() external {
+        uint256 totalCompounded = 0;
         for (uint256 i = 0; i < _poolInfo.length; i++) {
-            _poolInfo[i].strategy.autoCompound();
+            totalCompounded += _poolInfo[i].strategy.autoCompound();
         }
-        emit AutoCompoundAll();
+        emit AutoCompoundAll(totalCompounded);
     }
 
     /**

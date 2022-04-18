@@ -163,8 +163,9 @@ contract AnchorStratBase is Ownable {
         return 10**(18 - decimals);
     }
 
-    function autoCompound() public onlyZunami {
+    function autoCompound() public onlyZunami returns(uint256) {
         // Calcs automaticly
+        return 0;
     }
 
     /**
