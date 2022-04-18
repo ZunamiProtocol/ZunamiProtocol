@@ -177,7 +177,8 @@ contract AnchorStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
             uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), false);
-            tokensHoldings += (_config.aTokens[i].balanceOf(address(this)) * pER) / PRICE_DENOMINATOR;
+            tokensHoldings += _config.tokens[i].balanceOf(address(this)) * decimalsMultipliers[i] +
+                (_config.aTokens[i].balanceOf(address(this)) * pER) / PRICE_DENOMINATOR;
         }
         return tokensHoldings;
     }
