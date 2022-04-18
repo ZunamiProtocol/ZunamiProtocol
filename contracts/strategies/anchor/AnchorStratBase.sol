@@ -28,14 +28,8 @@ contract AnchorStratBase is Ownable {
     IZunami public zunami;
 
     uint256 public constant PRICE_DENOMINATOR = 1e18;
-    uint256 public constant DEPOSIT_DENOMINATOR = 10000;
-    uint256 public constant ZUNAMI_DAI_TOKEN_ID = 0;
-    uint256 public constant ZUNAMI_USDC_TOKEN_ID = 1;
-    uint256 public constant ZUNAMI_USDT_TOKEN_ID = 2;
 
-    uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
-
     uint256[3] public managementFees;
 
     uint256[3] public decimalsMultipliers;
@@ -78,7 +72,7 @@ contract AnchorStratBase is Ownable {
 
             IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
             uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), false);
-            addedHoldings += ((_config.aTokens[i].balanceOf(address(this)) - beforeATokenBalance) * pER) / 1e18;
+            addedHoldings += ((_config.aTokens[i].balanceOf(address(this)) - beforeATokenBalance) * pER) / PRICE_DENOMINATOR;
         }
 
         return addedHoldings;
@@ -87,6 +81,7 @@ contract AnchorStratBase is Ownable {
     function initWithdrawAll() external onlyOwner {
         for (uint256 i = 0; i < 3; i++) {
             uint256 aTokenBalance = _config.aTokens[i].balanceOf(address(this));
+            if(aTokenBalance == 0) continue;
             _config.aTokens[i].safeIncreaseAllowance(
                 address(_config.aTokenPools[i]),
                 aTokenBalance
@@ -108,6 +103,7 @@ contract AnchorStratBase is Ownable {
         uint256 transferAmount;
         for (uint256 i = 0; i < 3; i++) {
             uint256 tokenStratBalance = _config.tokens[i].balanceOf(address(this));
+            if(tokenStratBalance == 0) continue;
             require( tokenStratBalance > managementFees[i], "Zunami: Not enough strategy balance");
             unchecked {
                 transferAmount = tokenStratBalance - managementFees[i];
@@ -133,12 +129,13 @@ contract AnchorStratBase is Ownable {
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
-        require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, 'Wrong lp Ratio');
+        require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= PRICE_DENOMINATOR, 'Wrong lp Ratio');
         require(withdrawalType == WithdrawalType.Base, 'Only base');
 
         for (uint256 i = 0; i < 3; i++) {
             uint256 removingATokenBalance = (_config.aTokens[i].balanceOf(address(this)) *
-                userRatioOfCrvLps) / 1e18;
+                userRatioOfCrvLps) / PRICE_DENOMINATOR;
+            if(removingATokenBalance == 0) continue;
 
             _config.aTokens[i].safeIncreaseAllowance(
                 address(_config.aTokenPools[i]),
@@ -150,7 +147,7 @@ contract AnchorStratBase is Ownable {
             IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
             uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), true);
 
-            uint256 transferAmount = (removingATokenBalance * pER) / 1e18 / decimalsMultipliers[i];
+            uint256 transferAmount = (removingATokenBalance * pER) / PRICE_DENOMINATOR / decimalsMultipliers[i];
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(withdrawer, transferAmount);
             }
@@ -180,7 +177,7 @@ contract AnchorStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             IExchangeRateFeeder feeder = IExchangeRateFeeder(_config.aTokenPools[i].feeder());
             uint256 pER = feeder.exchangeRateOf(address(_config.tokens[i]), false);
-            tokensHoldings += (_config.aTokens[i].balanceOf(address(this)) * pER) / 1e18;
+            tokensHoldings += (_config.aTokens[i].balanceOf(address(this)) * pER) / PRICE_DENOMINATOR;
         }
         return tokensHoldings;
     }
@@ -208,16 +205,6 @@ contract AnchorStratBase is Ownable {
         }
 
         return totalClaimedFees;
-    }
-
-    /**
-     * @dev dev can update minDepositAmount but it can't be higher than 10000 (100%)
-     * If user send deposit tx and get deposit amount lower than minDepositAmount than deposit tx failed
-     * @param _minDepositAmount - amount which must be the minimum (%) after the deposit, min amount 1, max amount 10000
-     */
-    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
-        minDepositAmount = _minDepositAmount;
     }
 
     /**

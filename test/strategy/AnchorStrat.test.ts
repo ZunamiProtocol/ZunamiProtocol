@@ -164,15 +164,6 @@ describe(STRATEGY_NAME, function () {
             }
         });
 
-        it('updateMinDepositAmount should be successful', async () => {
-            const newMinDepositAmount = 9974;
-            const minDepositAmountEqual = '0.000000000000009974';
-            expect(await strategy.updateMinDepositAmount(newMinDepositAmount));
-            expect(ethers.utils.formatUnits(await strategy.minDepositAmount())).equal(
-                minDepositAmountEqual
-            );
-        });
-
         it('deposit after MIN_LOCK_TIME should be successful', async () => {
             await expect(
                 zunami.deposit([
