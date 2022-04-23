@@ -6,7 +6,7 @@ import { ContractFactory, Signer } from 'ethers';
 const { time } = require('@openzeppelin/test-helpers');
 
 import { Contract } from '@ethersproject/contracts';
-import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { abi as erc20ABI } from '../../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import {
     BLOCKS,
     daiAccount,
@@ -20,13 +20,13 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from '../constants/TestConstants';
+} from '../../Constants';
 import { parseUnits } from 'ethers/lib/utils';
 
-const STRAT = 'Frax';
+const STRAT = 'BUSDV2';
 const STRATEGY_NAME = `${STRAT}CurveConvex`;
 
-import * as config from '../../config.json';
+import * as config from '../../../config.json';
 
 describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;

@@ -6,7 +6,8 @@ import { ContractFactory, Signer } from 'ethers';
 const { time } = require('@openzeppelin/test-helpers');
 
 import { Contract } from '@ethersproject/contracts';
-import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { abi as erc20ABI } from '../../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+
 import {
     BLOCKS,
     daiAccount,
@@ -23,7 +24,7 @@ import {
 } from '../constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
-const STRATEGY_NAME = "AnchorStrat";
+const STRATEGY_NAME = 'AnchorStrat';
 
 describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
@@ -249,7 +250,6 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
-
 
             // Remove withdraw reserver
             await strategy.withdrawStuckToken(usdt.address);

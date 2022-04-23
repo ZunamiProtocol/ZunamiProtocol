@@ -1,0 +1,12 @@
+{
+  "stablecoins": {
+    "dai": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "usdt": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  },
+  "holders": {
+    "daiHolder": "0x6F6C07d80D0D433ca389D336e6D1feBEA2489264",
+    "usdcHolder": "0x6BB273bF25220D13C9b46c6eD3a5408A3bA9Bcc6",
+    "usdtHolder": "0x67aB29354a70732CDC97f372Be81d657ce8822cd"
+  }
+}

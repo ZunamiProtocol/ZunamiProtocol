@@ -6,7 +6,7 @@ import { ContractFactory, Signer } from 'ethers';
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 
 import { Contract } from '@ethersproject/contracts';
-import { abi as erc20ABI } from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import {
     BLOCKS,
     daiAccount,
@@ -20,10 +20,10 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from './constants/TestConstants';
+} from '../Constants';
 import { parseUnits } from 'ethers/lib/utils';
 
-import * as config from '../config.json';
+import * as config from '../../config.json';
 
 enum WithdrawalType {
     Base,
