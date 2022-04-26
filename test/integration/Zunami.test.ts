@@ -6,6 +6,11 @@ import { expect } from 'chai';
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import * as addrs from '../address.json';
 
+enum WithdrawalType {
+    Base,
+    OneCoin,
+}
+
 describe('Zunami core functionality tests', () => {
     const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -124,7 +129,7 @@ describe('Zunami core functionality tests', () => {
 
         //All functions which would be crashed
         await expect(zunami.delegateDeposit([1, 1, 1])).to.be.revertedWith('Pausable: paused');
-        await expect(zunami.delegateWithdrawal(1, [1, 1, 1])).to.be.revertedWith(
+        await expect(zunami.delegateWithdrawal(1, [1, 1, 1], WithdrawalType.Base, 0)).to.be.revertedWith(
             'Pausable: paused'
         );
         await expect(zunami.deposit([1, 1, 1])).to.be.revertedWith('Pausable: paused');
@@ -227,7 +232,7 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.completeWithdrawals([ZERO_ADDRESS])).to.be.revertedWith(
             'Zunami: default deposit pool not started yet!'
         );
-        await expect(zunami.completeWithdrawalsOptimized([ZERO_ADDRESS])).to.be.revertedWith(
+        await expect(zunami.completeWithdrawals([ZERO_ADDRESS])).to.be.revertedWith(
             'Zunami: default deposit pool not started yet!'
         );
         await expect(zunami.deposit([0, 0, 0])).to.be.revertedWith(
@@ -320,7 +325,7 @@ describe('Zunami core functionality tests', () => {
         expect(lpShares).to.eq(0);
         expect(coins).to.eq(0);
 
-        await expect(zunami.connect(alice).delegateWithdrawal(55555, [50, 100, 150]))
+        await expect(zunami.connect(alice).delegateWithdrawal(55555, [50, 100, 150], WithdrawalType.Base, 0))
             .to.emit(zunami, 'CreatedPendingWithdrawal')
             .withArgs(await alice.getAddress(), 55555, [50, 100, 150]);
 

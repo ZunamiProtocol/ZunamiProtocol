@@ -201,7 +201,7 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0]))
+                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0))
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
@@ -227,13 +227,13 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0]))
+                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0))
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
 
             await expect(
-                zunami.completeWithdrawalsOptimized([alice.getAddress(), bob.getAddress()])
+                zunami.completeWithdrawals([alice.getAddress(), bob.getAddress()])
             ).to.emit(zunami, 'Withdrawn');
         }
     });
