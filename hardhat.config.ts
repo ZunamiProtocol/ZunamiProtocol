@@ -1,17 +1,14 @@
 import '@nomiclabs/hardhat-waffle';
-import '@nomiclabs/hardhat-web3';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
-import '@nomiclabs/hardhat-truffle5';
-import '@nomiclabs/hardhat-ganache';
 
-import 'hardhat-contract-sizer'
+import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 
-import 'dotenv/config'
+import 'dotenv/config';
 
 import { HardhatUserConfig } from 'hardhat/types';
 
