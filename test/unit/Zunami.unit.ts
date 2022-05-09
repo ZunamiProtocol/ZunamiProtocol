@@ -4,7 +4,7 @@ import { MockContract } from 'ethereum-waffle';
 import chai from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import BigNumber from 'bignumber.js';
-import { MIN_LOCK_TIME } from './constants/TestConstants';
+import { MIN_LOCK_TIME } from '../Constants';
 
 const { deployMockContract, provider } = waffle;
 const [wallet, otherWallet] = provider.getWallets();
