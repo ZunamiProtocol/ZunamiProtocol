@@ -14,7 +14,7 @@ import chai from 'chai';
 
 const { expect } = chai;
 
-import { MIN_LOCK_TIME } from './constants/TestConstants';
+import { MIN_LOCK_TIME } from '../Constants';
 
 export const bn = (num: string | number) => new BigNumber(num);
 export const decify = (value: any, decimals: any) =>
