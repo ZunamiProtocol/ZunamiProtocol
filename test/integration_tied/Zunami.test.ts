@@ -167,7 +167,9 @@ describe('Zunami', function () {
             const DEFAULT_ADMIN_ROLE =
                 '0x0000000000000000000000000000000000000000000000000000000000000000';
             await zunami.grantRole(DEFAULT_ADMIN_ROLE, admin.address);
-            await zunami.updateOperator(carol.address);
+
+            const operatorRole: string = await zunami.OPERATOR_ROLE();
+            await zunami.grantRole(operatorRole, carol.address);
 
             await zunami.launch();
         });
@@ -404,7 +406,7 @@ describe('Zunami', function () {
 
                 expect(await zunami.addPool(strategy2b.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-                expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
+                expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address], [0,0,0]));
             });
 
             it('should completeWithdrawals successful complete', async () => {
@@ -416,7 +418,7 @@ describe('Zunami', function () {
                 }
 
                 expect(
-                    await zunami.completeWithdrawals([alice.address, bob.address, rosa.address])
+                    await zunami.completeWithdrawalsBase([alice.address, bob.address, rosa.address], [0,0,0])
                 );
 
                 for (const user of [alice, bob, carol, rosa]) {
@@ -451,7 +453,7 @@ describe('Zunami', function () {
 
                 expect(await zunami.connect(admin).addPool(strategy4.address));
                 await time.increaseTo((await time.latest()).add(MIN_LOCK_TIME));
-                expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
+                expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address], [0,0,0]));
 
                 for (const user of [alice, bob]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
@@ -463,7 +465,7 @@ describe('Zunami', function () {
                 expect(
                     await zunami
                         .connect(admin)
-                        .completeWithdrawals([alice.address, bob.address])
+                        .completeWithdrawalsBase([alice.address, bob.address])
                 );
                 // expect(await zunami.moveFundsBatch([1, 2, 3], 0));
             });
@@ -471,7 +473,7 @@ describe('Zunami', function () {
             it('should delegate & completeWithdrawals successful complete', async () => {
                 let zunami_balance = await zunami.balanceOf(rosa.address);
                 expect(await zunami.connect(rosa).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0));
-                expect(await zunami.connect(admin).completeWithdrawals([rosa.address]));
+                expect(await zunami.connect(admin).completeWithdrawalsBase([rosa.address], [0,0,0]));
 
                 for (const user of [alice, bob, carol, rosa]) {
                     expect(
@@ -501,9 +503,9 @@ describe('Zunami', function () {
                     );
                 }
 
-                expect(await zunami.connect(admin).completeDeposits([bob.address]));
-                expect(await zunami.connect(admin).completeDeposits([alice.address]));
-                expect(await zunami.connect(admin).completeDeposits([carol.address, rosa.address]));
+                expect(await zunami.connect(admin).completeDeposits([bob.address], [0,0,0]));
+                expect(await zunami.connect(admin).completeDeposits([alice.address], [0,0,0]));
+                expect(await zunami.connect(admin).completeDeposits([carol.address, rosa.address], [0,0,0]));
 
                 for (var i = 0; i < SKIP_TIMES; i++) {
                     await time.advanceBlockTo((await provider.getBlockNumber()) + BLOCKS);
@@ -529,12 +531,12 @@ describe('Zunami', function () {
                 expect(
                     await zunami
                         .connect(admin)
-                        .completeWithdrawals([
+                        .completeWithdrawalsBase([
                             alice.address,
                             bob.address,
                             rosa.address,
                             carol.address,
-                        ])
+                        ], [0,0,0])
                 );
             });
 
