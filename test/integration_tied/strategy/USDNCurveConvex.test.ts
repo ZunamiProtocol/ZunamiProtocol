@@ -20,13 +20,18 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from '../../Constants';
+} from '../constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
-const STRAT = 'IronBank';
+const STRAT = 'USDN';
 const STRATEGY_NAME = `${STRAT}CurveConvex`;
 
 import * as config from '../../../config.json';
+
+enum WithdrawalType {
+    Base,
+    OneCoin,
+}
 
 describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
@@ -273,7 +278,7 @@ describe(STRATEGY_NAME, function () {
             expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, rosa]) {
                 let zunami_balance = await zunami.balanceOf(user.address);
-                expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0]));
+                expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0));
             }
             expect(await zunami.completeWithdrawals([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, carol, rosa]) {
