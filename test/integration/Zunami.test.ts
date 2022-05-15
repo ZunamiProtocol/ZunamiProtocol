@@ -118,9 +118,6 @@ describe('Zunami core functionality tests', () => {
 
         await zunami.revokeRole(operatorRole, aliceAddr);
         expect(await zunami.hasRole(operatorRole, aliceAddr)).to.false;
-
-        await zunami.updateOperator(aliceAddr);
-        expect(await zunami.hasRole(operatorRole, aliceAddr)).to.true;
     });
 
     it('should handle paused/unpaused mode properly', async () => {
@@ -229,7 +226,7 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.completeDeposits([ZERO_ADDRESS])).to.be.revertedWith(
             'Zunami: default deposit pool not started yet!'
         );
-        await expect(zunami.completeWithdrawals([ZERO_ADDRESS])).to.be.revertedWith(
+        await expect(zunami.completeWithdrawalsBase([ZERO_ADDRESS], [0,0,0])).to.be.revertedWith(
             'Zunami: default deposit pool not started yet!'
         );
         await expect(zunami.completeWithdrawals([ZERO_ADDRESS])).to.be.revertedWith(
