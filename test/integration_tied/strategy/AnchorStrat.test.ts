@@ -7,6 +7,7 @@ const { time } = require('@openzeppelin/test-helpers');
 
 import { Contract } from '@ethersproject/contracts';
 import { abi as erc20ABI } from '../../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
+
 import {
     BLOCKS,
     daiAccount,
@@ -20,13 +21,15 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from '../../Constants';
+} from '../constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
-const STRAT = 'USDP';
-const STRATEGY_NAME = `${STRAT}CurveConvex`;
+const STRATEGY_NAME = 'AnchorStrat';
 
-import * as config from '../../../config.json';
+enum WithdrawalType {
+    Base,
+    OneCoin,
+}
 
 describe(STRATEGY_NAME, function () {
     let owner: SignerWithAddress;
@@ -146,7 +149,7 @@ describe(STRATEGY_NAME, function () {
         before(async function () {
             let Zunami: ContractFactory = await ethers.getContractFactory('Zunami');
             let deployedStrat: ContractFactory = await ethers.getContractFactory(STRATEGY_NAME);
-            strategy = await deployedStrat.deploy(config);
+            strategy = await deployedStrat.deploy();
             await strategy.deployed();
             zunami = await Zunami.deploy([daiAddress, usdcAddress, usdtAddress]);
             await zunami.deployed();
@@ -165,15 +168,6 @@ describe(STRATEGY_NAME, function () {
                 await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
                 await dai.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
             }
-        });
-
-        it('updateMinDepositAmount should be successful', async () => {
-            const newMinDepositAmount = 9974;
-            const minDepositAmountEqual = '0.000000000000009974';
-            expect(await strategy.updateMinDepositAmount(newMinDepositAmount));
-            expect(ethers.utils.formatUnits(await strategy.minDepositAmount())).equal(
-                minDepositAmountEqual
-            );
         });
 
         it('deposit after MIN_LOCK_TIME should be successful', async () => {
@@ -233,7 +227,13 @@ describe(STRATEGY_NAME, function () {
         it('claimManagementFees should be successful', async () => {});
 
         it('users withdraw from zunami after claim should be successful', async () => {
+            // Add withdraw reserver
+            await usdt.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await usdc.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await dai.connect(owner).transfer(strategy.address, parseUnits('15000', 'ether'));
+
             expect(await strategy.claimManagementFees());
+
             for (const user of [alice, bob, carol, rosa]) {
                 expect(
                     await zunami
@@ -255,9 +255,19 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
+
+            // Remove withdraw reserver
+            await strategy.withdrawStuckToken(usdt.address);
+            await strategy.withdrawStuckToken(usdc.address);
+            await strategy.withdrawStuckToken(dai.address);
         });
 
         it('deposit, remove user from it, complete, withdraw should be successful', async () => {
+            // Add withdraw reserver
+            await usdt.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await usdc.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await dai.connect(owner).transfer(strategy.address, parseUnits('15000', 'ether'));
+
             for (const user of [alice, bob, carol, rosa]) {
                 let usdt_balance = await usdt.balanceOf(user.address);
                 let usdc_balance = await usdc.balanceOf(user.address);
@@ -273,7 +283,7 @@ describe(STRATEGY_NAME, function () {
             expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, rosa]) {
                 let zunami_balance = await zunami.balanceOf(user.address);
-                expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0]));
+                expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0));
             }
             expect(await zunami.completeWithdrawals([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, carol, rosa]) {
@@ -289,9 +299,19 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
+
+            // Remove withdraw reserver
+            await strategy.withdrawStuckToken(usdt.address);
+            await strategy.withdrawStuckToken(usdc.address);
+            await strategy.withdrawStuckToken(dai.address);
         });
 
         it('Users double delegateDeposit, deposit, withdraw should be successful', async () => {
+            // Add withdraw reserver
+            await usdt.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await usdc.connect(owner).transfer(strategy.address, parseUnits('15000', 'mwei'));
+            await dai.connect(owner).transfer(strategy.address, parseUnits('15000', 'ether'));
+
             for (const user of [alice, bob, carol, rosa]) {
                 await zunami
                     .connect(user)
@@ -334,6 +354,11 @@ describe(STRATEGY_NAME, function () {
                     parseFloat(ethers.utils.formatUnits(usdt_balance, 6));
                 expect(SUMM).to.gt(testCheckSumm);
             }
+
+            // Remove withdraw reserver
+            await strategy.withdrawStuckToken(usdt.address);
+            await strategy.withdrawStuckToken(usdc.address);
+            await strategy.withdrawStuckToken(dai.address);
         });
     });
 });

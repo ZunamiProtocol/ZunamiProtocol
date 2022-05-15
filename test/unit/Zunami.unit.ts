@@ -471,7 +471,7 @@ describe('Zunami', () => {
             decify(123.123123123, 6).toFixed(),
         ];
 
-        await zunami.delegateWithdrawal(lpAmount, minTokenBalances);
+        await zunami.delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
 
         const pendingWithdrawal = await zunami.pendingWithdrawals(admin.address);
         expect(pendingWithdrawal.lpShares).to.be.equal(lpAmount);
@@ -517,7 +517,7 @@ describe('Zunami', () => {
                 decify(lpSharesThird, 6).toFixed(),
                 decify(lpSharesThird, 6).toFixed(),
             ];
-            await zunami.connect(user).delegateWithdrawal(lpAmount, minTokenBalances);
+            await zunami.connect(user).delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
         }
 
         for (let j = 0; j < users.length; j++) {
@@ -566,7 +566,7 @@ describe('Zunami', () => {
                 decify(lpSharesOther, 6).toFixed(),
                 decify(lpSharesOther, 6).toFixed(),
             ];
-            await zunami.connect(user).delegateWithdrawal(lpAmount, minTokenBalances);
+            await zunami.connect(user).delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
         }
 
         for (let j = 0; j < users.length; j++) {

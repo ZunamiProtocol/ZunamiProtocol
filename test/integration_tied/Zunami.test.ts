@@ -20,7 +20,7 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from '../Constants';
+} from './constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
 import * as config from '../../config.json';
@@ -407,11 +407,11 @@ describe('Zunami', function () {
                 expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             });
 
-            it('should completeWithdrawalsOptimized successful complete', async () => {
+            it('should completeWithdrawals successful complete', async () => {
                 for (const user of [alice, bob, rosa]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
                     expect(
-                        await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0])
+                        await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0)
                     );
                 }
 
@@ -456,21 +456,21 @@ describe('Zunami', function () {
                 for (const user of [alice, bob]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
                     expect(
-                        await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0])
+                        await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0)
                     );
                 }
 
                 expect(
                     await zunami
                         .connect(admin)
-                        .completeWithdrawalsOptimized([alice.address, bob.address])
+                        .completeWithdrawals([alice.address, bob.address])
                 );
                 // expect(await zunami.moveFundsBatch([1, 2, 3], 0));
             });
 
             it('should delegate & completeWithdrawals successful complete', async () => {
                 let zunami_balance = await zunami.balanceOf(rosa.address);
-                expect(await zunami.connect(rosa).delegateWithdrawal(zunami_balance, [0, 0, 0]));
+                expect(await zunami.connect(rosa).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0));
                 expect(await zunami.connect(admin).completeWithdrawals([rosa.address]));
 
                 for (const user of [alice, bob, carol, rosa]) {
@@ -522,7 +522,7 @@ describe('Zunami', function () {
                 for (const user of [alice, bob, rosa, carol]) {
                     let zunami_balance = await zunami.balanceOf(user.address);
                     expect(
-                        await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0])
+                        await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0)
                     );
                 }
                 // complete
