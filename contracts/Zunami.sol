@@ -47,8 +47,10 @@ contract Zunami is ERC20, Pausable, AccessControl {
     }
 
     PoolInfo[] internal _poolInfo;
+
     uint256 public defaultDepositPid;
     uint256 public defaultWithdrawPid;
+
     uint8 public availableWithdrawalTypes;
 
     address[POOL_ASSETS] public tokens;
@@ -67,7 +69,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 lpShares,
         uint256[POOL_ASSETS] tokenAmounts
     );
-    event Deposited(address indexed depositor, uint256[POOL_ASSETS] amounts, uint256 lpShares);
+    event Deposited(address indexed depositor, uint256 depositedValue, uint256[POOL_ASSETS] amounts, uint256 lpShares);
     event RemovedDeposit(address indexed depositor);
     event Withdrawn(
         address indexed withdrawer,
@@ -192,7 +194,9 @@ contract Zunami is ERC20, Pausable, AccessControl {
     function autoCompoundAll() external {
         uint256 totalCompounded = 0;
         for (uint256 i = 0; i < _poolInfo.length; i++) {
-            totalCompounded += _poolInfo[i].strategy.autoCompound();
+            if(_poolInfo[i].lpShares > 0) {
+                totalCompounded += _poolInfo[i].strategy.autoCompound();
+            }
         }
         emit AutoCompoundAll(totalCompounded);
     }
@@ -271,6 +275,55 @@ contract Zunami is ERC20, Pausable, AccessControl {
     }
 
     /**
+     * @dev deposit in one tx, without waiting complete by dev
+     * @return Returns amount of lpShares minted for user
+     * @param amounts - user send amounts of stablecoins to deposit
+     */
+    function deposit(uint256[POOL_ASSETS] memory amounts)
+    external
+    whenNotPaused
+    startedPool
+    returns (uint256)
+    {
+        IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
+
+        uint256 holdingsBefore = totalHoldings();
+
+        for (uint256 i = 0; i < amounts.length; i++) {
+            if (amounts[i] > 0) {
+                IERC20Metadata(tokens[i]).safeTransferFrom(
+                    _msgSender(),
+                    address(strategy),
+                    amounts[i]
+                );
+            }
+        }
+        uint256 depositedValue = strategy.deposit(amounts);
+        require(depositedValue > 0, 'Zunami: too low deposit!');
+
+        return processSuccessfulDeposit(_msgSender(), depositedValue, amounts, holdingsBefore);
+    }
+
+    function processSuccessfulDeposit(
+        address user,
+        uint256 depositedValue,
+        uint256[POOL_ASSETS] memory depositedTokens,
+        uint256 holdingsBefore
+    ) internal returns(uint256 lpShares){
+
+        if (totalSupply() == 0) {
+            lpShares = depositedValue;
+        } else {
+            lpShares = (totalSupply() * depositedValue) / holdingsBefore;
+        }
+
+        _mint(user, lpShares);
+        _poolInfo[defaultDepositPid].lpShares += lpShares;
+        emit Deposited(user, depositedValue, depositedTokens, lpShares);
+        totalDeposited += depositedValue;
+    }
+
+    /**
      * @dev Zunami protocol owner complete all active pending deposits of users
      * @param userList - dev send array of users from pending to complete
      */
@@ -280,53 +333,42 @@ contract Zunami is ERC20, Pausable, AccessControl {
         startedPool
     {
         IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
-        uint256 currentTotalHoldings = totalHoldings();
+        uint256 holdingsBefore = totalHoldings();
 
-        uint256 newHoldings = 0;
+        uint256 holdingsNew;
         uint256[POOL_ASSETS] memory totalAmounts;
-        uint256[] memory userCompleteHoldings = new uint256[](userList.length);
+        uint256[] memory holdingsPerUser = new uint256[](userList.length);
         for (uint256 i = 0; i < userList.length; i++) {
-            newHoldings = 0;
-
+            holdingsNew = 0;
             for (uint256 x = 0; x < totalAmounts.length; x++) {
                 uint256 userTokenDeposit = _pendingDeposits[userList[i]][x];
                 totalAmounts[x] += userTokenDeposit;
-                newHoldings += userTokenDeposit * decimalsMultipliers[x];
+                holdingsNew += userTokenDeposit * decimalsMultipliers[x];
             }
-            userCompleteHoldings[i] = newHoldings;
+            holdingsPerUser[i] = holdingsNew;
         }
 
-        newHoldings = 0;
+        uint256 holdingsTotal = 0;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
-            uint256 totalTokenAmount = totalAmounts[y];
-            if (totalTokenAmount > 0) {
-                newHoldings += totalTokenAmount * decimalsMultipliers[y];
-                IERC20Metadata(tokens[y]).safeTransfer(address(strategy), totalTokenAmount);
+            uint256 tokenAmountTotal = totalAmounts[y];
+            if (tokenAmountTotal > 0) {
+                holdingsTotal += tokenAmountTotal * decimalsMultipliers[y];
+                IERC20Metadata(tokens[y]).safeTransfer(address(strategy), tokenAmountTotal);
             }
         }
-        uint256 totalDepositedNow = strategy.deposit(totalAmounts);
-        require(totalDepositedNow > 0, 'Zunami: too low deposit!');
+        uint256 depositedValue = strategy.deposit(totalAmounts);
+        require(depositedValue > 0, 'Zunami: too low deposit!');
+
         uint256 lpShares = 0;
-        uint256 addedHoldings = 0;
-        uint256 userDeposited = 0;
-
+        uint256 holdingsCounted = 0;
+        uint256 userDepositedValue = 0;
         for (uint256 z = 0; z < userList.length; z++) {
-            userDeposited = (totalDepositedNow * userCompleteHoldings[z]) / newHoldings;
             address userAddr = userList[z];
-            if (totalSupply() == 0) {
-                lpShares = userDeposited;
-            } else {
-                lpShares = (totalSupply() * userDeposited) / (currentTotalHoldings + addedHoldings);
-            }
-            addedHoldings += userDeposited;
-            _mint(userAddr, lpShares);
-            _poolInfo[defaultDepositPid].lpShares += lpShares;
-            emit Deposited(userAddr, _pendingDeposits[userAddr], lpShares);
-
-            // remove deposit from list
+            userDepositedValue = (depositedValue * holdingsPerUser[z]) / holdingsTotal;
+            processSuccessfulDeposit(userAddr, userDepositedValue, _pendingDeposits[userAddr], holdingsBefore + holdingsCounted);
+            holdingsCounted += userDepositedValue;
             delete _pendingDeposits[userAddr];
         }
-        totalDeposited += addedHoldings;
     }
 
     /**
@@ -585,46 +627,6 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
             delete _pendingWithdrawals[user];
         }
-    }
-
-    /**
-     * @dev deposit in one tx, without waiting complete by dev
-     * @return Returns amount of lpShares minted for user
-     * @param amounts - user send amounts of stablecoins to deposit
-     */
-    function deposit(uint256[POOL_ASSETS] memory amounts)
-        external
-        whenNotPaused
-        startedPool
-        returns (uint256)
-    {
-        IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
-        uint256 holdings = totalHoldings();
-        for (uint256 i = 0; i < amounts.length; i++) {
-            if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(
-                    _msgSender(),
-                    address(strategy),
-                    amounts[i]
-                );
-            }
-        }
-        uint256 newDeposited = strategy.deposit(amounts);
-        require(newDeposited > 0, 'Zunami: too low deposit!');
-
-        uint256 lpShares = 0;
-        if (totalSupply() == 0) {
-            lpShares = newDeposited;
-        } else {
-            lpShares = (totalSupply() * newDeposited) / holdings;
-        }
-
-        _mint(_msgSender(), lpShares);
-        _poolInfo[defaultDepositPid].lpShares += lpShares;
-        totalDeposited += newDeposited;
-
-        emit Deposited(_msgSender(), amounts, lpShares);
-        return lpShares;
     }
 
     /**
