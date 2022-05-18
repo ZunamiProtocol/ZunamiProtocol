@@ -221,8 +221,12 @@ contract Zunami is ERC20, Pausable, AccessControl {
      * @dev Returns price depends on the income of users
      * @return Returns currently price of ZLP (1e18 = 1$)
      */
-    function lpPrice() external view returns (uint256) {
-        return (totalHoldings() * 1e18) / totalSupply();
+    function lpPrice() public view returns (uint256) {
+        return calcTokenPrice(totalHoldings(), totalSupply());
+    }
+
+    function calcTokenPrice(uint256 holdings, uint256 tokens) internal view returns(uint256) {
+        return (holdings * 1e18) / tokens;
     }
 
     /**
@@ -668,11 +672,84 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return _poolInfo[defaultWithdrawPid].strategy.calcSharesAmount(tokenAmounts, isDeposit);
     }
 
+    struct PriceInfo {
+        uint256 pid;
+        uint256 price;
+        uint256 holdings;
+    }
+
+    function rebalance() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        //calc strategy lp prices
+        uint256 totalHoldings = 0;
+        PriceInfo[] memory prices = new PriceInfo[](_poolInfo.length);
+        for(uint256 i = 0; i < _poolInfo.length; i++) {
+            PoolInfo memory poolInfo = _poolInfo[i];
+            if(poolInfo.lpShares == 0) continue;
+            uint256 holdings = poolInfo.strategy.totalHoldings();
+            prices[i] = PriceInfo(i, calcTokenPrice(holdings, poolInfo.lpShares), holdings);
+            totalHoldings += holdings;
+        }
+
+        //cache protocol lp price
+        uint256 commonPrice = calcTokenPrice(totalHoldings, totalSupply());
+
+        //descendant sort of prices
+        PriceInfo[] memory sortedPrices = sortPrices(prices);
+
+        uint256 boundary = sortedPrices.length - 1;
+        for(uint256 i = 0; i <= boundary; i++) {
+            PriceInfo memory lowerPrice = sortedPrices[i];
+            if(lowerPrice.price == 0) continue;
+            if(lowerPrice.price >= commonPrice) break;
+
+            PoolInfo storage lowerPool = _poolInfo[lowerPrice.pid];
+            uint256 lowerTokenDiff = calcTokenDiff(lowerPool.lpShares, commonPrice, lowerPrice.holdings);
+            lowerPool.lpShares -= lowerTokenDiff;
+
+            for(uint256 j = boundary; j >= i + 1; j--) {
+                PriceInfo memory higherPrice = sortedPrices[j];
+                if(higherPrice.price == 0) continue;
+                if(higherPrice.price <= commonPrice) break;
+
+                PoolInfo storage higherPool = _poolInfo[higherPrice.pid];
+                uint256 higherTokenDiff = calcTokenDiff(higherPool.lpShares, commonPrice, higherPrice.holdings);
+                if(higherTokenDiff >= lowerTokenDiff) {
+                    higherPool.lpShares += lowerTokenDiff;
+                    lowerTokenDiff = 0;
+                    break;
+                }
+
+                higherPool.lpShares += higherTokenDiff;
+                lowerTokenDiff -= higherTokenDiff;
+                boundary -= 1;
+            }
+
+            // give back unused lps
+            if(lowerTokenDiff > 0) {
+                lowerPool.lpShares += lowerTokenDiff;
+            }
+        }
+    }
+
+    function calcTokenDiff(uint256 shares, uint256 price, uint256 value) internal returns(uint) {
+        uint256 balancedShares = value * 1e18 / price;
+        return shares > balancedShares ? shares - balancedShares : balancedShares - shares;
+    }
+
+    function sortPrices(PriceInfo[] memory arr) private pure returns (PriceInfo[] memory) {
+        uint256 l = arr.length;
+        for(uint256 i = 0; i < l; i++) {
+            for(uint256 j = i + 1; j < l ;j++) {
+                if(arr[i].price > arr[j].price) (arr[i], arr[j]) = (arr[j], arr[i]);
+            }
+        }
+        return arr;
+    }
+
     /**
      * @dev add a new pool, deposits in the new pool are blocked for one day for safety
      * @param _strategyAddr - the new pool strategy address
      */
-
     function addPool(address _strategyAddr) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_strategyAddr != address(0), 'Zunami: zero strategy addr');
         uint256 startTime = block.timestamp + (launched ? MIN_LOCK_TIME : 0);

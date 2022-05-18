@@ -4,7 +4,9 @@ import { MockContract } from 'ethereum-waffle';
 import chai from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import BigNumber from 'bignumber.js';
-import { MIN_LOCK_TIME } from '../Constants';
+import {duration} from "../integration_tied/utils";
+
+const MIN_LOCK_TIME = duration.seconds(86405);
 
 const { deployMockContract, provider } = waffle;
 const [wallet, otherWallet] = provider.getWallets();
@@ -619,5 +621,56 @@ describe('Zunami', () => {
         const transactionDelay = 4; // seconds
         const startTime = creationTime.add(MIN_LOCK_TIME).toNumber() - transactionDelay;
         expect((await zunami.poolInfo(1)).startTime).to.be.equal(startTime);
+    });
+
+    it.only('should rebalance randomly initialised pools', async () => {
+        const tokens = [100, 100, 100];
+        const holdings = 300;
+        const createStrategy = async () => {
+            const tokenBalances = await mintAndApproveTokens(admin, tokens);
+            const strategy = await mockStrategy();
+            await zunami.addPool(strategy.address);
+            const pid = await zunami.poolCount();
+            await zunami.setDefaultDepositPid(pid - 1);
+            await setTotalHoldings(strategy, 0);
+            await strategy.mock.deposit.withArgs(tokenBalances).returns(tokenify(holdings).toFixed());
+            await zunami.deposit(tokenBalances);
+            await setTotalHoldings(strategy, tokenify(holdings).toFixed());
+            return strategy;
+        }
+
+        const poolCount = 20;
+        const pids = Array.from(new Array(poolCount).keys());
+        const strategies = [];
+        for (const pid of pids) {
+            strategies.push(await createStrategy());
+        }
+
+        expect(await zunami.lpPrice()).to.be.equal(tokenify(1).toFixed());
+
+        for (const strat of strategies) {
+            const changePercentage = Math.random() * 2;
+            await setTotalHoldings(strat, tokenify(300 * changePercentage).toFixed());
+        }
+
+        const lpPrice = await zunami.lpPrice();
+
+        const calcTokenPrice = async (strategy: Contract, pid: number) =>
+          await strategy.totalHoldings() / (await zunami.poolInfo(pid)).lpShares;
+
+        let lpPrices = await Promise.all(strategies.map( (strat, index) => calcTokenPrice(strat, index)));
+        console.log(lpPrices);
+
+        await zunami.rebalance();
+
+        expect(await zunami.lpPrice()).to.be.equal(lpPrice);
+
+        lpPrices = await Promise.all(strategies.map( (strat, index) => calcTokenPrice(strat, index)));
+        console.log(lpPrices);
+
+        const truncate = (value: any, digits: number) => Math.trunc(value * (10 ** digits)) / (10 ** digits);
+        for (let i = 0; i < lpPrices.length - 1; i++) {
+            expect(truncate(lpPrices[i], 14)).to.be.equal(truncate(lpPrices[i + 1], 14));
+        }
     });
 });
