@@ -77,7 +77,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 depositedValue,
         uint256[POOL_ASSETS] amounts,
         uint256 lpShares,
-        bool isOptimized
+        bool optimized
     );
 
     event Withdrawn(
@@ -85,7 +85,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 lpShares,
         IStrategy.WithdrawalType withdrawalType,
         uint128 tokenIndex,
-        bool isOptimized
+        bool optimized
     );
     event FailedWithdrawal(
         address indexed withdrawer,
@@ -295,7 +295,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 depositedValue,
         uint256[POOL_ASSETS] memory depositedTokens,
         uint256 holdingsBefore,
-        bool isOptimized
+        bool optimized
     ) internal returns (uint256 lpShares) {
         if (totalSupply() == 0) {
             lpShares = depositedValue;
@@ -305,7 +305,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
         _mint(user, lpShares);
         _poolInfo[defaultDepositPid].lpShares += lpShares;
-        emit Deposited(user, depositedValue, depositedTokens, lpShares, isOptimized);
+        emit Deposited(user, depositedValue, depositedTokens, lpShares, optimized);
         totalDeposited += depositedValue;
     }
 
@@ -437,12 +437,12 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 lpShares,
         IStrategy.WithdrawalType withdrawalType,
         uint128 tokenIndex,
-        bool isOptimized
+        bool optimized
     ) internal {
         _burn(user, lpShares);
         _poolInfo[defaultWithdrawPid].lpShares -= lpShares;
         totalDeposited -= userDeposit;
-        emit Withdrawn(user, lpShares, withdrawalType, tokenIndex, isOptimized);
+        emit Withdrawn(user, lpShares, withdrawalType, tokenIndex, optimized);
     }
 
     function processSuccessfulOptimizedWithdrawal(
