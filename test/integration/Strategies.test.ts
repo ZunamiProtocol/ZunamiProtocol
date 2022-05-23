@@ -202,13 +202,17 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0))
+                await expect(
+                    zunami
+                        .connect(user)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
+                )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
 
             await expect(
-                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0,0,0])
+                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0, 0, 0])
             ).to.emit(zunami, 'Withdrawn');
         }
     });
@@ -228,13 +232,17 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0))
+                await expect(
+                    zunami
+                        .connect(user)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0)
+                )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
 
             await expect(
-                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0,0,0])
+                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0, 0, 0])
             ).to.emit(zunami, 'Withdrawn');
         }
     });
@@ -285,5 +293,46 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.eq(0);
             }
         }
+    });
+
+    it('should moveFunds only to not outdated pool', async () => {
+        const poolSrc = 0;
+        const poolDst = 1;
+        const veryBigNumber = 1_000_000_000;
+        const percentage = 10_000;
+
+        for (let poolId = 0; poolId < 2; poolId++) {
+            await zunami.addPool(strategies[poolId].address);
+        }
+
+        await zunami.setDefaultDepositPid(poolSrc);
+        await zunami.setDefaultWithdrawPid(poolSrc);
+
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.eq(0);
+        await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
+
+        await expect(zunami.setOutdatedPool(veryBigNumber, true)).to.be.revertedWith(
+            'Zunami: incorrect an index of the pool'
+        );
+        await expect(zunami.setOutdatedPool(poolSrc, true)).to.be.revertedWith(
+            'Zunami: current pool is set as deposit/withdraw default pool'
+        );
+
+        await expect(zunami.setOutdatedPool(poolDst, true));
+        await expect((await zunami.poolInfo(poolDst)).outdated).to.be.true;
+
+        await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst)).to.be.revertedWith(
+            'Zunami: attempt to move funds to an outdated pool'
+        );
+
+        await expect(zunami.setOutdatedPool(poolDst, false));
+        await expect((await zunami.poolInfo(poolDst)).outdated).to.be.false;
+
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
+        await expect((await zunami.poolInfo(poolDst)).lpShares).to.be.eq(0);
+        await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst));
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.eq(0);
+        await expect((await zunami.poolInfo(poolDst)).lpShares).to.be.gt(0);
     });
 });

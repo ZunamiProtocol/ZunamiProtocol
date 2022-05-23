@@ -44,6 +44,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         IStrategy strategy;
         uint256 startTime;
         uint256 lpShares;
+        bool outdated;
     }
 
     PoolInfo[] internal _poolInfo;
@@ -801,7 +802,12 @@ contract Zunami is ERC20, Pausable, AccessControl {
         require(_strategyAddr != address(0), 'Zunami: zero strategy addr');
         uint256 startTime = block.timestamp + (launched ? MIN_LOCK_TIME : 0);
         _poolInfo.push(
-            PoolInfo({ strategy: IStrategy(_strategyAddr), startTime: startTime, lpShares: 0 })
+            PoolInfo({
+                strategy: IStrategy(_strategyAddr),
+                startTime: startTime,
+                lpShares: 0,
+                outdated: false
+            })
         );
         emit AddedPool(_poolInfo.length - 1, _strategyAddr, startTime);
     }
@@ -848,6 +854,10 @@ contract Zunami is ERC20, Pausable, AccessControl {
             'Zunami: incorrect arguments for the moveFundsBatch'
         );
         require(_receiverStrategyId < _poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
+        require(
+            _poolInfo[_receiverStrategyId].outdated == false,
+            'Zunami: attempt to move funds to an outdated pool'
+        );
 
         uint256[POOL_ASSETS] memory tokenBalance;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
@@ -942,5 +952,19 @@ contract Zunami is ERC20, Pausable, AccessControl {
     // Get bit value at position
     function checkBit(uint8 mask, uint8 bit) internal pure returns (bool) {
         return mask & (0x01 << bit) != 0;
+    }
+
+    function setOutdatedPool(uint256 poolIndex, bool outdated)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(poolIndex < _poolInfo.length, 'Zunami: incorrect an index of the pool');
+        require(
+            poolIndex != defaultDepositPid && poolIndex != defaultWithdrawPid,
+            'Zunami: current pool is set as deposit/withdraw default pool'
+        );
+
+        PoolInfo storage pool = _poolInfo[poolIndex];
+        pool.outdated = outdated;
     }
 }
