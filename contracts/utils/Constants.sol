@@ -24,6 +24,7 @@ library Constants {
     uint256 internal constant CVX_MIM_PID = 40;
     uint256 internal constant CVX_OUSD_PID = 56;
     uint256 internal constant CVX_UST_PID = 59;
+    uint256 internal constant CVX_D3_PID = 58;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
@@ -139,4 +140,7 @@ library Constants {
     address internal constant CVX_UST_EXTRA_ADDRESS = 0x0000000000000000000000000000000000000000;
     address internal constant UST_EXTRA_ADDRESS = 0x0000000000000000000000000000000000000000;
     address internal constant UST_EXTRA_PAIR_ADDRESS = 0x0000000000000000000000000000000000000000;
+    address internal constant CRV_D3_ADDRESS = 0xBaaa1F5DbA42C3389bDbc2c9D2dE134F5cD0Dc89;
+    address internal constant CRV_D3_LP_ADDRESS = 0xBaaa1F5DbA42C3389bDbc2c9D2dE134F5cD0Dc89;
+    address internal constant CVX_D3_REWARDS_ADDRESS = 0x329cb014b562d5d42927cfF0dEdF4c13ab0442EF;
 }
