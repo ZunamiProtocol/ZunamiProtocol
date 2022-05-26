@@ -290,5 +290,13 @@ describe('Single strategy tests', () => {
     it.only('test', async () => {
         await zunami.addPool(strategies[0].address);
         await zunami.connect(alice).deposit(getMinAmount());
+
+        const zlpAmountBefore = await zunami.balanceOf(alice.getAddress());
+        // console.log(`Strategies.test.ts:295: ${zlpAmountBefore}`);
+
+        await zunami.connect(alice).withdraw(zlpAmountBefore, [0, 0, 0], WithdrawalType.OneCoin, 0);
+
+        const zlpAmountAfter = await zunami.balanceOf(alice.getAddress());
+        // console.log(`Strategies.test.ts:299: ${zlpAmountAfter}`);
     });
 });

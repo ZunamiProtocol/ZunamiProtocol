@@ -18,8 +18,6 @@ contract D3CurveConvex is CurveConvexStratBase {
     ICurvePool d3Pool;
     IERC20Metadata d3PoolLP;
 
-    uint8 public constant CURVE_FRAX_LP_TOKEN_ID = 0;
-
     constructor(Config memory config)
         CurveConvexStratBase(
             config,
@@ -31,7 +29,7 @@ contract D3CurveConvex is CurveConvexStratBase {
         pool3 = ICurvePool(Constants.CRV_3POOL_ADDRESS);
         pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
         fraxPool = ICurvePool2(Constants.CRV_FRAX_ADDRESS);
-        fraxLP = IERC20Metadata(Constants.CRV_FRAX_LP_ADDRESS);
+        fraxLP = IERC20Metadata(Constants.FRAX_ADDRESS);
         d3Pool = ICurvePool(Constants.CRV_D3_ADDRESS);
         d3PoolLP = IERC20Metadata(Constants.CRV_D3_LP_ADDRESS);
     }
@@ -55,47 +53,56 @@ contract D3CurveConvex is CurveConvexStratBase {
         return (depositedFraxLp * fraxLpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
+    function depositPool(uint256[3] memory amounts) internal override returns (uint256 d3LPAmount) {
         for (uint256 i = 0; i < 3; i++) {
             _config.tokens[i].safeIncreaseAllowance(address(pool3), amounts[i]);
         }
         pool3.add_liquidity(amounts, 0);
 
-        uint256[2] memory lp3Amounts;
-        uint8 lp3Index = 1;
-        lp3Amounts[lp3Index] = pool3LP.balanceOf(address(this));
-        pool3LP.safeIncreaseAllowance(address(fraxPool), lp3Amounts[lp3Index]);
-        fraxPool.add_liquidity(lp3Amounts, 0);
+        uint256 lp3Amounts = pool3LP.balanceOf(address(this));
+        int128 sellCoinIndex = 1;
+        int128 buyCoinIndex = 0;
+        pool3LP.safeIncreaseAllowance(address(fraxPool), lp3Amounts);
+        fraxPool.exchange(sellCoinIndex, buyCoinIndex, lp3Amounts, 0);
 
         uint256[3] memory fraxAmounts;
-        uint8 fraxIndex = 0;
+        uint256 fraxIndex = 0;
         fraxAmounts[fraxIndex] = fraxLP.balanceOf(address(this));
         fraxLP.safeIncreaseAllowance(address(d3Pool), fraxAmounts[fraxIndex]);
         d3Pool.add_liquidity(fraxAmounts, 0);
 
-        poolLPs = d3PoolLP.balanceOf(address(this));
+        d3LPAmount = d3PoolLP.balanceOf(address(this));
 
-        // poolLP.safeApprove(address(_config.booster), poolLPs);
-        // _config.booster.depositAll(cvxPoolPID, true);
+        d3PoolLP.safeApprove(address(_config.booster), d3LPAmount);
+        _config.booster.depositAll(cvxPoolPID, true);
     }
 
     function getCurvePoolPrice() internal view override returns (uint256) {
         return d3Pool.get_virtual_price();
     }
 
-    function calcWithdrawOneCoin(uint256 sharesAmount, uint128 tokenIndex)
-        external
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
+        public
         view
         override
         returns (uint256 tokenAmount)
-    {}
+    {
+        uint256 d3poolLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        uint256 fraxLps = d3Pool.calc_withdraw_one_coin(d3poolLps, 0);
+        uint256 pool3Lps = fraxPool.calc_withdraw_one_coin(fraxLps, 0);
+        tokenAmount = pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
+    }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
-        external
+        public
         view
         override
         returns (uint256 sharesAmount)
-    {}
+    {
+        uint256 pool3Lps = pool3.calc_token_amount(tokenAmounts, isDeposit);
+        uint256 fraxLps = fraxPool.calc_token_amount([pool3Lps, 0], isDeposit);
+        sharesAmount = d3Pool.calc_token_amount([fraxLps, 0, 0], isDeposit);
+    }
 
     function calcCrvLps(
         WithdrawalType withdrawalType,
@@ -104,13 +111,23 @@ contract D3CurveConvex is CurveConvexStratBase {
         uint128 tokenIndex
     )
         internal
+        view
         override
         returns (
             bool success,
             uint256 removingCrvLps,
             uint256[] memory tokenAmountsDynamic
         )
-    {}
+    {
+        removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        success = removingCrvLps >= calcSharesAmount(tokenAmounts, false);
+
+        if (success && withdrawalType == WithdrawalType.OneCoin) {
+            success = tokenAmounts[tokenIndex] <= calcWithdrawOneCoin(removingCrvLps, tokenIndex);
+        }
+
+        tokenAmountsDynamic = new uint256[](2);
+    }
 
     function removeCrvLps(
         uint256 removingCrvLps,
@@ -118,5 +135,36 @@ contract D3CurveConvex is CurveConvexStratBase {
         WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
-    ) internal override {}
+    ) internal override {
+        uint256 fraxBalanceBefore = fraxLP.balanceOf(address(this));
+        d3Pool.remove_liquidity_one_coin(removingCrvLps, 0, 0);
+        uint256 fraxLPAmount = fraxLP.balanceOf(address(this)) - fraxBalanceBefore;
+
+        console.log('D3CurveConvex.sol:143: removingCrvLps = %s', removingCrvLps);
+        console.log('D3CurveConvex.sol:144: fraxLPAmount = %s', fraxLPAmount);
+
+        pool3LP.safeIncreaseAllowance(address(fraxPool), fraxLPAmount);
+
+        uint256 pool3BalanceBefore = pool3LP.balanceOf(address(this));
+        console.log('D3CurveConvex.sol:149: pool3BalanceBefore = %s', pool3BalanceBefore);
+        int128 sellCoinIndex = 0;
+        int128 buyCoinIndex = 1;
+        fraxPool.exchange(sellCoinIndex, buyCoinIndex, fraxLPAmount, 0);
+
+        /* uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
+
+        uint256[2] memory minAmounts2;
+        pool.remove_liquidity_one_coin(removingCrvLps, CURVE_3POOL_LP_TOKEN_ID_INT, 0);
+
+        uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;
+        if (withdrawalType == WithdrawalType.Base) {
+            pool3.remove_liquidity(crv3LiqAmount, tokenAmounts);
+        } else if (withdrawalType == WithdrawalType.OneCoin) {
+            pool3.remove_liquidity_one_coin(
+                crv3LiqAmount,
+                int128(tokenIndex),
+                tokenAmounts[tokenIndex]
+            );
+        } */
+    }
 }

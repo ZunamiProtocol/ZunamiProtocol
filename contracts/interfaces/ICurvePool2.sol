@@ -22,6 +22,13 @@ interface ICurvePool2 is ICurvePoolPricable {
         uint256 min_received
     ) external returns (uint256);
 
+    function exchange(
+        int128 i,
+        int128 j,
+        uint256 input,
+        uint256 min_output
+    ) external returns (uint256);
+
     function exchange_underlying(
         int128 i,
         int128 j,
