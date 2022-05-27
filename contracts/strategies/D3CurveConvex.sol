@@ -14,7 +14,7 @@ contract D3CurveConvex is CurveConvexStratBase {
     ICurvePool pool3;
     IERC20Metadata pool3LP;
     ICurvePool2 fraxPool;
-    IERC20Metadata fraxLP;
+    IERC20Metadata frax;
     ICurvePool d3Pool;
     IERC20Metadata d3PoolLP;
 
@@ -29,7 +29,7 @@ contract D3CurveConvex is CurveConvexStratBase {
         pool3 = ICurvePool(Constants.CRV_3POOL_ADDRESS);
         pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
         fraxPool = ICurvePool2(Constants.CRV_FRAX_ADDRESS);
-        fraxLP = IERC20Metadata(Constants.FRAX_ADDRESS);
+        frax = IERC20Metadata(Constants.FRAX_ADDRESS);
         d3Pool = ICurvePool(Constants.CRV_D3_ADDRESS);
         d3PoolLP = IERC20Metadata(Constants.CRV_D3_LP_ADDRESS);
     }
@@ -67,8 +67,8 @@ contract D3CurveConvex is CurveConvexStratBase {
 
         uint256[3] memory fraxAmounts;
         uint256 fraxIndex = 0;
-        fraxAmounts[fraxIndex] = fraxLP.balanceOf(address(this));
-        fraxLP.safeIncreaseAllowance(address(d3Pool), fraxAmounts[fraxIndex]);
+        fraxAmounts[fraxIndex] = frax.balanceOf(address(this));
+        frax.safeIncreaseAllowance(address(d3Pool), fraxAmounts[fraxIndex]);
         d3Pool.add_liquidity(fraxAmounts, 0);
 
         d3LPAmount = d3PoolLP.balanceOf(address(this));
@@ -136,20 +136,20 @@ contract D3CurveConvex is CurveConvexStratBase {
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
-        uint256 fraxBalanceBefore = fraxLP.balanceOf(address(this));
+        uint256 fraxBalanceBefore = frax.balanceOf(address(this));
         d3Pool.remove_liquidity_one_coin(removingCrvLps, 0, 0);
-        uint256 fraxLPAmount = fraxLP.balanceOf(address(this)) - fraxBalanceBefore;
+        uint256 fraxAmount = frax.balanceOf(address(this)) - fraxBalanceBefore;
 
         console.log('D3CurveConvex.sol:143: removingCrvLps = %s', removingCrvLps);
-        console.log('D3CurveConvex.sol:144: fraxLPAmount = %s', fraxLPAmount);
+        console.log('D3CurveConvex.sol:144: fraxLPAmount = %s', fraxAmount);
 
-        pool3LP.safeIncreaseAllowance(address(fraxPool), fraxLPAmount);
+        frax.safeIncreaseAllowance(address(fraxPool), fraxAmount);
 
         uint256 pool3BalanceBefore = pool3LP.balanceOf(address(this));
         console.log('D3CurveConvex.sol:149: pool3BalanceBefore = %s', pool3BalanceBefore);
         int128 sellCoinIndex = 0;
         int128 buyCoinIndex = 1;
-        fraxPool.exchange(sellCoinIndex, buyCoinIndex, fraxLPAmount, 0);
+        fraxPool.exchange(sellCoinIndex, buyCoinIndex, fraxAmount, 0);
 
         /* uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
 
