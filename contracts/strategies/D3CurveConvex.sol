@@ -136,35 +136,55 @@ contract D3CurveConvex is CurveConvexStratBase {
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
-        uint256 fraxBalanceBefore = frax.balanceOf(address(this));
-        d3Pool.remove_liquidity_one_coin(removingCrvLps, 0, 0);
-        uint256 fraxAmount = frax.balanceOf(address(this)) - fraxBalanceBefore;
-
-        console.log('D3CurveConvex.sol:143: removingCrvLps = %s', removingCrvLps);
-        console.log('D3CurveConvex.sol:144: fraxLPAmount = %s', fraxAmount);
-
-        frax.safeIncreaseAllowance(address(fraxPool), fraxAmount);
-
         uint256 pool3BalanceBefore = pool3LP.balanceOf(address(this));
-        console.log('D3CurveConvex.sol:149: pool3BalanceBefore = %s', pool3BalanceBefore);
-        int128 sellCoinIndex = 0;
-        int128 buyCoinIndex = 1;
-        fraxPool.exchange(sellCoinIndex, buyCoinIndex, fraxAmount, 0);
+        _sellTokens(removingCrvLps);
+        uint256 pool3BalanceAfter = pool3LP.balanceOf(address(this)) - pool3BalanceBefore;
 
-        /* uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
-
-        uint256[2] memory minAmounts2;
-        pool.remove_liquidity_one_coin(removingCrvLps, CURVE_3POOL_LP_TOKEN_ID_INT, 0);
-
-        uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;
         if (withdrawalType == WithdrawalType.Base) {
-            pool3.remove_liquidity(crv3LiqAmount, tokenAmounts);
+            pool3.remove_liquidity(pool3BalanceAfter, tokenAmounts);
         } else if (withdrawalType == WithdrawalType.OneCoin) {
             pool3.remove_liquidity_one_coin(
-                crv3LiqAmount,
+                pool3BalanceAfter,
                 int128(tokenIndex),
                 tokenAmounts[tokenIndex]
             );
-        } */
+        }
+    }
+
+    function withdrawAll() external onlyZunami {
+        cvxRewards.withdrawAllAndUnwrap(true);
+
+        sellRewards();
+
+        withdrawAllSpecific();
+
+        transferZunamiAllTokens();
+    }
+
+    function withdrawAllSpecific() internal {
+        uint256[3] memory minAmounts;
+
+        uint256 pool3BalanceBefore = pool3LP.balanceOf(address(this));
+        sellAllTokens();
+        uint256 pool3BalanceAfter = pool3LP.balanceOf(address(this)) - pool3BalanceBefore;
+
+        pool3.remove_liquidity(pool3BalanceAfter, minAmounts);
+    }
+
+    function sellAllTokens() public {
+        uint256 d3Balance = d3PoolLP.balanceOf((address(this)));
+        _sellTokens(d3Balance);
+    }
+
+    function _sellTokens(uint256 tokenAmount) internal {
+        uint256 fraxBalanceBefore = frax.balanceOf(address(this));
+        d3Pool.remove_liquidity_one_coin(tokenAmount, 0, 0);
+        uint256 fraxAmount = frax.balanceOf(address(this)) - fraxBalanceBefore;
+
+        frax.safeIncreaseAllowance(address(fraxPool), fraxAmount);
+
+        int128 sellCoinIndex = 0;
+        int128 buyCoinIndex = 1;
+        fraxPool.exchange(sellCoinIndex, buyCoinIndex, fraxAmount, 0);
     }
 }

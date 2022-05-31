@@ -16,8 +16,12 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['D3CurveConvex'];
-    // const strategyNames = ['USDNCurveConvex', 'LUSDCurveConvex', 'USTWormholeCurveConvex'];
+    const strategyNames = [
+        'USDNCurveConvex',
+        'LUSDCurveConvex',
+        'USTWormholeCurveConvex',
+        'D3CurveConvex',
+    ];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -285,18 +289,5 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.eq(0);
             }
         }
-    });
-
-    it.only('test', async () => {
-        await zunami.addPool(strategies[0].address);
-        await zunami.connect(alice).deposit(getMinAmount());
-
-        const zlpAmountBefore = await zunami.balanceOf(alice.getAddress());
-        // console.log(`Strategies.test.ts:295: ${zlpAmountBefore}`);
-
-        await zunami.connect(alice).withdraw(zlpAmountBefore, [0, 0, 0], WithdrawalType.OneCoin, 0);
-
-        const zlpAmountAfter = await zunami.balanceOf(alice.getAddress());
-        // console.log(`Strategies.test.ts:299: ${zlpAmountAfter}`);
     });
 });
