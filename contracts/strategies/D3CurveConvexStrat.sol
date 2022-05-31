@@ -8,17 +8,25 @@ import '../interfaces/ICurvePool2.sol';
 
 import 'hardhat/console.sol';
 
-contract D3CurveConvex is CurveConvexStratBase {
+contract D3CurveConvexStrat is CurveConvexStratBase {
     using SafeERC20 for IERC20Metadata;
 
     ICurvePool pool3;
     IERC20Metadata pool3LP;
-    ICurvePool2 fraxPool;
-    IERC20Metadata frax;
+    ICurvePool2 extraTokenPool;
+    IERC20Metadata extraToken;
     ICurvePool d3Pool;
     IERC20Metadata d3PoolLP;
 
-    constructor(Config memory config)
+    constructor(
+        Config memory config,
+        address pool3Addr,
+        address pool3LPAddr,
+        address extraTokenPoolAddr,
+        address extraTokenAddr,
+        address d3PoolAddr,
+        address d3PoolLPAddr
+    )
         CurveConvexStratBase(
             config,
             Constants.CRV_D3_ADDRESS,
@@ -26,12 +34,12 @@ contract D3CurveConvex is CurveConvexStratBase {
             Constants.CVX_D3_PID
         )
     {
-        pool3 = ICurvePool(Constants.CRV_3POOL_ADDRESS);
-        pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
-        fraxPool = ICurvePool2(Constants.CRV_FRAX_ADDRESS);
-        frax = IERC20Metadata(Constants.FRAX_ADDRESS);
-        d3Pool = ICurvePool(Constants.CRV_D3_ADDRESS);
-        d3PoolLP = IERC20Metadata(Constants.CRV_D3_LP_ADDRESS);
+        pool3 = ICurvePool(pool3Addr);
+        pool3LP = IERC20Metadata(pool3LPAddr);
+        extraTokenPool = ICurvePool2(extraTokenPoolAddr);
+        extraToken = IERC20Metadata(extraTokenAddr);
+        d3Pool = ICurvePool(d3PoolAddr);
+        d3PoolLP = IERC20Metadata(d3PoolLPAddr);
     }
 
     function checkDepositSuccessful(uint256[3] memory amounts)
@@ -46,11 +54,11 @@ contract D3CurveConvex is CurveConvexStratBase {
         }
 
         uint256 deposited3Lp = pool3.calc_token_amount(amounts, true);
-        uint256 depositedFraxLp = fraxPool.calc_token_amount([deposited3Lp, 0], true, false);
-        uint256 fraxLpPrice = fraxPool.get_virtual_price();
-        uint256 amountsMin = (depositedFraxLp * minDepositAmount) / DEPOSIT_DENOMINATOR;
+        uint256 depositedextraTokenLp = extraTokenPool.calc_token_amount([deposited3Lp, 0], true, false);
+        uint256 extraTokenLpPrice = extraTokenPool.get_virtual_price();
+        uint256 amountsMin = (depositedextraTokenLp * minDepositAmount) / DEPOSIT_DENOMINATOR;
 
-        return (depositedFraxLp * fraxLpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
+        return (depositedextraTokenLp * extraTokenLpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
     function depositPool(uint256[3] memory amounts) internal override returns (uint256 d3LPAmount) {
@@ -62,14 +70,14 @@ contract D3CurveConvex is CurveConvexStratBase {
         uint256 lp3Amounts = pool3LP.balanceOf(address(this));
         int128 sellCoinIndex = 1;
         int128 buyCoinIndex = 0;
-        pool3LP.safeIncreaseAllowance(address(fraxPool), lp3Amounts);
-        fraxPool.exchange(sellCoinIndex, buyCoinIndex, lp3Amounts, 0);
+        pool3LP.safeIncreaseAllowance(address(extraTokenPool), lp3Amounts);
+        extraTokenPool.exchange(sellCoinIndex, buyCoinIndex, lp3Amounts, 0);
 
-        uint256[3] memory fraxAmounts;
-        uint256 fraxIndex = 0;
-        fraxAmounts[fraxIndex] = frax.balanceOf(address(this));
-        frax.safeIncreaseAllowance(address(d3Pool), fraxAmounts[fraxIndex]);
-        d3Pool.add_liquidity(fraxAmounts, 0);
+        uint256[3] memory extraTokenAmounts;
+        uint256 extraTokenIndex = 0;
+        extraTokenAmounts[extraTokenIndex] = extraToken.balanceOf(address(this));
+        extraToken.safeIncreaseAllowance(address(d3Pool), extraTokenAmounts[extraTokenIndex]);
+        d3Pool.add_liquidity(extraTokenAmounts, 0);
 
         d3LPAmount = d3PoolLP.balanceOf(address(this));
 
@@ -88,8 +96,8 @@ contract D3CurveConvex is CurveConvexStratBase {
         returns (uint256 tokenAmount)
     {
         uint256 d3poolLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
-        uint256 fraxLps = d3Pool.calc_withdraw_one_coin(d3poolLps, 0);
-        uint256 pool3Lps = fraxPool.calc_withdraw_one_coin(fraxLps, 0);
+        uint256 extraTokenLps = d3Pool.calc_withdraw_one_coin(d3poolLps, 0);
+        uint256 pool3Lps = extraTokenPool.calc_withdraw_one_coin(extraTokenLps, 0);
         tokenAmount = pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
     }
 
@@ -100,8 +108,8 @@ contract D3CurveConvex is CurveConvexStratBase {
         returns (uint256 sharesAmount)
     {
         uint256 pool3Lps = pool3.calc_token_amount(tokenAmounts, isDeposit);
-        uint256 fraxLps = fraxPool.calc_token_amount([pool3Lps, 0], isDeposit);
-        sharesAmount = d3Pool.calc_token_amount([fraxLps, 0, 0], isDeposit);
+        uint256 extraTokenLps = extraTokenPool.calc_token_amount([pool3Lps, 0], isDeposit);
+        sharesAmount = d3Pool.calc_token_amount([extraTokenLps, 0, 0], isDeposit);
     }
 
     function calcCrvLps(
@@ -177,14 +185,14 @@ contract D3CurveConvex is CurveConvexStratBase {
     }
 
     function _sellTokens(uint256 tokenAmount) internal {
-        uint256 fraxBalanceBefore = frax.balanceOf(address(this));
+        uint256 extraTokenBalanceBefore = extraToken.balanceOf(address(this));
         d3Pool.remove_liquidity_one_coin(tokenAmount, 0, 0);
-        uint256 fraxAmount = frax.balanceOf(address(this)) - fraxBalanceBefore;
+        uint256 extraTokenAmount = extraToken.balanceOf(address(this)) - extraTokenBalanceBefore;
 
-        frax.safeIncreaseAllowance(address(fraxPool), fraxAmount);
+        extraToken.safeIncreaseAllowance(address(extraTokenPool), extraTokenAmount);
 
         int128 sellCoinIndex = 0;
         int128 buyCoinIndex = 1;
-        fraxPool.exchange(sellCoinIndex, buyCoinIndex, fraxAmount, 0);
+        extraTokenPool.exchange(sellCoinIndex, buyCoinIndex, extraTokenAmount, 0);
     }
 }
