@@ -29,7 +29,7 @@ const config: HardhatUserConfig = {
         hardhat: {
             forking: {
                 url: `${process.env.NODE_API_KEY}`,
-                blockNumber: 14645100,
+                blockNumber: 14738979,
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each

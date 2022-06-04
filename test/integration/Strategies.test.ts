@@ -16,8 +16,12 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    // const strategyNames = ['USDNCurveConvex', 'LUSDCurveConvex', 'USTWormholeCurveConvex'];
-    const strategyNames = ['PUSDCurveConvex'];
+    const strategyNames = [
+        'USDNCurveConvex',
+        'LUSDCurveConvex',
+        'USTWormholeCurveConvex',
+        'PUSDCurveConvex',
+    ];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -127,7 +131,7 @@ describe('Single strategy tests', () => {
         strategies = [];
     });
 
-    it.only('should deposit assets in optimized mode', async () => {
+    it('should deposit assets in optimized mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {
             await zunami.addPool(strategies[poolId].address);
             await zunami.setDefaultDepositPid(poolId);

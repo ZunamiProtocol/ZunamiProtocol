@@ -14,8 +14,6 @@ import '../interfaces/IZunami.sol';
 import '../interfaces/IConvexBooster.sol';
 import '../interfaces/IConvexRewards.sol';
 
-import 'hardhat/console.sol';
-
 abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
@@ -213,9 +211,7 @@ abstract contract CurveConvexStratBase is Ownable {
     ) internal virtual;
 
     function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
-        console.log('CurveConvexStratBase.sol:216: ');
         uint8 decimals = token.decimals();
-        console.log('CurveConvexStratBase.sol:218: ');
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
         return 10**(18 - decimals);
@@ -277,11 +273,9 @@ abstract contract CurveConvexStratBase is Ownable {
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual returns (uint256) {
-        console.log('CurveConvexStratBase.sol:280: %s', cvxRewards.balanceOf(address(this)));
-        console.log('CurveConvexStratBase.sol:281: %s', getCurvePoolPrice());
         uint256 crvLpHoldings = (cvxRewards.balanceOf(address(this)) * getCurvePoolPrice()) /
             CURVE_PRICE_DENOMINATOR;
-        console.log('CurveConvexStratBase.sol:283: ');
+
         uint256 crvEarned = cvxRewards.earned(address(this));
 
         uint256 cvxTotalCliffs = _config.cvx.totalCliffs();
