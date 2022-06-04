@@ -127,7 +127,7 @@ describe('Single strategy tests', () => {
         strategies = [];
     });
 
-    it('should deposit assets in optimized mode', async () => {
+    it.only('should deposit assets in optimized mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {
             await zunami.addPool(strategies[poolId].address);
             await zunami.setDefaultDepositPid(poolId);
