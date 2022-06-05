@@ -16,7 +16,12 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['USDNCurveConvex', 'LUSDCurveConvex', 'USTWormholeCurveConvex'];
+    const strategyNames = [
+        'USDNCurveConvex',
+        'LUSDCurveConvex',
+        'USTWormholeCurveConvex',
+        'PUSDCurveConvex',
+    ];
     enum WithdrawalType {
         Base,
         OneCoin,
