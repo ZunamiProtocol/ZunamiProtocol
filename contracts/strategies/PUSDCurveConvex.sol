@@ -13,8 +13,8 @@ contract PUSDCurveConvex is CurveConvexStrat2 {
             Constants.CVX_PUSD_REWARDS_ADDRESS,
             Constants.CVX_PUSD_PID,
             Constants.PUSD_ADDRESS,
-            Constants.CVX_PUSD_EXTRA_ADDRESS,
-            Constants.PUSD_EXTRA_ADDRESS
+            address(0),
+            address(0)
         )
     {}
 }
