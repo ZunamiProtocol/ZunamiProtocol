@@ -44,7 +44,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         IStrategy strategy;
         uint256 startTime;
         uint256 lpShares;
-        bool outdated;
+        bool disabled;
     }
 
     PoolInfo[] internal _poolInfo;
@@ -101,6 +101,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     event SetDefaultWithdrawPid(uint256 pid);
     event ClaimedAllManagementFee(uint256 feeValue);
     event AutoCompoundAll(uint256 compoundedValue);
+    event UpdatedDisabledPoolStatus(address pool, bool prevStatus, bool newStatus);
 
     modifier startedPool() {
         require(_poolInfo.length != 0, 'Zunami: pool not existed!');
@@ -112,6 +113,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
             block.timestamp >= _poolInfo[defaultWithdrawPid].startTime,
             'Zunami: default withdraw pool not started yet!'
         );
+        _;
+    }
+
+    modifier isPoolDisabled(uint256 poolIndex) {
+        require(_poolInfo[poolIndex].disabled == false, 'Zunami: Operations with a disabled pool');
         _;
     }
 
@@ -806,7 +812,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
                 strategy: IStrategy(_strategyAddr),
                 startTime: startTime,
                 lpShares: 0,
-                outdated: false
+                disabled: false
             })
         );
         emit AddedPool(_poolInfo.length - 1, _strategyAddr, startTime);
@@ -816,7 +822,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
      * @dev set a default pool for deposit funds
      * @param _newPoolId - new pool id
      */
-    function setDefaultDepositPid(uint256 _newPoolId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDefaultDepositPid(uint256 _newPoolId)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        isPoolDisabled(_newPoolId)
+    {
         require(_newPoolId < _poolInfo.length, 'Zunami: incorrect default deposit pool id');
 
         defaultDepositPid = _newPoolId;
@@ -827,7 +837,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
      * @dev set a default pool for withdraw funds
      * @param _newPoolId - new pool id
      */
-    function setDefaultWithdrawPid(uint256 _newPoolId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDefaultWithdrawPid(uint256 _newPoolId)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        isPoolDisabled(_newPoolId)
+    {
         require(_newPoolId < _poolInfo.length, 'Zunami: incorrect default withdraw pool id');
 
         defaultWithdrawPid = _newPoolId;
@@ -848,16 +862,12 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256[] memory _strategies,
         uint256[] memory withdrawalsPercents,
         uint256 _receiverStrategyId
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) isPoolDisabled(_receiverStrategyId) {
         require(
             _strategies.length == withdrawalsPercents.length,
             'Zunami: incorrect arguments for the moveFundsBatch'
         );
         require(_receiverStrategyId < _poolInfo.length, 'Zunami: incorrect a reciver strategy ID');
-        require(
-            _poolInfo[_receiverStrategyId].outdated == false,
-            'Zunami: attempt to move funds to an outdated pool'
-        );
 
         uint256[POOL_ASSETS] memory tokenBalance;
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
@@ -954,17 +964,20 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return mask & (0x01 << bit) != 0;
     }
 
-    function setOutdatedPool(uint256 poolIndex, bool outdated)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function togglePoolStatus(uint256 poolIndex) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(poolIndex < _poolInfo.length, 'Zunami: incorrect an index of the pool');
         require(
             poolIndex != defaultDepositPid && poolIndex != defaultWithdrawPid,
             'Zunami: current pool is set as deposit/withdraw default pool'
         );
 
-        PoolInfo storage pool = _poolInfo[poolIndex];
-        pool.outdated = outdated;
+        bool status = _poolInfo[poolIndex].disabled;
+        _poolInfo[poolIndex].disabled = !status;
+
+        emit UpdatedDisabledPoolStatus(
+            address(_poolInfo[poolIndex].strategy),
+            status,
+            _poolInfo[poolIndex].disabled
+        );
     }
 }

@@ -312,22 +312,27 @@ describe('Single strategy tests', () => {
         await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
         await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
 
-        await expect(zunami.setOutdatedPool(veryBigNumber, true)).to.be.revertedWith(
+        await expect(zunami.togglePoolStatus(veryBigNumber)).to.be.revertedWith(
             'Zunami: incorrect an index of the pool'
         );
-        await expect(zunami.setOutdatedPool(poolSrc, true)).to.be.revertedWith(
+
+        await expect(zunami.togglePoolStatus(poolSrc)).to.be.revertedWith(
             'Zunami: current pool is set as deposit/withdraw default pool'
         );
 
-        await expect(zunami.setOutdatedPool(poolDst, true));
-        await expect((await zunami.poolInfo(poolDst)).outdated).to.be.true;
+        await expect(zunami.togglePoolStatus(poolDst))
+            .to.emit(zunami, 'UpdatedDisabledPoolStatus')
+            .withArgs(strategies[poolDst].address, false, true);
+        await expect((await zunami.poolInfo(poolDst)).disabled).to.be.true;
 
         await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst)).to.be.revertedWith(
-            'Zunami: attempt to move funds to an outdated pool'
+            'Zunami: Operations with a disabled pool'
         );
 
-        await expect(zunami.setOutdatedPool(poolDst, false));
-        await expect((await zunami.poolInfo(poolDst)).outdated).to.be.false;
+        await expect(zunami.togglePoolStatus(poolDst))
+            .to.emit(zunami, 'UpdatedDisabledPoolStatus')
+            .withArgs(strategies[poolDst].address, true, false);
+        await expect((await zunami.poolInfo(poolDst)).disabled).to.be.false;
 
         await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
         await expect((await zunami.poolInfo(poolDst)).lpShares).to.be.eq(0);
