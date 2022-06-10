@@ -321,8 +321,9 @@ describe('Single strategy tests', () => {
         );
 
         await expect(zunami.togglePoolStatus(poolDst))
-            .to.emit(zunami, 'UpdatedDisabledPoolStatus')
-            .withArgs(strategies[poolDst].address, false, true);
+            .to.emit(zunami, 'ToggledDisabledPoolStatus')
+            .withArgs(strategies[poolDst].address, true);
+
         await expect((await zunami.poolInfo(poolDst)).disabled).to.be.true;
 
         await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst)).to.be.revertedWith(
@@ -330,8 +331,8 @@ describe('Single strategy tests', () => {
         );
 
         await expect(zunami.togglePoolStatus(poolDst))
-            .to.emit(zunami, 'UpdatedDisabledPoolStatus')
-            .withArgs(strategies[poolDst].address, true, false);
+            .to.emit(zunami, 'ToggledDisabledPoolStatus')
+            .withArgs(strategies[poolDst].address, false);
         await expect((await zunami.poolInfo(poolDst)).disabled).to.be.false;
 
         await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);

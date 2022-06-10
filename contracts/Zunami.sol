@@ -101,7 +101,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     event SetDefaultWithdrawPid(uint256 pid);
     event ClaimedAllManagementFee(uint256 feeValue);
     event AutoCompoundAll(uint256 compoundedValue);
-    event UpdatedDisabledPoolStatus(address pool, bool prevStatus, bool newStatus);
+    event ToggledDisabledPoolStatus(address pool, bool newStatus);
 
     modifier startedPool() {
         require(_poolInfo.length != 0, 'Zunami: pool not existed!');
@@ -971,12 +971,10 @@ contract Zunami is ERC20, Pausable, AccessControl {
             'Zunami: current pool is set as deposit/withdraw default pool'
         );
 
-        bool status = _poolInfo[poolIndex].disabled;
-        _poolInfo[poolIndex].disabled = !status;
+        _poolInfo[poolIndex].disabled = !_poolInfo[poolIndex].disabled;
 
-        emit UpdatedDisabledPoolStatus(
+        emit ToggledDisabledPoolStatus(
             address(_poolInfo[poolIndex].strategy),
-            status,
             _poolInfo[poolIndex].disabled
         );
     }
