@@ -22,6 +22,13 @@ interface ICurvePool2 is ICurvePoolPricable {
         uint256 min_received
     ) external returns (uint256);
 
+    function exchange(
+        int128 i,
+        int128 j,
+        uint256 input,
+        uint256 min_output
+    ) external returns (uint256);
+
     function exchange_underlying(
         int128 i,
         int128 j,
@@ -33,6 +40,12 @@ interface ICurvePool2 is ICurvePoolPricable {
         external
         view
         returns (uint256);
+
+    function calc_token_amount(
+        uint256[2] memory amounts,
+        bool is_deposit,
+        bool previous
+    ) external view returns (uint256);
 
     function calc_withdraw_one_coin(uint256 burn_amount, int128 i) external view returns (uint256);
 }

@@ -147,7 +147,6 @@ contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     ) internal override {
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
 
-        uint256[2] memory minAmounts2;
         pool.remove_liquidity_one_coin(removingCrvLps, CURVE_3POOL_LP_TOKEN_ID_INT, 0);
 
         uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;

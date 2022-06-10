@@ -24,6 +24,7 @@ library Constants {
     uint256 internal constant CVX_MIM_PID = 40;
     uint256 internal constant CVX_OUSD_PID = 56;
     uint256 internal constant CVX_UST_PID = 59;
+    uint256 internal constant CVX_D3_PID = 58;
     uint256 internal constant CVX_PUSD_PID = 91;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
@@ -129,6 +130,9 @@ library Constants {
         0xCEAF7747579696A2F0bb206a14210e3c9e6fB269;
     address internal constant CVX_UST_WORMHOLE_REWARDS_ADDRESS =
         0x7e2b9B5244bcFa5108A76D5E7b507CFD5581AD4A;
+    address internal constant CRV_D3_ADDRESS = 0xBaaa1F5DbA42C3389bDbc2c9D2dE134F5cD0Dc89;
+    address internal constant CRV_D3_LP_ADDRESS = 0xBaaa1F5DbA42C3389bDbc2c9D2dE134F5cD0Dc89;
+    address internal constant CVX_D3_REWARDS_ADDRESS = 0x329cb014b562d5d42927cfF0dEdF4c13ab0442EF;
     address internal constant CRV_PUSD_ADDRESS = 0x8EE017541375F6Bcd802ba119bdDC94dad6911A1;
     address internal constant CRV_PUSD_LP_ADDRESS = 0x8EE017541375F6Bcd802ba119bdDC94dad6911A1;
     address internal constant CVX_PUSD_REWARDS_ADDRESS = 0x83a3CE160915675F5bC7cC3CfDA5f4CeBC7B7a5a;
