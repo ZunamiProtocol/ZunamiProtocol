@@ -110,7 +110,7 @@ describe('Single strategy tests', () => {
         // Init all stratigies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
-            const strategy = await factory.deploy(config);
+            const strategy = await factory.deploy(config.tokens);
             await strategy.deployed();
 
             strategy.setZunami(zunami.address);

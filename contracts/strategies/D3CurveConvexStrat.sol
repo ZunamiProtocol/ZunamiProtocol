@@ -6,8 +6,6 @@ import './CurveConvexStratBase.sol';
 import '../interfaces/ICurvePool.sol';
 import '../interfaces/ICurvePool2.sol';
 
-import 'hardhat/console.sol';
-
 contract D3CurveConvexStrat is CurveConvexStratBase {
     using SafeERC20 for IERC20Metadata;
 
@@ -54,7 +52,11 @@ contract D3CurveConvexStrat is CurveConvexStratBase {
         }
 
         uint256 deposited3Lp = pool3.calc_token_amount(amounts, true);
-        uint256 depositedextraTokenLp = extraTokenPool.calc_token_amount([deposited3Lp, 0], true, false);
+        uint256 depositedextraTokenLp = extraTokenPool.calc_token_amount(
+            [deposited3Lp, 0],
+            true,
+            false
+        );
         uint256 extraTokenLpPrice = extraTokenPool.get_virtual_price();
         uint256 amountsMin = (depositedextraTokenLp * minDepositAmount) / DEPOSIT_DENOMINATOR;
 

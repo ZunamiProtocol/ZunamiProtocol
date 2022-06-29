@@ -6,6 +6,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
+import 'hardhat-docgen';
 
 import 'dotenv/config';
 
@@ -24,6 +25,11 @@ const config: HardhatUserConfig = {
         tests: './test',
         artifacts: './artifacts',
         cache: './cache',
+    },
+    docgen: {
+        path: './docs',
+        clear: true,
+        runOnCompile: false,
     },
     networks: {
         hardhat: {
