@@ -6,9 +6,9 @@ import './LiquityConstants.sol';
 import './CurveLiquityStratBase.sol';
 
 contract CurveLiquityStrat is CurveLiquityStratBase {
-    constructor(Config memory config)
+    constructor(IERC20Metadata[3] memory underlyingTokens)
         CurveLiquityStratBase(
-            config,
+            underlyingTokens,
             Constants.CRV_3POOL_ADDRESS,
             Constants.CRV_3POOL_LP_ADDRESS,
             Constants.CRV_LUSD_ADDRESS,

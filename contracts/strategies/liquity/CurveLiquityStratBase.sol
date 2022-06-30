@@ -58,7 +58,7 @@ contract CurveLiquityStratBase is Ownable {
     }
 
     constructor(
-        Config memory __config,
+        IERC20Metadata[3] memory underlyingTokens,
         address pool3Addr,
         address pool3LPAddr,
         address lusdPoolAddr,
@@ -66,7 +66,7 @@ contract CurveLiquityStratBase is Ownable {
         address liquityPoolAddr,
         address lqtyTokenAddr
     ) {
-        _config = __config;
+        _config = Config(underlyingTokens);
         pool3 = ICurvePool(pool3Addr);
         pool3LP = IERC20Metadata(pool3LPAddr);
         lusdPool = ICurvePool2(lusdPoolAddr);
