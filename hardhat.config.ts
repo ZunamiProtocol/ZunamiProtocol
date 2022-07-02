@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
     networks: {
         hardhat: {
             forking: {
-                url: `${process.env.NODE_API_KEY}`,
+                url: `${process.env.ETH_NODE_API_KEY}`,
                 blockNumber: 14738979,
             },
             accounts: [
@@ -72,7 +72,7 @@ const config: HardhatUserConfig = {
             loggingEnabled: false,
         },
         mainnet: {
-            url: `${process.env.NODE_API_KEY}`,
+            url: `${process.env.ETH_NODE_API_KEY}`,
             chainId: 1,
             gas: 'auto',
             gasMultiplier: 1.2,
@@ -80,30 +80,23 @@ const config: HardhatUserConfig = {
             accounts: [`${process.env.PRIVATE_KEY}`],
             loggingEnabled: true,
         },
-        rinkeby: {
-            url: `${process.env.NODE_API_KEY}`,
-            accounts: [`${process.env.PRIVATE_KEY}`],
-        },
-        ropsten: {
-            url: `${process.env.NODE_API_KEY}`,
-            accounts: [`${process.env.PRIVATE_KEY}`],
-        },
-        kovan: {
-            url: `${process.env.NODE_API_KEY}`,
-            accounts: [`${process.env.PRIVATE_KEY}`],
-        },
         polygon: {
-            url: `${process.env.NODE_API_KEY}`,
+            url: `${process.env.POLYGON_NODE_API_KEY}`,
+            chainId: 137,
             accounts: [`${process.env.PRIVATE_KEY}`],
             gas: 'auto',
-            gasPrice: 'auto',
+            gasMultiplier: 1.2,
+            gasPrice: 50000000000,
+            loggingEnabled: true,
         },
-        bsctest: {
-            url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-            chainId: 97,
+        bsc: {
+            url: `${process.env.BINANCE_NODE_API_KEY}`,
+            chainId: 56,
+            accounts: [`${process.env.PRIVATE_KEY}`],
             gas: 'auto',
-            gasPrice: 20000000000,
-            accounts: ['1fb50a8b321a32cf00aca119b6009cbe3d930a7909b32f9a30ebfe80b49d1034'],
+            gasMultiplier: 1.2,
+            gasPrice: 5000000000,
+            loggingEnabled: true,
         },
         development: {
             url: 'http://127.0.0.1:8545',
@@ -114,7 +107,7 @@ const config: HardhatUserConfig = {
     solidity: {
         compilers: [
             {
-                version: '0.8.12',
+                version: '0.8.15',
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -128,7 +121,7 @@ const config: HardhatUserConfig = {
         timeout: 500000,
     },
     etherscan: {
-        apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        apiKey: `${process.env.BSCSCAN_API_KEY}`,
     },
 };
 

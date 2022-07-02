@@ -1,0 +1,6 @@
+Verification:
+npx hardhat verify --network polygon --constructor-args ./abi/crosschain/137_zunami_arguments.js 0x9B43E47BEc96A9345cd26fDDE7EFa5F8C06e126c
+npx hardhat verify --network polygon --constructor-args ./abi/crosschain/137_strategy_arguments.js --contract contracts/strategies/utility/RebalancingStrat.sol:RebalancingStrat 0x346E74Dc9935a9b02Eb34fB84658a66010fA056D
+npx hardhat verify --network polygon --constructor-args ./abi/crosschain/137_forwarder_arguments.js 0x1db0Fc8933f545648b54A9eE4326209a9A259643
+
+npx hardhat verify --network bsc --constructor-args ./abi/crosschain/56_gateway_arguments.js 0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95

@@ -18,7 +18,7 @@ async function main() {
         'function poolInfo(uint256 pid) external view returns (tuple(address, uint256, uint256))',
     ];
     const strategyAbi = ['function totalHoldings() public view returns (uint256)'];
-    const provider = new ethers.providers.JsonRpcProvider(process.env.NODE_API_KEY);
+    const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_NODE_API_KEY);
     const zunami = new ethers.Contract(zunamiAddr, zunamiAbi, provider);
 
     const poolCount = +(await zunami.poolCount());

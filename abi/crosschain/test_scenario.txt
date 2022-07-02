@@ -1,0 +1,87 @@
+DEPOSIT
+
+1/ Approve USDT to gateway
+
+https://bscscan.com/address/0x55d398326f99059ff775485246999027b3197955#writeContract
+increaseAllowance
+    0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95
+    11111111111111111111
+
+2/ Delegate deposit to gateway
+
+https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+delegateDeposit
+    [0,0,11111111111111111111]
+
+3/ Send crosschain deposit
+
+https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+sendCrosschainDeposit
+    0.1
+    [0xe9b2B067eE106A6E518fB0552F3296d22b82b32B]
+
+4/ Complete deposit on master chain
+    - check USDT went through forwarder https://polygonscan.com/address/0x1db0Fc8933f545648b54A9eE4326209a9A259643#tokentxns
+    - complete crosschain deposit:
+https://polygonscan.com/address/0x9b43e47bec96a9345cd26fdde7efa5f8c06e126c#writeContract
+completeDeposits
+    [0x1db0Fc8933f545648b54A9eE4326209a9A259643]
+
+5/ Complete deposits in Forwarder
+https://polygonscan.com/address/0x1db0Fc8933f545648b54A9eE4326209a9A259643#writeContract
+completeCrosschainDeposit
+    1.5
+    19195064
+    11104445000000000000
+
+6/ Finalize deposit in Gateway
+    - check message went through event ReceivedCrosschainDepositResponse https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#events
+    - finalize crosschain deposit
+    https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+    finalizeCrosschainDeposit
+        19195064
+
+
+WITHDRAW
+
+1/ Approve GZLP to gateway
+
+https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+increaseAllowance
+    0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95
+    11104445000000000000
+
+
+2/ Delegate withdrawal
+
+https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+delegateWithdrawal
+    11104445000000000000
+
+3/ Send crosschain withdrawal
+
+https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+sendCrosschainWithdrawal
+    0.1
+    [0xe9b2B067eE106A6E518fB0552F3296d22b82b32B]
+
+4/ Complete withdrawal on master chain
+    - check message is going through forwarder:
+https://polygonscan.com/address/0x1db0Fc8933f545648b54A9eE4326209a9A259643#events
+event CreatedPendingWithdrawal
+
+    - complete delegated withdrawal:
+https://polygonscan.com/address/0x9b43e47bec96a9345cd26fdde7efa5f8c06e126c#writeContract
+completeWithdrawalsOptimized
+    [0x1db0Fc8933f545648b54A9eE4326209a9A259643]
+
+5/ Complete crosschain withdrawal in Forwarder
+https://polygonscan.com/address/0x1db0Fc8933f545648b54A9eE4326209a9A259643#writeContract
+completeCrosschainWithdrawal
+    2
+    19195756
+
+6/ Finalize deposit in Gateway
+https://bscscan.com/address/0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95#writeContract
+finalizeCrosschainDeposit
+    19195756

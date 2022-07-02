@@ -4,6 +4,16 @@
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         "0xdAC17F958D2ee523a2206206994597C13D831ec7"
     ],
+    "tokens_polygon": [
+        "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+        "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+    ],
+    "tokens_bsc": [
+        "0x0",
+        "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+        "0x55d398326f99059ff775485246999027b3197955"
+    ],
     "crv": "0xD533a949740bb3306d119CC777fa900bA034cd52",
     "cvx": "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
     "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
@@ -17,5 +27,25 @@
         "0xD533a949740bb3306d119CC777fa900bA034cd52",
         "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-    ]
+    ],
+    "crosschain": {
+        "1": {
+            "layerzero": "0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675",
+            "chainId": 1,
+            "stargate": "0x8731d54E9D02c286767d56ac03e8037C07e01e98",
+            "usdtPoolId": 2
+        },
+        "56": {
+            "layerzero": "0x3c2269811836af69497E5F486A85D7316753cf62",
+            "chainId": 2,
+            "stargate": "0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8",
+            "usdtPoolId": 2
+        },
+        "137": {
+            "layerzero": "0x3c2269811836af69497E5F486A85D7316753cf62",
+            "chainId": 9,
+            "stargate": "0x45A01E4e04F14f7A4a6702c74187c5F6222033cd",
+            "usdtPoolId": 2
+        }
+    }
 }
