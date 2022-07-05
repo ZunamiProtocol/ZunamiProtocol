@@ -20,7 +20,6 @@ describe('Single strategy tests', () => {
         'USDNCurveConvex',
         'LUSDCurveConvex',
         'USTWormholeCurveConvex',
-        'FraxD3CurveConvex',
         'PUSDCurveConvex',
         'USDDCurveConvex',
     ];
@@ -290,6 +289,34 @@ describe('Single strategy tests', () => {
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
             }
+        }
+    });
+
+    it.only('should sell all tokens and rewards after autocompaund', async () => {
+        for (let strategy of strategies) {
+            await zunami.addPool(strategy.address);
+        }
+
+        await zunami.setDefaultDepositPid(0);
+        await zunami.setDefaultWithdrawPid(0);
+
+        await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
+        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 10]);
+
+        for (let strategy of strategies) {
+            let addr = await strategy.token();
+            let token = new ethers.Contract(addr, erc20ABI, admin);
+            console.log(`Strategies.test.ts:309: ${await token.name()}`);
+            console.log(`Strategies.test.ts:307: ${await token.balanceOf(strategy.address)}`);
+        }
+
+        await zunami.autoCompoundAll();
+
+        for (let strategy of strategies) {
+            let addr = await strategy.token();
+            let token = new ethers.Contract(addr, erc20ABI, admin);
+            console.log(`Strategies.test.ts:309: ${await token.name()}`);
+            console.log(`Strategies.test.ts:307: ${await token.balanceOf(strategy.address)}`);
         }
     });
 });

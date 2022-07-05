@@ -2,11 +2,11 @@
 pragma solidity ^0.8.0;
 
 import '../utils/Constants.sol';
-import './CurveConvexStrat2Self.sol';
+import './CurveConvexStrat2.sol';
 
-contract USDDCurveConvex is CurveConvexStrat2Self {
+contract USDDCurveConvex is CurveConvexStrat2 {
     constructor(Config memory config)
-        CurveConvexStrat2Self(
+        CurveConvexStrat2(
             config,
             Constants.CRV_USDD_ADDRESS,
             Constants.CRV_USDD_LP_ADDRESS,
