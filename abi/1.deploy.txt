@@ -23,13 +23,17 @@ Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in AnchorStrat str
 RebalancingStrat strategy deployed to: 0x6fCC3Bb4948C20a81F652a525F78f80993F907A6
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in RebalancingStrat strategy
 
-
-
-USDNCurveConvex strategy deployed to: 0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2
-Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDNCurveConvex strategy
-
+5
 MIMCurveConvex strategy deployed to: 0x946C3397D917898Be9034fe8206717ab84c4451a
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in MIMCurveConvex strategy
 
+6
 PUSDCurveConvex strategy deployed to: 0x7e3e10eA28affD3Fc47c5491fEf8351ACB530d71
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in PUSDCurveConvex strategy
+
+7
+USDDCurveConvex strategy deployed to: 0x63d82eCd6C4819BCf3BB291eB27fd93356eAA694
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDDCurveConvex strategy
+
+USDNCurveConvex strategy deployed to: 0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDNCurveConvex strategy

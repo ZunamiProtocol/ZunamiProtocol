@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
         coinmarketcap: process.env.COINMARKETCAP_API_KEY,
         showTimeSpent: true,
         enabled: true,
+        outputFile: './gas_report',
     },
     paths: {
         sources: './contracts',
@@ -29,7 +30,7 @@ const config: HardhatUserConfig = {
         hardhat: {
             forking: {
                 url: `${process.env.NODE_API_KEY}`,
-                blockNumber: 14738979,
+                blockNumber: 14858630,
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each
