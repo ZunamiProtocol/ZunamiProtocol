@@ -33,3 +33,6 @@ Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in MIMCurveConvex 
 
 PUSDCurveConvex strategy deployed to: 0x7e3e10eA28affD3Fc47c5491fEf8351ACB530d71
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in PUSDCurveConvex strategy
+
+USDDCurveConvex strategy deployed to: 0x63d82eCd6C4819BCf3BB291eB27fd93356eAA694
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDDCurveConvex strategy

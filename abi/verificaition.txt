@@ -4,3 +4,4 @@ npx hardhat verify --network mainnet --constructor-args ./abi/strategy_arguments
 npx hardhat verify --network mainnet --constructor-args ./abi/strategy_arguments.js --contract contracts/strategies/DUSDCurveConvex.sol:DUSDCurveConvex address
 npx hardhat verify --network mainnet --constructor-args ./abi/strategy_arguments.js --contract contracts/strategies/MIMCurveConvex.sol:MIMCurveConvex address
 npx hardhat verify --network mainnet --constructor-args ./abi/strategy_arguments.js --contract contracts/strategies/PUSDCurveConvex.sol:PUSDCurveConvex 0x7e3e10eA28affD3Fc47c5491fEf8351ACB530d71
+npx hardhat verify --network mainnet --constructor-args ./abi/strategy_arguments.js --contract contracts/strategies/USDDCurveConvex.sol:USDDCurveConvex 0x63d82eCd6C4819BCf3BB291eB27fd93356eAA694
