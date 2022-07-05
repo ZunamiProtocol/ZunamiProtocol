@@ -293,15 +293,17 @@ describe('Single strategy tests', () => {
     });
 
     it.only('should sell all tokens and rewards after autocompaund', async () => {
-        for (let strategy of strategies) {
+        for (let i = 0; i < strategies.length; i++) {
+            const strategy = strategies[i];
             await zunami.addPool(strategy.address);
+
+            await zunami.setDefaultDepositPid(i);
+            await zunami.setDefaultWithdrawPid(i);
+
+            await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
         }
 
-        await zunami.setDefaultDepositPid(0);
-        await zunami.setDefaultWithdrawPid(0);
-
-        await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
-        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 10]);
+        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 1]);
 
         for (let strategy of strategies) {
             let addr = await strategy.token();
