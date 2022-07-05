@@ -247,10 +247,15 @@ abstract contract CurveConvexStratBase is Ownable {
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
+        sellRewardsExtra();
+
         uint256 usdtBalanceAfter = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
 
         managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
         emit SoldRewards(cvxBalance, crvBalance, 0);
+    }
+
+    function sellRewardsExtra() internal virtual {
     }
 
     function autoCompound() public onlyZunami {
