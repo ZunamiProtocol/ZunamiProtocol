@@ -292,7 +292,7 @@ describe('Single strategy tests', () => {
         }
     });
 
-    it.only('should sell all tokens and rewards after autocompaund', async () => {
+    it('should sell all tokens and rewards after autocompaund', async () => {
         for (let i = 0; i < strategies.length; i++) {
             const strategy = strategies[i];
             await zunami.addPool(strategy.address);
@@ -300,25 +300,22 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(i);
             await zunami.setDefaultWithdrawPid(i);
 
-            await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
+            await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(
+                zunami,
+                'Deposited'
+            );
         }
 
         await ethers.provider.send('evm_increaseTime', [3600 * 24 * 1]);
-
-        for (let strategy of strategies) {
-            let addr = await strategy.token();
-            let token = new ethers.Contract(addr, erc20ABI, admin);
-            console.log(`Strategies.test.ts:309: ${await token.name()}`);
-            console.log(`Strategies.test.ts:307: ${await token.balanceOf(strategy.address)}`);
-        }
-
         await zunami.autoCompoundAll();
 
+        let token;
+        let balance;
         for (let strategy of strategies) {
-            let addr = await strategy.token();
-            let token = new ethers.Contract(addr, erc20ABI, admin);
-            console.log(`Strategies.test.ts:309: ${await token.name()}`);
-            console.log(`Strategies.test.ts:307: ${await token.balanceOf(strategy.address)}`);
+            token = new ethers.Contract(await strategy.token(), erc20ABI, admin);
+            balance = await token.balanceOf(strategy.address);
+
+            expect(balance).to.eq(0);
         }
     });
 });
