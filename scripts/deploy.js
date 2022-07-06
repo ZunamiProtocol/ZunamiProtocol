@@ -35,7 +35,7 @@ async function main() {
     console.log('Start deploy');
     const Zunami = await ethers.getContractFactory('Zunami');
     // const zunami = await Zunami.deploy(config.tokens);
-    const zunami = await Zunami.attach("0x2ffCC661011beC72e1A9524E12060983E74D14ce");
+    const zunami = await Zunami.attach('0x2ffCC661011beC72e1A9524E12060983E74D14ce');
 
     await zunami.deployed();
     console.log('Zunami deployed to:', zunami.address);
@@ -47,6 +47,7 @@ async function main() {
     // await deployAndLinkConvexStrategy('LUSDCurveConvex', zunami);
     // await deployAndLinkConvexStrategy('DUSDCurveConvex', zunami);
     // await deployAndLinkStrategy('PUSDCurveConvex', zunami);
+    await deployAndLinkConvexStrategy('USDDCurveConvex', zunami);
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)
