@@ -61,23 +61,15 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
 
-    function sellRewards() internal override {
-        super.sellRewards();
-        if (address(extraToken) != address(0)) {
-            sellExtraToken();
+    function sellRewardsExtra() internal override virtual {
+        if (address(extraToken) == address(0)) {
+            return;
         }
-    }
 
-    /**
-     * @dev sell extra reward token on strategy can be called by anyone
-     */
-    function sellExtraToken() public {
         uint256 extraBalance = extraToken.balanceOf(address(this));
         if (extraBalance == 0) {
             return;
         }
-
-        uint256 usdtBalanceBefore = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
 
         extraToken.safeApprove(address(_config.router), extraToken.balanceOf(address(this)));
         _config.router.swapExactTokensForTokens(
@@ -87,12 +79,6 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
-
-        managementFees += zunami.calcManagementFee(
-            _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this)) - usdtBalanceBefore
-        );
-
-        emit SoldRewards(0, 0, extraBalance);
     }
 
     /**

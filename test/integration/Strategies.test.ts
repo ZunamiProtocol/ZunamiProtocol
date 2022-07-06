@@ -20,7 +20,6 @@ describe('Single strategy tests', () => {
         'USDNCurveConvex',
         'LUSDCurveConvex',
         'USTWormholeCurveConvex',
-        'FraxD3CurveConvex',
         'PUSDCurveConvex',
         'USDDCurveConvex',
     ];
@@ -290,6 +289,33 @@ describe('Single strategy tests', () => {
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
             }
+        }
+    });
+
+    it('should sell all tokens and rewards after autocompaund', async () => {
+        for (let i = 0; i < strategies.length; i++) {
+            const strategy = strategies[i];
+            await zunami.addPool(strategy.address);
+
+            await zunami.setDefaultDepositPid(i);
+            await zunami.setDefaultWithdrawPid(i);
+
+            await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(
+                zunami,
+                'Deposited'
+            );
+        }
+
+        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 1]);
+        await zunami.autoCompoundAll();
+
+        let token;
+        let balance;
+        for (let strategy of strategies) {
+            token = new ethers.Contract(await strategy.token(), erc20ABI, admin);
+            balance = await token.balanceOf(strategy.address);
+
+            expect(balance).to.eq(0);
         }
     });
 });
