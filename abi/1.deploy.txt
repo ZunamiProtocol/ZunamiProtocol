@@ -1,12 +1,12 @@
 Start deploy
 Zunami deployed to: 0x2ffCC661011beC72e1A9524E12060983E74D14ce
 
-0
+0 (DEPRECATED)
 USDNCurveConvex strategy deployed to: 0x7eae19161869Adc5F99d3987dA881Fb972B6eED5
 Added USDNCurveConvex pool to Zunami
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDNCurveConvex strategy
 
-1
+1 (DEPRECATED)
 USDNCurveConvex strategy deployed to: 0xc2bbEDcCE9b54a9F8eaAFf40D1965f9b25B74e66
 Added USDNCurveConvex pool to Zunami
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDNCurveConvex strategy
@@ -31,7 +31,7 @@ Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in MIMCurveConvex 
 PUSDCurveConvex strategy deployed to: 0x7e3e10eA28affD3Fc47c5491fEf8351ACB530d71
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in PUSDCurveConvex strategy
 
-7
+7 (DEPRECATED)
 USDDCurveConvex strategy deployed to: 0x63d82eCd6C4819BCf3BB291eB27fd93356eAA694
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDDCurveConvex strategy
 
