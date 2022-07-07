@@ -36,9 +36,9 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     uint8 public constant POOL_ASSETS = 3;
     uint8 public constant USDT_TOKEN_ID = 2;
 
-    uint256 public constant SG_FEE_REDUCER = 999;
-    uint256 public constant SG_FEE_DIVIDER = 1000;
+    uint256 public constant SG_SLIPPAGE_DIVIDER = 10000;
 
+    uint256 public stargateSlippage = 20;
     IERC20Metadata public token;
     uint256 public tokenPoolId;
 
@@ -84,6 +84,10 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         uint256 _tokenPoolId
     );
 
+    event SetStargateSlippage(
+        uint256 slippage
+    );
+
     constructor(
         address _token,
         uint256 _tokenPoolId,
@@ -112,6 +116,15 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         forwarderTokenPoolId =  _tokenPoolId;
 
         emit SetForwarderParams(_chainId, _address, _tokenPoolId);
+    }
+
+    function setStargateSlippage(
+        uint16 _slippage
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_slippage <= SG_SLIPPAGE_DIVIDER,"Gateway: wrong stargate slippage");
+        stargateSlippage = _slippage;
+
+        emit SetStargateSlippage(_slippage);
     }
 
     function pendingDeposits(address user) external view returns (uint256) {

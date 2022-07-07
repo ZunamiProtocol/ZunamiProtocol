@@ -76,14 +76,16 @@ event CreatedPendingWithdrawal
 https://etherscan.com/address/0x2ffCC661011beC72e1A9524E12060983E74D14ce#writeContract
 completeWithdrawalsOptimized
     [0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc]
+https://etherscan.io/tx/0xb001c6e09c636512e3778837cf12fbd6ca6131587c40e1f00157dacd265c32a5
 
 5/ Complete crosschain withdrawal in Forwarder
 https://etherscan.com/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#writeContract
 completeCrosschainWithdrawal
     0.001
     19343565
+https://etherscan.io/tx/0x7162be9df6db38015d6a7db4d1dfda6cd782d76f51f813a9a8a3bc5322e3a73c FAILED
 
 6/ Finalize deposit in Gateway
 https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
 finalizeCrosschainDeposit
-    19195756
+    19343565

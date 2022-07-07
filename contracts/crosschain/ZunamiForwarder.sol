@@ -27,9 +27,9 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     int128 public constant USDC_TOKEN_ID = 1;
     uint128 public constant USDT_TOKEN_ID = 2;
 
-    uint256 public constant SG_FEE_REDUCER = 999;
-    uint256 public constant SG_FEE_DIVIDER = 1000;
+    uint256 public constant SG_SLIPPAGE_DIVIDER = 10000;
 
+    uint256 public stargateSlippage = 20;
     IERC20Metadata[POOL_ASSETS] public tokens;
     uint256 public tokenPoolId;
 
@@ -56,6 +56,10 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         uint256 chainId,
         address gateway,
         uint256 tokenPoolId
+    );
+
+    event SetStargateSlippage(
+        uint256 slippage
     );
 
     constructor(
@@ -90,6 +94,15 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         gatewayTokenPoolId = _tokenPoolId;
 
         emit SetGatewayParams(_chainId, _address, _tokenPoolId);
+    }
+
+    function setStargateSlippage(
+        uint16 _slippage
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_slippage <= SG_SLIPPAGE_DIVIDER,"Forwarder: wrong stargate slippage");
+        stargateSlippage = _slippage;
+
+        emit SetStargateSlippage(_slippage);
     }
 
     function sgReceive(
@@ -197,7 +210,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             gatewayTokenPoolId,                                 // dest pool id
             payable(address(this)),                              // refund address. extra gas (if any) is returned to this address
             tokenTotalAmount,                                   // quantity to swap
-            tokenTotalAmount * SG_FEE_REDUCER / SG_FEE_DIVIDER, // the min qty you would accept on the destination
+            tokenTotalAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER, // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(50000, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(gatewayAddress),                   // the address to send the tokens to on the destination
             abi.encode(withdrawalId)                            // bytes param, if you wish to send additional payload you can abi.encode() them here
