@@ -191,7 +191,7 @@ describe('Crosschain', () => {
         // );
 
         //TODO: return 500 instead of 600 zlp
-        let message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint", "uint" ], [ depositId, tokenify(usdtTotal).toFixed(), tokenify(usdtTotal).toFixed() ]);
+        let message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint" ], [ depositId, tokenify(usdtTotal).toFixed() ]);
         await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
         await gateway.finalizeCrosschainDeposit();
 

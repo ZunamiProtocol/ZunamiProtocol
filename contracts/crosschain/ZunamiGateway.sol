@@ -218,8 +218,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
 //        require(_srcAddress == forwarderAddress, "Gateway: wrong source address");
 
         // 3/ receive ZLP amount on lzReceive method for sent deposits and mint GZLP to each depositer proportionaly deposits
-        (uint256 depositId, uint256 totalLpShares, uint256 storedLpShares) = abi.decode(_payload, (uint256, uint256, uint256));
-        require( IERC20Metadata(address(this)).totalSupply() == storedLpShares - totalLpShares, "Gateway: stored ZLP != minted GZLP");
+        (uint256 depositId, uint256 totalLpShares) = abi.decode(_payload, (uint256, uint256));
 
         processingCrosschainDeposit.totalLpShares = totalLpShares;
 

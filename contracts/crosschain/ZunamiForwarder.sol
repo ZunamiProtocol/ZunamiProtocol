@@ -149,7 +149,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         storedLpShares += lpShares;
 
         // 1/ send layer zero message to Gateway with LP shares deposit amount
-        bytes memory payload = abi.encode(processingDepositId, lpShares, storedLpShares);
+        bytes memory payload = abi.encode(processingDepositId, lpShares);
 
         // use adapterParams v1 to specify more gas for the destination
         bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(50000));
