@@ -1,0 +1,89 @@
+DEPOSIT
+
+1/ Approve USDT to gateway
+
+https://bscscan.com/address/0x55d398326f99059ff775485246999027b3197955#writeContract
+increaseAllowance
+    0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57
+    10000000000000000000
+
+2/ Delegate deposit to gateway
+
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+delegateDeposit
+    [0,0,10000000000000000000]
+
+3/ Send crosschain deposit
+
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+sendCrosschainDeposit
+    0.11
+    [0xe9b2B067eE106A6E518fB0552F3296d22b82b32B,0x7A596C2d3e0f390A212a8Ed47308cf621b5E949C]
+https://bscscan.com/tx/0xb51f33e2cf1e8ad08dc8a0fc27c45528175087a2008f6db42e8a36c19ca65329
+
+4/ Complete deposit on master chain
+    - check USDT went through forwarder https://etherscan.com/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#tokentxns
+    - complete crosschain deposit:
+https://etherscan.com/address/0x2ffCC661011beC72e1A9524E12060983E74D14ce#writeContract
+completeDeposits
+    [0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc]
+
+5/ Complete deposits in Forwarder
+https://etherscan.com/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#writeContract
+completeCrosschainDeposit
+    0.001
+    19340806
+https://etherscan.io/tx/0x8ed2f65d220bc565ce5840e03b68acac58e31bcb32a0251e51adf99b592707d4
+
+6/ Finalize deposit in Gateway
+    - check message went through event ReceivedCrosschainDepositResponse https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#events
+    - finalize crosschain deposit
+    https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+    finalizeCrosschainDeposit
+        19340806
+https://bscscan.com/tx/0x9caba16e4c6f4853d9d29336bc34a239af037f209fc5061be74726fc2d645ecd
+
+WITHDRAW
+
+1/ Approve GZLP to gateway
+
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+increaseAllowance
+    0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57
+    9393530598040583805 || 18787061196081167611
+
+
+2/ Delegate withdrawal
+
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+delegateWithdrawal
+    9000000000000000000
+
+3/ Send crosschain withdrawal
+
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+sendCrosschainWithdrawal
+    0.15
+    [0xe9b2B067eE106A6E518fB0552F3296d22b82b32B,0x7A596C2d3e0f390A212a8Ed47308cf621b5E949C]
+https://bscscan.com/tx/0xebe38df6123188e45deb978706572de37a34fc4bb8fb27a8d097ccf58a111dc5
+
+4/ Complete withdrawal on master chain
+    - check message is going through forwarder:
+https://etherscan.com/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#events
+event CreatedPendingWithdrawal
+
+    - complete delegated withdrawal:
+https://etherscan.com/address/0x2ffCC661011beC72e1A9524E12060983E74D14ce#writeContract
+completeWithdrawalsOptimized
+    [0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc]
+
+5/ Complete crosschain withdrawal in Forwarder
+https://etherscan.com/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#writeContract
+completeCrosschainWithdrawal
+    0.001
+    19343565
+
+6/ Finalize deposit in Gateway
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#writeContract
+finalizeCrosschainDeposit
+    19195756

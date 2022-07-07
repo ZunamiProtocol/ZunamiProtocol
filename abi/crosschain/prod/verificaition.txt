@@ -1,0 +1,6 @@
+Verification:
+npx hardhat verify --network mainnet --constructor-args ./abi/crosschain/prod/1_forwarder_arguments.js 0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc
+https://etherscan.io/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#code
+
+npx hardhat verify --network bsc --constructor-args ./abi/crosschain/prod/56_gateway_arguments.js 0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57
+https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#code

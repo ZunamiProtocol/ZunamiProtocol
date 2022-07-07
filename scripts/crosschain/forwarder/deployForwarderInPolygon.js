@@ -1,12 +1,7 @@
-const config = require('../../config.json');
+const config = require('../../../config.json');
 
 
 async function main() {
-    // const networkId = 1;
-    // const zunami = "";
-    // const curvePool = "";
-    // const tokens = config.tokens;
-
     const networkId = 137;
     const zunami = "0x9B43E47BEc96A9345cd26fDDE7EFa5F8C06e126c";
     const curvePool = "0x445FE580eF8d70FF569aB36e80c647af338db351";
