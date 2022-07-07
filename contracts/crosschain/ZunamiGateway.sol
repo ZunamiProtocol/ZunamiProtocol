@@ -17,6 +17,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
 
     struct CrosschainDeposit {
+        uint256 id;
         uint256 totalTokenAmount;
         address[] users;
         uint256[] tokenAmounts;
@@ -24,6 +25,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     }
 
     struct CrosschainWithdrawal {
+        uint256 id;
         uint256 totalLpShares;
         address[] users;
         uint256[] lpSharesAmounts;
@@ -46,11 +48,11 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     address public forwarderAddress;
     uint256 public forwarderTokenPoolId;
 
-    mapping(address => uint256) internal _pendingDeposits;
-    mapping(uint256 => CrosschainDeposit) internal _processingCrosschainDeposits;
+    CrosschainDeposit public processingCrosschainDeposit;
+    CrosschainWithdrawal public processingCrosschainWithdrawal;
 
+    mapping(address => uint256) internal _pendingDeposits;
     mapping(address => uint256) internal _pendingWithdrawals;
-    mapping(uint256 => CrosschainWithdrawal) internal _processingCrosschainWithdrawals;
 
     event CreatedPendingDeposit(address indexed depositor, uint256 amount);
     event SentCrosschainDepositRequest(uint256 depositId, uint256 totalTokenAmount);
@@ -135,14 +137,6 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         return _pendingWithdrawals[user];
     }
 
-    function processingCrosschainDeposits(uint256 depositId) external view returns (CrosschainDeposit memory) {
-        return _processingCrosschainDeposits[depositId];
-    }
-
-    function processingCrosschainWithdrawals(uint256 withdrawalId) external view returns (CrosschainWithdrawal memory) {
-        return _processingCrosschainWithdrawals[withdrawalId];
-    }
-
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
@@ -174,6 +168,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     payable
     onlyRole(OPERATOR_ROLE)
     {
+        require(processingCrosschainDeposit.id == 0, "Gateway: deposit was sent");
         uint256 depositId = block.number;
 
         uint256 totalTokenAmount = 0;
@@ -187,7 +182,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
             totalTokenAmount += deposit;
             delete _pendingDeposits[user];
         }
-        _processingCrosschainDeposits[depositId] = CrosschainDeposit(totalTokenAmount, userList, tokenAmounts, 0);
+        processingCrosschainDeposit = CrosschainDeposit(depositId, totalTokenAmount, userList, tokenAmounts, 0);
 
         token.safeIncreaseAllowance(address(stargateRouter), totalTokenAmount);
 
@@ -199,7 +194,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
             forwarderTokenPoolId,                   // dest pool id
             payable(address(this)),                    // refund address. extra gas (if any) is returned to this address
             totalTokenAmount,                       // quantity to swap
-            totalTokenAmount * SG_FEE_REDUCER / SG_FEE_DIVIDER,                                      // the min qty you would accept on the destination
+            totalTokenAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER,                                      // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(150000, 0, "0x"),     // 350000 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(forwarderAddress),     // the address to send the tokens to on the destination
             abi.encode(depositId)                   // bytes param, if you wish to send additional payload you can abi.encode() them here
@@ -226,26 +221,27 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         (uint256 depositId, uint256 totalLpShares, uint256 storedLpShares) = abi.decode(_payload, (uint256, uint256, uint256));
         require( IERC20Metadata(address(this)).totalSupply() == storedLpShares - totalLpShares, "Gateway: stored ZLP != minted GZLP");
 
-        CrosschainDeposit storage deposits = _processingCrosschainDeposits[depositId];
-        deposits.totalLpShares = totalLpShares;
+        processingCrosschainDeposit.totalLpShares = totalLpShares;
 
         emit ReceivedCrosschainDepositResponse(depositId, totalLpShares);
     }
 
-    function finalizeCrosschainDeposit(uint256 depositId)
+    function finalizeCrosschainDeposit()
     external
     onlyRole(OPERATOR_ROLE)
     {
-        CrosschainDeposit memory deposits = _processingCrosschainDeposits[depositId];
-        require(deposits.totalLpShares > 0, "Gateway: callback wasn't received");
-        for (uint256 i = 0; i < deposits.users.length; i++) {
-            uint256 tokenAmount = deposits.tokenAmounts[i];
-            uint256 lpShares = (deposits.totalLpShares * tokenAmount) / deposits.totalTokenAmount;
-            _mint(deposits.users[i], lpShares);
+        require(processingCrosschainDeposit.id != 0, "Gateway: deposit was not sent");
+        require(processingCrosschainDeposit.totalLpShares != 0, "Gateway: callback wasn't received");
 
-            emit Deposited(deposits.users[i], tokenAmount, lpShares);
+        for (uint256 i = 0; i < processingCrosschainDeposit.users.length; i++) {
+            uint256 tokenAmount = processingCrosschainDeposit.tokenAmounts[i];
+            uint256 lpShares = (processingCrosschainDeposit.totalLpShares * tokenAmount) / processingCrosschainDeposit.totalTokenAmount;
+            _mint(processingCrosschainDeposit.users[i], lpShares);
+
+            emit Deposited(processingCrosschainDeposit.users[i], tokenAmount, lpShares);
         }
-        delete _processingCrosschainDeposits[depositId];
+
+        delete processingCrosschainDeposit;
     }
 
     /**
@@ -284,6 +280,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         onlyRole(OPERATOR_ROLE)
     {
         require(userList.length > 0, 'Gateway: there are no pending withdrawals requests');
+        require(processingCrosschainWithdrawal.id == 0, "Gateway: withdrawal was sent");
 
         // 1/ clone withdrawals
         uint256 withdrawalId = block.number;
@@ -300,7 +297,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
             delete _pendingWithdrawals[user];
         }
         _burn(address(this), totalLpShares);
-        _processingCrosschainWithdrawals[withdrawalId] = CrosschainWithdrawal(totalLpShares, userList, lpSharesAmounts, 0);
+        processingCrosschainWithdrawal = CrosschainWithdrawal(withdrawalId, totalLpShares, userList, lpSharesAmounts, 0);
 
         // 2/ send withdrawal by zero layer request to forwarder with total withdrawing ZLP amount
         bytes memory payload = abi.encode(withdrawalId, totalLpShares);
@@ -339,26 +336,26 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         // 3/ receive USDT stables by star gate and transfer to customers
         // 4/ burn GZLP and remove cloned mapping
         (uint256 withdrawalId) = abi.decode(_payload, (uint256));
-        CrosschainWithdrawal storage withdrawals = _processingCrosschainWithdrawals[withdrawalId];
-        withdrawals.totalTokenAmount = _amountLD;
+        processingCrosschainWithdrawal.totalTokenAmount = _amountLD;
         emit ReceivedCrosschainWithdrawalResponse(withdrawalId, _amountLD);
     }
 
-    function finalizeCrosschainWithdrawal(uint256 withdrawalId)
+    function finalizeCrosschainWithdrawal()
     external
     onlyRole(OPERATOR_ROLE)
     {
-        CrosschainWithdrawal memory withdrawals = _processingCrosschainWithdrawals[withdrawalId];
-        require(withdrawals.totalTokenAmount > 0, "Gateway: callback wasn't received");
-        for (uint256 i = 0; i < withdrawals.users.length; i++) {
-            uint256 lpShares = withdrawals.lpSharesAmounts[i];
-            address user = withdrawals.users[i];
-            uint256 tokenAmount = (withdrawals.totalTokenAmount * lpShares) / withdrawals.totalLpShares;
+        require(processingCrosschainWithdrawal.id != 0, "Gateway: withdrawal was not sent");
+        require(processingCrosschainWithdrawal.totalTokenAmount != 0, "Gateway: callback wasn't received");
+
+        for (uint256 i = 0; i < processingCrosschainWithdrawal.users.length; i++) {
+            uint256 lpShares = processingCrosschainWithdrawal.lpSharesAmounts[i];
+            address user = processingCrosschainWithdrawal.users[i];
+            uint256 tokenAmount = (processingCrosschainWithdrawal.totalTokenAmount * lpShares) / processingCrosschainWithdrawal.totalLpShares;
             IERC20Metadata(token).safeTransfer(user, tokenAmount);
             emit Withdrawn(user, tokenAmount, lpShares);
         }
 
-        delete _processingCrosschainWithdrawals[withdrawalId];
+        delete processingCrosschainWithdrawal;
     }
 
     function removePendingWithdrawal() external {
