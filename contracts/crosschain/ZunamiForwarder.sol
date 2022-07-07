@@ -136,11 +136,11 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         // use adapterParams v1 to specify more gas for the destination
         bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(50000));
 
-        layerZeroEndpoint.send{value: msg.value}(
+        layerZeroEndpoint.send{value: address(this).balance}(
             gatewayChainId, // destination chainId
             abi.encodePacked(gatewayAddress), // destination address
             payload, // abi.encode()'ed bytes
-            payable(_msgSender()),
+            payable(address(this)),
             address(0x0), // future param, unused for this example
             adapterParams // v1 adapterParams, specify custom destination gas qty
         );
@@ -191,11 +191,11 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         tokens[USDT_TOKEN_ID].safeIncreaseAllowance(address(stargateRouter), tokenTotalAmount);
 
-        stargateRouter.swap{value:msg.value}(
+        stargateRouter.swap{value:address(this).balance}(
             gatewayChainId,                                     // LayerZero chainId
             tokenPoolId,                                        // source pool id
             gatewayTokenPoolId,                                 // dest pool id
-            payable(_msgSender()),                              // refund address. extra gas (if any) is returned to this address
+            payable(address(this)),                              // refund address. extra gas (if any) is returned to this address
             tokenTotalAmount,                                   // quantity to swap
             tokenTotalAmount * SG_FEE_REDUCER / SG_FEE_DIVIDER, // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(50000, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address

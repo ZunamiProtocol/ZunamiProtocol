@@ -179,12 +179,12 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         token.safeIncreaseAllowance(address(stargateRouter), totalTokenAmount);
 
         // 2/ send cloned deposits to forwarder by stargate
-        // the msg.value is the "fee" that Stargate needs to pay for the cross chain message
-        stargateRouter.swap{value:msg.value}(
+        // the address(this).balance is the "fee" that Stargate needs to pay for the cross chain message
+        stargateRouter.swap{value:address(this).balance}(
             forwarderChainId,                       // LayerZero chainId
             tokenPoolId,                            // source pool id
             forwarderTokenPoolId,                   // dest pool id
-            payable(_msgSender()),                    // refund address. extra gas (if any) is returned to this address
+            payable(address(this)),                    // refund address. extra gas (if any) is returned to this address
             totalTokenAmount,                       // quantity to swap
             totalTokenAmount * SG_FEE_REDUCER / SG_FEE_DIVIDER,                                      // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(150000, 0, "0x"),     // 350000 additional gasLimit increase, 0 airdrop, at 0x address
@@ -295,11 +295,11 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         // use adapterParams v1 to specify more gas for the destination
         bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(150000));
 
-        layerZeroEndpoint.send{value: msg.value}(
+        layerZeroEndpoint.send{value: address(this).balance}(
             forwarderChainId, // destination chainId
             abi.encodePacked(forwarderAddress), // destination address
             payload, // abi.encode()'ed bytes
-            payable(_msgSender()),
+            payable(address(this)),
             address(0x0), // future param
             adapterParams // v1 adapterParams, specify custom destination gas qty
         );
