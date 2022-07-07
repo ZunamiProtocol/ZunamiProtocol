@@ -186,7 +186,7 @@ describe('Crosschain', () => {
         const depositId = await ethers.provider.getBlockNumber();
 
         //TODO: return 500 instead of 600 zlp
-        let message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint" ], [ depositId, tokenify(usdtTotal).toFixed() ]);
+        let message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint", "uint" ], [ depositId, tokenify(usdtTotal).toFixed(), tokenify(usdtTotal).toFixed() ]);
         await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
         await gateway.finalizeCrosschainDeposit(depositId);
 
@@ -234,7 +234,7 @@ describe('Crosschain', () => {
         await expect(await usdt.balanceOf(zunami.address)).to.be.equal(0);
         await expect(await zunami.balanceOf(forwarder.address)).to.be.equal(decify(600, 18).toFixed());
 
-        await forwarder.completeCrosschainDeposit(depositId, usdtTotal);
+        await forwarder.completeCrosschainDeposit(depositId);
 
         // withdrawal
         const witdrawalId = 4321;
