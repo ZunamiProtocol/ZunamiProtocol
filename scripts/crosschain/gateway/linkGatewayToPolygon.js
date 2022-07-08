@@ -12,7 +12,7 @@ async function main() {
     console.log('ZunamiGateway: ', gateway.address);
 
     const setParams = [
-        config["crosschain"][forwarderNetworkId.toString()]["zlChainId"],
+        config["crosschain"][forwarderNetworkId.toString()]["lzChainId"],
         forwarderAddress,
         config["crosschain"][forwarderNetworkId.toString()]["usdtPoolId"]
     ];

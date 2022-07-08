@@ -1,5 +1,5 @@
 Start deploy ZunamiForwarder
-ZunamiForwarder deployed to: 0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc [
+ZunamiForwarder deployed to: 0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72 [
   [
     '0x6B175474E89094C44Da98b954EedeAC495271d0F',
     '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -12,5 +12,10 @@ ZunamiForwarder deployed to: 0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc [
   '0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675'
 ]
 
-ZunamiForwarder:  0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc
-Set gateway params:  [ 2, '0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57', 2 ]
+ZunamiForwarder:  0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72
+Set gateway params:  [
+  2,
+  '0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf',
+  2,
+  '0x6694340fc020c5e6b96567843da2df01b2ce1eb6'
+]

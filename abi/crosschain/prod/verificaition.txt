@@ -1,6 +1,6 @@
 Verification:
-npx hardhat verify --network mainnet --constructor-args ./abi/crosschain/prod/1_forwarder_arguments.js 0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc
-https://etherscan.io/address/0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc#code
+npx hardhat verify --network mainnet --constructor-args ./abi/crosschain/prod/1_forwarder_arguments.js 0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72
+https://etherscan.io/address/0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72#code
 
-npx hardhat verify --network bsc --constructor-args ./abi/crosschain/prod/56_gateway_arguments.js 0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57
-https://bscscan.com/address/0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57#code
+npx hardhat verify --network bsc --constructor-args ./abi/crosschain/prod/56_gateway_arguments.js 0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf
+https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#code
