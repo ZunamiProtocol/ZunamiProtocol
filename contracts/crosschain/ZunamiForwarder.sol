@@ -125,9 +125,11 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         // 1/ receive stargate deposit in USDT
         require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
+        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayAddress)), "Forwarder: wrong source address");
 
         processingDepositId = abi.decode(payload, (uint256));
         require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
+
         // 2/ delegate deposit to Zunami
         uint256[3] memory amounts;
         amounts[uint256(USDT_TOKEN_ID)] = amountLD;
@@ -137,11 +139,13 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         emit CreatedPendingDeposit(processingDepositId, USDT_TOKEN_ID, amountLD);
     }
 
-    function completeCrosschainDeposit()
+    function completeCrossDeposit()
     external
     payable
     onlyRole(OPERATOR_ROLE)
     {
+        require(processingDepositId != 0, "Forwarder: deposit not processing");
+
         uint256 lpShares = IERC20Metadata(address(zunami)).balanceOf(address(this)) - storedLpShares;
         // 0/ wait until receive ZLP tokens back
         require(lpShares > 0, "Forwarder: deposit wasn't completed at Zunami");
@@ -165,7 +169,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         emit Deposited(processingDepositId, lpShares);
 
-        processingDepositId = 0;
+        delete processingDepositId;
     }
 
     // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
@@ -178,9 +182,10 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             _msgSender() == address(layerZeroEndpoint),
             "Forwarder: only zero layer endpoint can call lzReceive!"
         );
-        require(processingWithdrawalId == 0, "Forwarder: withdrawal is processing");
+        require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
+        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayAddress)), "Forwarder: wrong source address");
 
-        require(withdrawingLpShares == 0, "Forwarder: doubled withdrawal request");
+        require(processingWithdrawalId == 0 && withdrawingLpShares == 0, "Forwarder: withdrawal is processing");
 
         // 1/ Receive request to withdrawal
         uint256 lpShares;
@@ -196,16 +201,16 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         emit CreatedPendingWithdrawal(processingWithdrawalId, lpShares);
     }
 
-    function completeCrosschainWithdrawal()
+    function completeCrossWithdrawal()
     external
     payable
     onlyRole(OPERATOR_ROLE)
     {
         // 0/ wait to receive stables from Zunami
+        require(processingWithdrawalId != 0 && withdrawingLpShares != 0, "Forwarder: withdrawal is not processing");
 
         // 1/ exchange DAI and USDC to USDT
         exchangeOtherTokenToUSDT(DAI_TOKEN_ID);
-
         exchangeOtherTokenToUSDT(USDC_TOKEN_ID);
 
         // 2/ send USDT by startgate to gateway
@@ -227,11 +232,11 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         storedLpShares -= withdrawingLpShares;
         require( IERC20Metadata(address(zunami)).balanceOf(address(this)) == storedLpShares, "Forwarder: withdrawal wasn't completed in Zunami");
-        withdrawingLpShares = 0;
 
         emit Withdrawn(processingWithdrawalId, USDT_TOKEN_ID, tokenTotalAmount);
 
-        processingWithdrawalId = 0;
+        delete processingWithdrawalId;
+        delete withdrawingLpShares;
     }
 
     function exchangeOtherTokenToUSDT(int128 tokenId) internal {
