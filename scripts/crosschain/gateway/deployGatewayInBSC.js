@@ -12,8 +12,8 @@ async function main() {
     const gatewayParams = [
         tokens[usdtPoolId],
         config["crosschain"][networkId.toString()]["usdtPoolId"],
-        config["crosschain"][networkId.toString()]["stargate"],
-        config["crosschain"][networkId.toString()]["layerzero"],
+        config["crosschain"][networkId.toString()]["sgRouter"],
+        config["crosschain"][networkId.toString()]["lzRouter"],
     ];
     const gateway = await ZunamiGateway.deploy(
       ...gatewayParams

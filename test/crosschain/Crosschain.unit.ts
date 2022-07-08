@@ -138,12 +138,14 @@ describe('Cross', () => {
           otherChainId,
           gateway.address,
           otherUSDTPoolId,
+          gateway.address,
         );
 
         await gateway.setForwarderParams(
           masterChainId,
           forwarder.address,
           masterUSDTPoolId,
+          forwarder.address,
         );
     });
 

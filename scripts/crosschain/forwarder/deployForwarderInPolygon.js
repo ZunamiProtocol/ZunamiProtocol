@@ -13,8 +13,8 @@ async function main() {
         config["crosschain"][networkId.toString()]["usdtPoolId"],
         zunami,
         curvePool,
-        config["crosschain"][networkId.toString()]["stargate"],
-        config["crosschain"][networkId.toString()]["layerzero"]
+        config["crosschain"][networkId.toString()]["sgRouter"],
+        config["crosschain"][networkId.toString()]["lzRouter"]
     ];
 
     const forwarder = await ZunamiForwarder.deploy(...forwarderParams);

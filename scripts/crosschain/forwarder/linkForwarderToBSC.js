@@ -3,8 +3,8 @@ const config = require('../../../config.json');
 
 async function main() {
     const gatewayNetworkId = 56;
-    const gatewayAddress = "0x1237203e55F69Bd2907C3DA4694Fd57Be9e0ED57";
-    const forwarderAddress = "0xAa166CaA2ebDDA7Adad54792159a24e24C5669cc";
+    const gatewayAddress = "0x65363f1A6cb67fE045bbD2fb3c5cb81bFBEe7902";
+    const forwarderAddress = "0x92a08D7079bD6751DFC8e41738C93E2B559860BF";
 
     const ZunamiForwarder = await ethers.getContractFactory('ZunamiForwarder');
     const forwarder = await ZunamiForwarder.attach(forwarderAddress);
@@ -12,9 +12,10 @@ async function main() {
     console.log('ZunamiForwarder: ', forwarder.address);
 
     const setParams = [
-        config["crosschain"][gatewayNetworkId.toString()]["chainId"],
+        config["crosschain"][gatewayNetworkId.toString()]["zlChainId"],
         gatewayAddress,
-        config["crosschain"][gatewayNetworkId.toString()]["usdtPoolId"]
+        config["crosschain"][gatewayNetworkId.toString()]["usdtPoolId"],
+        config["crosschain"][gatewayNetworkId.toString()]["sgBridge"],
     ];
 
     await forwarder.setGatewayParams(...setParams);

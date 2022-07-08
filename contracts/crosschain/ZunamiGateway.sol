@@ -46,6 +46,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     uint16 public forwarderChainId;
     address public forwarderAddress;
     uint256 public forwarderTokenPoolId;
+    address public forwarderStargateBridge;
 
     CrossDeposit public processingCrossDeposit;
     CrossWithdrawal public processingCrossWithdrawal;
@@ -83,7 +84,8 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     event SetForwarderParams(
         uint256 _chainId,
         address _address,
-        uint256 _tokenPoolId
+        uint256 _tokenPoolId,
+        address _bridgeAddress
     );
 
     event SetStargateSlippage(
@@ -111,13 +113,15 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     function setForwarderParams(
         uint16 _chainId,
         address _address,
-        uint256 _tokenPoolId
+        uint256 _tokenPoolId,
+        address _stargateBridge
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         forwarderChainId = _chainId;
         forwarderAddress = _address;
         forwarderTokenPoolId =  _tokenPoolId;
+        forwarderStargateBridge =  _stargateBridge;
 
-        emit SetForwarderParams(_chainId, _address, _tokenPoolId);
+        emit SetForwarderParams(_chainId, _address, _tokenPoolId, _stargateBridge);
     }
 
     function setStargateSlippage(
@@ -330,7 +334,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         );
 
         require(_srcChainId == forwarderChainId, "Gateway: wrong source chain id");
-        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(forwarderAddress)), "Gateway: wrong source address");
+        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(forwarderStargateBridge)), "Gateway: wrong source address");
 
         // 3/ receive USDT stables by star gate and transfer to customers
         // 4/ burn GZLP and remove cloned mapping

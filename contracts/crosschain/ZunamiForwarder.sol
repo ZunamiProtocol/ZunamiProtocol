@@ -42,6 +42,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     uint16 public gatewayChainId;
     address public gatewayAddress;
     uint256 public gatewayTokenPoolId;
+    address public gatewayStargateBridge;
 
     event CreatedPendingDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
     event CreatedPendingWithdrawal(
@@ -58,7 +59,8 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     event SetGatewayParams(
         uint256 chainId,
         address gateway,
-        uint256 tokenPoolId
+        uint256 tokenPoolId,
+        address gatewayStargateBridge
     );
 
     event SetStargateSlippage(
@@ -90,13 +92,15 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     function setGatewayParams(
         uint16 _chainId,
         address _address,
-        uint256 _tokenPoolId
+        uint256 _tokenPoolId,
+        address _stargateBridge
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         gatewayChainId = _chainId;
         gatewayAddress = _address;
         gatewayTokenPoolId = _tokenPoolId;
+        gatewayStargateBridge = _stargateBridge;
 
-        emit SetGatewayParams(_chainId, _address, _tokenPoolId);
+        emit SetGatewayParams(_chainId, _address, _tokenPoolId, _stargateBridge);
     }
 
     function setStargateSlippage(
@@ -125,7 +129,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         // 1/ receive stargate deposit in USDT
         require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
-        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayAddress)), "Forwarder: wrong source address");
+        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayStargateBridge)), "Forwarder: wrong source address");
 
         processingDepositId = abi.decode(payload, (uint256));
         require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
