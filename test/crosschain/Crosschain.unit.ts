@@ -40,6 +40,11 @@ const mockCurvePool = async () => mockContract('ICurvePool');
 // const setTotalHoldings = async (strategy: MockContract, holdings: any) =>
 //     await strategy.mock.totalHoldings.returns(bn(holdings).toFixed());
 
+enum MessageType {
+    Deposit,
+    Withdrawal
+}
+
 describe('Cross', () => {
     let admin: SignerWithAddress;
     let alice: SignerWithAddress;
@@ -193,7 +198,7 @@ describe('Cross', () => {
         // );
 
         //TODO: return 500 instead of 600 zlp
-        let message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint" ], [ depositId, tokenify(usdtTotal).toFixed() ]);
+        let message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Deposit, depositId, tokenify(usdtTotal).toFixed(), 18 ]);
         await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
         await gateway.finalizeCrossDeposit();
 
@@ -201,20 +206,18 @@ describe('Cross', () => {
             await expect(await gateway.balanceOf(users[i].address)).to.be.equal(tokenify(usdtAmounts[i]).toFixed());
         }
 
-        //deposit can be sent again
-        for (let i = 0; i < users.length; i++) {
-            await mintAndApproveTokensTo(gateway.address, users[i], [0,0,usdtAmounts[i]]);
-            await gateway.connect(users[i]).delegateDeposit(decify(usdtAmounts[i], 6).toFixed());
-        }
-
-        await gateway.sendCrossDeposit(users.map(user => user.address));
+        // //deposit can be sent again
+        // for (let i = 0; i < users.length; i++) {
+        //     await mintAndApproveTokensTo(gateway.address, users[i], [0,0,usdtAmounts[i]]);
+        //     await gateway.connect(users[i]).delegateDeposit(decify(usdtAmounts[i], 6).toFixed());
+        // }
+        //
+        // await gateway.sendCrossDeposit(users.map(user => user.address));
 
 
         // withdrawal
-        const gzlpAmounts = [50, 100, 150];
-        const gzlpTotal = usdtTotal / 2;
         for (let i = 0; i < users.length; i++) {
-            const tokenBalance = decify(gzlpAmounts[i], 18).toFixed();
+            const tokenBalance = decify(usdtAmounts[i], 18).toFixed();
             await gateway.connect(users[i]).approve(gateway.address, tokenBalance);
             await gateway.connect(users[i]).delegateWithdrawal(tokenBalance);
         }
@@ -227,40 +230,48 @@ describe('Cross', () => {
         //   'Gateway: withdrawal was sent'
         // );
 
-        const gzlpTotalBalance = tokenify(gzlpTotal).toFixed();
+        // await usdt.mint(gateway.address, decify(gzlpTotal, 6).toFixed());
+        message = ethers.utils.defaultAbiCoder.encode([ "uint" ], [ withdrawalId ]);
+        await stargate.sgReceive(gateway.address, masterChainId, forwarder.address, 0, usdt.address, decify(usdtTotal, 6).toFixed(), message);
 
-        await usdt.mint(gateway.address, gzlpTotalBalance);
-        message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint" ], [ withdrawalId, gzlpTotalBalance ]);
-        await stargate.sgReceive(gateway.address, masterChainId, forwarder.address, 0, usdt.address, gzlpTotalBalance, message);
+        message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Withdrawal, withdrawalId, decify(usdtTotal, 6).toFixed(), 6 ]);
+        await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
+
         await gateway.finalizeCrossWithdrawal();
 
         for (let i = 0; i < users.length; i++) {
-            await expect(await usdt.balanceOf(users[i].address)).to.be.equal(tokenify(usdtAmounts[i] / 2).toFixed());
+            await expect(await usdt.balanceOf(users[i].address)).to.be.equal(decify(usdtAmounts[i], 6).toFixed());
         }
 
-        // withdrawal can be sent again
-        for (let i = 0; i < users.length; i++) {
-            const tokenBalance = decify(gzlpAmounts[i], 18).toFixed();
-            await gateway.connect(users[i]).approve(gateway.address, tokenBalance);
-            await gateway.connect(users[i]).delegateWithdrawal(tokenBalance);
-        }
-
-        await gateway.sendCrossWithdrawal(users.map(user => user.address));
+        // // withdrawal can be sent again
+        // for (let i = 0; i < users.length; i++) {
+        //     const tokenBalance = decify(gzlpAmounts[i], 18).toFixed();
+        //     await gateway.connect(users[i]).approve(gateway.address, tokenBalance);
+        //     await gateway.connect(users[i]).delegateWithdrawal(tokenBalance);
+        // }
+        //
+        // await gateway.sendCrossWithdrawal(users.map(user => user.address));
     });
 
     it('should make deposit and withdrawal in forwarder', async () => {
         const depositId = 1234;
-        const usdtTotal = decify(600, 6).toFixed();
+        const usdtTotal = 600;
+        const usdtTotalMinimals = decify(600, 6).toFixed();
 
         // deposit
-        await usdt.mint(forwarder.address, usdtTotal);
-        let message = ethers.utils.defaultAbiCoder.encode([ "uint" ], [ depositId ]);
-        await stargate.sgReceive(forwarder.address, otherChainId, gateway.address, 0, usdt.address, usdtTotal, message);
-        await expect(await usdt.balanceOf(zunami.address)).to.be.equal(usdtTotal);
+        await usdt.mint(forwarder.address, usdtTotalMinimals);
+        let message = ethers.utils.defaultAbiCoder.encode([ "uint256" ], [ depositId ]);
+        await stargate.sgReceive(forwarder.address, otherChainId, gateway.address, 0, usdt.address, usdtTotalMinimals, message);
+
+        message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Deposit, depositId, tokenify(usdtTotal).toFixed(), 18 ]);
+        await layerzero.lzReceive(forwarder.address, otherChainId, gateway.address, 0, message);
+
+        await forwarder.delegateCrossDeposit();
+        await expect(await usdt.balanceOf(zunami.address)).to.be.equal(usdtTotalMinimals);
         await expect(await usdt.balanceOf(forwarder.address)).to.be.equal(0);
 
         await zunami.completeDeposits([forwarder.address]);
-        await expect(await usdt.balanceOf(strategy.address)).to.be.equal(usdtTotal);
+        await expect(await usdt.balanceOf(strategy.address)).to.be.equal(usdtTotalMinimals);
         await expect(await usdt.balanceOf(zunami.address)).to.be.equal(0);
         await expect(await zunami.balanceOf(forwarder.address)).to.be.equal(decify(600, 18).toFixed());
 
@@ -269,7 +280,7 @@ describe('Cross', () => {
         // withdrawal
         const witdrawalId = 4321;
         const zlpTotalHalf = tokenify(600 / 2).toFixed();
-        message = ethers.utils.defaultAbiCoder.encode([ "uint", "uint" ], [ witdrawalId, zlpTotalHalf ]);
+        message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Withdrawal, witdrawalId, zlpTotalHalf, 18 ]);
         await layerzero.lzReceive(forwarder.address, otherChainId, gateway.address, 0, message);
 
         await zunami.completeWithdrawals([forwarder.address]);

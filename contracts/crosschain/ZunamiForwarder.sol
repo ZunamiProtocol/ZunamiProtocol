@@ -16,10 +16,15 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
 
-    IZunami public zunami;
-    ICurvePool public curveExchange;
-    IStargateRouter public stargateRouter;
-    ILayerZeroEndpoint public layerZeroEndpoint;
+    enum MessageType {
+        Deposit,
+        Withdrawal
+    }
+
+    IZunami public immutable zunami;
+    ICurvePool public immutable curveExchange;
+    IStargateRouter public immutable stargateRouter;
+    ILayerZeroEndpoint public immutable layerZeroEndpoint;
 
     uint8 public constant POOL_ASSETS = 3;
 
@@ -31,30 +36,28 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
     uint256 public stargateSlippage = 20;
     IERC20Metadata[POOL_ASSETS] public tokens;
-    uint256 public tokenPoolId;
+    uint256 public immutable tokenPoolId;
 
     uint256 public storedLpShares;
-    uint256 public withdrawingLpShares;
 
-    uint256 public processingDepositId;
-    uint256 public processingWithdrawalId;
+    uint256 public currentDepositId;
+    uint256 public currentDepositAmount;
+
+    uint256 public currentWithdrawalId;
+    uint256 public currentWithdrawalAmount;
 
     uint16 public gatewayChainId;
     address public gatewayAddress;
     uint256 public gatewayTokenPoolId;
     address public gatewayStargateBridge;
 
+    event InitiatedDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
+    event ReceivedDepositProvision(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
     event CreatedPendingDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
-    event CreatedPendingWithdrawal(
-        uint256 indexed id,
-        uint256 lpShares
-    );
     event Deposited(uint256 indexed id, uint256 lpShares);
-    event Withdrawn(
-        uint256 indexed id,
-        uint256 tokenId,
-        uint256 tokenAmount
-    );
+
+    event CreatedPendingWithdrawal(uint256 indexed id, uint256 lpShares);
+    event Withdrawn(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
 
     event SetGatewayParams(
         uint256 chainId,
@@ -117,63 +120,21 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         bytes memory _srcAddress,        // the remote sender address
         uint256 _nonce,
         address _token,                  // the token contract on the local chain
-        uint256 amountLD,                // the qty of local _token contract tokens
-        bytes memory payload
+        uint256 _amountLD,                // the qty of local _token contract tokens
+        bytes memory _payload
     ) external {
         require(
             _msgSender() == address(stargateRouter),
             "Forwarder: only stargate router can call sgReceive!"
         );
 
-        require(processingDepositId == 0, "Forwarder: deposit is processing");
-
-        // 1/ receive stargate deposit in USDT
+        // receive stargate deposit in USDT
         require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
         require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayStargateBridge)), "Forwarder: wrong source address");
-
-        processingDepositId = abi.decode(payload, (uint256));
         require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
 
-        // 2/ delegate deposit to Zunami
-        uint256[3] memory amounts;
-        amounts[uint256(USDT_TOKEN_ID)] = amountLD;
-        IERC20Metadata(_token).safeApprove(address(zunami), amountLD);
-        zunami.delegateDeposit(amounts);
-
-        emit CreatedPendingDeposit(processingDepositId, USDT_TOKEN_ID, amountLD);
-    }
-
-    function completeCrossDeposit()
-    external
-    payable
-    onlyRole(OPERATOR_ROLE)
-    {
-        require(processingDepositId != 0, "Forwarder: deposit not processing");
-
-        uint256 lpShares = IERC20Metadata(address(zunami)).balanceOf(address(this)) - storedLpShares;
-        // 0/ wait until receive ZLP tokens back
-        require(lpShares > 0, "Forwarder: deposit wasn't completed at Zunami");
-
-        storedLpShares += lpShares;
-
-        // 1/ send layer zero message to Gateway with LP shares deposit amount
-        bytes memory payload = abi.encode(processingDepositId, lpShares);
-
-        // use adapterParams v1 to specify more gas for the destination
-        bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(50000));
-
-        layerZeroEndpoint.send{value: address(this).balance}(
-            gatewayChainId, // destination chainId
-            abi.encodePacked(gatewayAddress), // destination address
-            payload, // abi.encode()'ed bytes
-            payable(address(this)),
-            address(0x0), // future param, unused for this example
-            adapterParams // v1 adapterParams, specify custom destination gas qty
-        );
-
-        emit Deposited(processingDepositId, lpShares);
-
-        delete processingDepositId;
+        (uint256 depositId) = abi.decode(_payload, (uint256));
+        emit ReceivedDepositProvision(depositId, USDT_TOKEN_ID, _amountLD);
     }
 
     // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
@@ -189,20 +150,90 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
         require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayAddress)), "Forwarder: wrong source address");
 
-        require(processingWithdrawalId == 0 && withdrawingLpShares == 0, "Forwarder: withdrawal is processing");
+        // Receive request to withdrawal or deposit
+        (uint8 messageType, uint256 messageId, uint256 tokenAmount, uint8 tokenDecimals) =
+            abi.decode(_payload, (uint8, uint256, uint256, uint8));
 
-        // 1/ Receive request to withdrawal
-        uint256 lpShares;
-        (processingWithdrawalId, lpShares) = abi.decode(_payload, (uint256, uint256));
+        if(messageType == uint8(MessageType.Withdrawal)) {
+            require(currentWithdrawalId == 0 && currentWithdrawalAmount == 0, "Forwarder: previous withdrawal existed");
 
-        // 2/ Delegate withdrawal request to Zunami
-        uint256[POOL_ASSETS] memory tokenAmounts;
-        IERC20Metadata(address(zunami)).safeApprove(address(zunami), lpShares);
-        zunami.delegateWithdrawal(lpShares, tokenAmounts);
+            currentWithdrawalId = messageId;
+            currentWithdrawalAmount = tokenAmount; //don't convert - zlp anf gzlp have same decimals
 
-        withdrawingLpShares = lpShares;
+            // Delegate withdrawal request to Zunami
+            uint256[POOL_ASSETS] memory tokenAmounts;
+            IERC20Metadata(address(zunami)).safeApprove(address(zunami), tokenAmount);
+            zunami.delegateWithdrawal(tokenAmount, tokenAmounts);
 
-        emit CreatedPendingWithdrawal(processingWithdrawalId, lpShares);
+            emit CreatedPendingWithdrawal(currentWithdrawalId, tokenAmount);
+        }
+
+        if(messageType == uint8(MessageType.Deposit)) {
+            require(currentDepositId == 0 && currentDepositAmount == 0, "Forwarder: previous deposit existed");
+
+            currentDepositId = messageId;
+            currentDepositAmount = convertDecimals(tokenAmount, tokenDecimals, IERC20Metadata(tokens[USDT_TOKEN_ID]).decimals());
+
+            emit InitiatedDeposit(messageId, USDT_TOKEN_ID, currentDepositAmount);
+        }
+    }
+
+    function delegateCrossDeposit()
+    external
+    onlyRole(OPERATOR_ROLE)
+    {
+        require(currentDepositId != 0 && currentDepositAmount != 0, "Forwarder: deposit wasn't initiated");
+        uint256 realDepositAmount = IERC20Metadata(tokens[USDT_TOKEN_ID]).balanceOf(address(this));
+        require( realDepositAmount >=
+            currentDepositAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER,
+            "Forwarder: not enough provision"
+        );
+
+        // delegate deposit to Zunami
+        IERC20Metadata(tokens[USDT_TOKEN_ID]).safeApprove(address(zunami), realDepositAmount);
+
+        uint256[3] memory amounts;
+        amounts[uint256(USDT_TOKEN_ID)] = realDepositAmount;
+        zunami.delegateDeposit(amounts);
+
+        emit CreatedPendingDeposit(currentDepositId, USDT_TOKEN_ID, realDepositAmount);
+    }
+
+    function completeCrossDeposit()
+    external
+    payable
+    onlyRole(OPERATOR_ROLE)
+    {
+        require(currentDepositId != 0, "Forwarder: deposit not processing");
+
+        uint256 lpShares = IERC20Metadata(address(zunami)).balanceOf(address(this)) - storedLpShares;
+        // 0/ wait until receive ZLP tokens back
+        require(lpShares > 0, "Forwarder: deposit wasn't completed at Zunami");
+
+        storedLpShares += lpShares;
+
+        // send layer zero message to Gateway with LP shares deposit amount
+        bytes memory payload = abi.encode(uint8(MessageType.Deposit), currentDepositId, lpShares, 18);
+        sendCrossMessage(payload, uint256(50000));
+
+        emit Deposited(currentDepositId, lpShares);
+
+        delete currentDepositId;
+        delete currentDepositAmount;
+    }
+
+    function sendCrossMessage(bytes memory payload, uint256 gas) internal {
+        // use adapterParams v1 to specify more gas for the destination
+        bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(gas));
+
+        layerZeroEndpoint.send{value: address(this).balance}(
+            gatewayChainId, // destination chainId
+            abi.encodePacked(gatewayAddress), // destination address
+            payload, // abi.encode()'ed bytes
+            payable(address(this)),
+            address(0x0), // future param, unused for this example
+            adapterParams // v1 adapterParams, specify custom destination gas qty
+        );
     }
 
     function completeCrossWithdrawal()
@@ -211,7 +242,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     onlyRole(OPERATOR_ROLE)
     {
         // 0/ wait to receive stables from Zunami
-        require(processingWithdrawalId != 0 && withdrawingLpShares != 0, "Forwarder: withdrawal is not processing");
+        require(currentWithdrawalId != 0 && currentWithdrawalAmount != 0, "Forwarder: withdrawal is not processing");
 
         // 1/ exchange DAI and USDC to USDT
         exchangeOtherTokenToUSDT(DAI_TOKEN_ID);
@@ -231,16 +262,19 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             tokenTotalAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER, // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(50000, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(gatewayAddress),                   // the address to send the tokens to on the destination
-            abi.encode(processingWithdrawalId)                            // bytes param, if you wish to send additional payload you can abi.encode() them here
+            abi.encode(currentWithdrawalId)                            // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
-        storedLpShares -= withdrawingLpShares;
+        bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals);
+        sendCrossMessage(payload, uint256(50000));
+
+        storedLpShares -= currentWithdrawalAmount;
         require( IERC20Metadata(address(zunami)).balanceOf(address(this)) == storedLpShares, "Forwarder: withdrawal wasn't completed in Zunami");
 
-        emit Withdrawn(processingWithdrawalId, USDT_TOKEN_ID, tokenTotalAmount);
+        emit Withdrawn(currentWithdrawalId, USDT_TOKEN_ID, tokenTotalAmount);
 
-        delete processingWithdrawalId;
-        delete withdrawingLpShares;
+        delete currentWithdrawalId;
+        delete currentWithdrawalAmount;
     }
 
     function exchangeOtherTokenToUSDT(int128 tokenId) internal {
@@ -267,5 +301,33 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         if (balance > 0) {
             payable(_msgSender()).transfer(balance);
         }
+    }
+
+    function convertDecimals(
+        uint256 _value,
+        uint8 _decimalsFrom,
+        uint8 _decimalsTo
+    ) public view returns (uint256) { // pure
+        if(_decimalsFrom == _decimalsTo) return _value;
+        if(_decimalsFrom > _decimalsTo) return convertDownDecimals(_value, _decimalsFrom, _decimalsTo);
+        return convertUpDecimals(_value, _decimalsFrom, _decimalsTo);
+    }
+
+    function convertUpDecimals(
+        uint256 _value,
+        uint8 _decimalsFrom,
+        uint8 _decimalsTo
+    ) public pure returns (uint256) {
+        require(_decimalsFrom <= _decimalsTo, "BADDECIM");
+        return _value * (10**(_decimalsTo - _decimalsFrom));
+    }
+
+    function convertDownDecimals(
+        uint256 _value,
+        uint8 _decimalsFrom,
+        uint8 _decimalsTo
+    ) public pure returns (uint256) {
+        require(_decimalsFrom >= _decimalsTo, "BADDECIM");
+        return _value / (10**(_decimalsFrom - _decimalsTo));
     }
 }
