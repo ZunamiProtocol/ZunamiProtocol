@@ -1,0 +1,26 @@
+Start deploy
+Zunami deployed to: 0x9B43E47BEc96A9345cd26fDDE7EFa5F8C06e126c
+RebalancingStrat strategy deployed to: 0x346E74Dc9935a9b02Eb34fB84658a66010fA056D
+Added RebalancingStrat pool to Zunami
+Set zunami address 0x9B43E47BEc96A9345cd26fDDE7EFa5F8C06e126c in RebalancingStrat strategy
+Zunami setDefaultDepositPid to: 0
+Zunami setDefaultWithdrawPid to: 0
+
+
+Start deploy ZunamiForwarder
+ZunamiForwarder deployed to: 0x1db0Fc8933f545648b54A9eE4326209a9A259643 [
+  [
+    '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+    '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+    '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
+  ],
+  2,
+  '0x9B43E47BEc96A9345cd26fDDE7EFa5F8C06e126c',
+  '0x445FE580eF8d70FF569aB36e80c647af338db351',
+  '0x45A01E4e04F14f7A4a6702c74187c5F6222033cd',
+  '0x3c2269811836af69497E5F486A85D7316753cf62'
+]
+
+ZunamiForwarder:  0x1db0Fc8933f545648b54A9eE4326209a9A259643
+Set gateway params:  [ 2, '0x8d6a957D8bbE4F5C938D6d5ABa04B84c67e6cB95', 2 ]
+

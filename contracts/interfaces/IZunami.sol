@@ -9,4 +9,8 @@ interface IZunami {
     function totalHoldings() external returns (uint256);
 
     function calcManagementFee(uint256 amount) external returns (uint256);
+
+    function delegateDeposit(uint256[3] memory amounts) external;
+
+    function delegateWithdrawal(uint256 lpShares, uint256[3] memory tokenAmounts) external;
 }

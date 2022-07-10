@@ -40,12 +40,8 @@ contract RebalancingStrat is Ownable {
         _;
     }
 
-    constructor() {
-        tokens = [
-            IERC20Metadata(Constants.DAI_ADDRESS),
-            IERC20Metadata(Constants.USDC_ADDRESS),
-            IERC20Metadata(Constants.USDT_ADDRESS)
-        ];
+    constructor(IERC20Metadata[3] memory _tokens) {
+        tokens = _tokens;
 
         for (uint256 i; i < 3; i++) {
             decimalsMultipliers[i] = calcTokenDecimalsMultiplier(tokens[i]);
@@ -76,7 +72,7 @@ contract RebalancingStrat is Ownable {
         uint256 depositedAmount;
         for (uint256 i = 0; i < 3; i++) {
             if ( amounts[i] > 0) {
-                depositedAmount +=  amounts[i] * decimalsMultipliers[i];
+                depositedAmount += amounts[i] * decimalsMultipliers[i];
             }
         }
 
@@ -90,6 +86,7 @@ contract RebalancingStrat is Ownable {
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
+
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= PRICE_DENOMINATOR, 'Wrong lp Ratio');
         require(withdrawalType == WithdrawalType.Base, 'Only base');
 

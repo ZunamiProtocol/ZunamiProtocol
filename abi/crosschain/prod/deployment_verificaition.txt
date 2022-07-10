@@ -1,0 +1,12 @@
+Deployment:
+npx hardhat run --network mainnet ./scripts/crosschain/forwarder/deployForwarderInETH.js
+npx hardhat run --network bsc ./scripts/crosschain/gateway/deployGatewayInBSC.js
+npx hardhat run --network bsc ./scripts/crosschain/gateway/linkGatewayToETH.js
+npx hardhat run --network mainnet ./scripts/crosschain/forwarder/linkForwarderToBSC.js
+
+Verification:
+npx hardhat verify --network mainnet --constructor-args ./abi/crosschain/prod/1_forwarder_arguments.js 0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3
+https://etherscan.io/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#code
+
+npx hardhat verify --network bsc --constructor-args ./abi/crosschain/prod/56_gateway_arguments.js 0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#code
