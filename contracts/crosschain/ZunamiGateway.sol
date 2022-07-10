@@ -257,7 +257,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
 
         totalDepositedAmount -= totalTokenAmount;
 
-        bytes memory payload = abi.encode(uint8(MessageType.Deposit), depositId, totalTokenAmount, token.decimals);
+        bytes memory payload = abi.encode(uint8(MessageType.Deposit), depositId, totalTokenAmount, token.decimals());
         sendCrossMessage(payload, uint256(150000));
 
         emit SentCrossDeposit(depositId, totalTokenAmount);
@@ -351,7 +351,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     onlyRole(OPERATOR_ROLE)
     {
         require(currentCrossWithdrawal.id != 0, "Gateway: withdrawal was not sent");
-        
+
         uint256 realWithdrawalAmount = token.balanceOf(address(this)) - totalDepositedAmount;
         require( realWithdrawalAmount >=
             currentCrossWithdrawal.totalTokenAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER,

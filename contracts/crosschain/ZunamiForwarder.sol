@@ -51,8 +51,8 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     uint256 public gatewayTokenPoolId;
     address public gatewayStargateBridge;
 
-    event InitiatedDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
-    event ReceivedDepositProvision(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
+    event InitiatedCrossDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
+    event ReceivedCrossDepositProvision(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
     event CreatedPendingDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
     event Deposited(uint256 indexed id, uint256 lpShares);
 
@@ -134,7 +134,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
 
         (uint256 depositId) = abi.decode(_payload, (uint256));
-        emit ReceivedDepositProvision(depositId, USDT_TOKEN_ID, _amountLD);
+        emit ReceivedCrossDepositProvision(depositId, USDT_TOKEN_ID, _amountLD);
     }
 
     // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
@@ -174,7 +174,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             currentDepositId = messageId;
             currentDepositAmount = convertDecimals(tokenAmount, tokenDecimals, IERC20Metadata(tokens[USDT_TOKEN_ID]).decimals());
 
-            emit InitiatedDeposit(messageId, USDT_TOKEN_ID, currentDepositAmount);
+            emit InitiatedCrossDeposit(messageId, USDT_TOKEN_ID, currentDepositAmount);
         }
     }
 
@@ -265,7 +265,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             abi.encode(currentWithdrawalId)                            // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
-        bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals);
+        bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals());
         sendCrossMessage(payload, uint256(50000));
 
         storedLpShares -= currentWithdrawalAmount;
