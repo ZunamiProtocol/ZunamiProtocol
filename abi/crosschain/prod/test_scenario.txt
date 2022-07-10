@@ -4,110 +4,121 @@ DEPOSIT
 
 https://bscscan.com/address/0x55d398326f99059ff775485246999027b3197955#writeContract
 increaseAllowance
-    0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf
+    0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094
     10000000000000000000
 
-https://bscscan.com/tx/0xd4f5c91487c96b8f384b0208f7cc83df95afed0c725a5c68b1851cb63ad1acc9
+https://bscscan.com/tx/0xf6fdf185f77010027046a04f6e9098f00fe569a0806846b828399f7f100ed921
 
 
 2/ Delegate deposit to gateway
 
-https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 delegateDeposit
     10000000000000000000
 
-https://bscscan.com/tx/0xfd78375e48b4919ce9a78478c167ec030e1f5723bbb2ddeacf9d07375ec7cfe4
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 
 
 3/ Send crosschain deposit
 
-https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
-sendCrosschainDeposit
-    0.11
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
+sendCrossDeposit
+    0.06 - 0.22
     [0xe9b2B067eE106A6E518fB0552F3296d22b82b32B]
 
-https://bscscan.com/tx/0xab4315874588d1305b700c032fdd5b54bf8fa9f6c5dccea4980d7c7b96709ae7
+https://bscscan.com/tx/0x1830ff63271c0f19fd708e4fef317b3e29a7e367753dfae566a40cc09f7f2ce1
+
+4/ Delegate cross-chain deposit to Zunami
+    - check to callback executed in forwarder https://etherscan.io/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3/advanced#internaltx
+    - check forwarder events: ReceivedCrossDepositProvision & InitCrossDeposit - https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#events
+    - delegate crosschain deposit:
+https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#writeContract
+delegateCrossDeposit
+
+https://etherscan.io/tx/0x5345df21444371058d749fa7c457e42951cfe3f2497448428bb928bb06ddd7e8
 
 
-4/ Complete deposit on master chain
-    - check USDT went through forwarder https://etherscan.com/address/0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72#tokentxns
-    - complete crosschain deposit:
+4/ Complete deposit in Zunami
 https://etherscan.com/address/0x2ffCC661011beC72e1A9524E12060983E74D14ce#writeContract
 completeDeposits
-    [0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72]
+    [0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3]
 
-https://etherscan.io/tx/0x5b218dd67091503368840fe9244cb6a74c321bc441301294ee0bfb77723f4b16
+https://etherscan.io/tx/0xa3e098f350ee03a4e723c3a9f19eac16fd199e2800bb8bda1906c30d173fba67
+
 
 5/ Complete deposits in Forwarder
-https://etherscan.com/address/0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72#writeContract
-completeCrosschainDeposit
+https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#writeContract
+completeCrossDeposit
     0.001
 
-https://etherscan.io/tx/0x688faf734d4fc80bc9dcff6c204dabecf1f21d4f7b5d92cf1a99855e5ffe552d
+https://etherscan.io/tx/0x2e7affaae4c693ae5fc94c20b5f82fdc30a14aab41e0b9ae7938f3814172f350
+
 
 6/ Finalize deposit in Gateway
-    - check message went through event ReceivedCrosschainDepositResponse https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#events
+    - check message went through event ReceivedCrossDepositResponse https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#events
     - finalize crosschain deposit
-    https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
-    finalizeCrosschainDeposit
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
+finalizeCrossDeposit
 
-https://bscscan.com/tx/0x26e8f5bf6f1a0b3c7d1c8fef52d017e3fc0d5087ac8173385e5ca4203cb9013d
+https://bscscan.com/tx/0x6158bf460aa028a7b295182e969531bed113a378aa065cefb0e72e33de6c07ae
 
 
 WITHDRAW
 
 1/ Approve GZLP to gateway
 
-https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 increaseAllowance
-    0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf
-    9388872387592476102
+    0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094
+    9389319443248196642
 
-https://bscscan.com/tx/0x3787c901ac3867986e5b159e2d57ac32b64f4d6060ff2974803de8385b821d2f
+https://bscscan.com/tx/0xde0902c09127978a929d7191e2c40135b6a1b15d0e363a2177bd0f265936f748
 
 
 2/ Delegate withdrawal
 
-https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 delegateWithdrawal
-    9388872387592476102
+    9389319443248196642
 
-https://bscscan.com/tx/0xe4870ad7247b942ac8e4202b32175a6d3469b49205da8cd6ebcc0da4ff9837b7
+https://bscscan.com/tx/0xc1d8cb21762cda0d1f6d04b4d51c1c2c63f061e988933bcaf6090fe8fc1c1a5d
 
 
 3/ Send crosschain withdrawal
 
-https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
-sendCrosschainWithdrawal
+https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
+sendCrossWithdrawal
     0.15
     [0xe9b2B067eE106A6E518fB0552F3296d22b82b32B]
 
-https://bscscan.com/tx/0xccdbc4a4b69ee1215a958fa1b84b2a3ce4565d458ff8d3b3bad276acd398feec
+https://bscscan.com/tx/0xd820d2f85ba6ee48604b3d751632043e76e35812588d0fda4db2fc87114086fd
 
 
 4/ Complete withdrawal on master chain
     - check message is going through forwarder:
-https://etherscan.com/address/0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72#events
+https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#events
 event CreatedPendingWithdrawal
 
     - complete delegated withdrawal:
 https://etherscan.com/address/0x2ffCC661011beC72e1A9524E12060983E74D14ce#writeContract
 completeWithdrawalsOptimized
-    [0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72]
+    [0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3]
 
-https://etherscan.io/tx/0xed5148c1f8e3ee847a403c6db54b4f830a244c89500d635359969971f2f4c0da
+https://etherscan.io/tx/0xc8013502e351621e5d5ed5468c8beb780b79c115f2943e83e1b276721f68eb0e
 
 
 5/ Complete crosschain withdrawal in Forwarder
-https://etherscan.com/address/0x65246EDA89e72c7802a89dfBF4E58aa23AB79D72#writeContract
-completeCrosschainWithdrawal
-    0.001
+https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#writeContract
+completeCrossWithdrawal
+    0.002
 
-https://etherscan.io/tx/0xcc5a24f26f0f3dacd7a074d26fb048e1c04436f1e6e957aae766d99c8b38980a
+https://etherscan.io/tx/0xe9f2b8177b06ebbb0c60bb84be0999b79065646b09fe5e6231c246e938a82775
 
 
-6/ Finalize deposit in Gateway
-https://bscscan.com/address/0xF21D9DEdcD5b904151B9f60a335515E5596A6Bcf#writeContract
-finalizeCrosschainDeposit
+6/ Finalize withdrawal in Gateway
+- wait event ReceivedCrossWithdrawalProvision & ReceivedCrossWithdrawalResult https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
+- finalize withdrawal
+    https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
+    finalizeCrossDeposit
 
-https://bscscan.com/tx/0x6c7e82e869f13c5599dbd4e1a2de9d56fe32c5e9566dcbd1f1a4fe591f2cc267
+https://bscscan.com/tx/0xb3a77dade14a5081f10af63a62e4fcf7e943e4150e4d99e8f7ec94a8e222906c
