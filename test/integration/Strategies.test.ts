@@ -22,6 +22,7 @@ describe('Single strategy tests', () => {
         'USTWormholeCurveConvex',
         'PUSDCurveConvex',
         'USDDCurveConvex',
+        'DolaCurveConvex',
     ];
     enum WithdrawalType {
         Base,
