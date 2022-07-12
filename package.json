@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "prettier --write 'contracts/**/*.sol' && prettier --write 'scripts/**/*.js' && prettier --write 'test/**/*.ts'",
     "lint:contracts": "prettier --write 'contracts/**/*.sol'",
-    "compile": "hardhat compile",
+    "compile": "hardhat clean && hardhat compile",
     "contract:size": "hardhat size-contracts;",
     "fork": "hardhat node",
     "test": "hardhat test",
