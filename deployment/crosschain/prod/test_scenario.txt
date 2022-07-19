@@ -1,6 +1,6 @@
 DEPOSIT
 
-1/ Approve USDT to gateway
+0.1/ User in APP. In other chain: Approve USDT amount in USDT Contract to Gateway Contract
 
 https://bscscan.com/address/0x55d398326f99059ff775485246999027b3197955#writeContract
 increaseAllowance
@@ -10,7 +10,7 @@ increaseAllowance
 https://bscscan.com/tx/0xf6fdf185f77010027046a04f6e9098f00fe569a0806846b828399f7f100ed921
 
 
-2/ Delegate deposit to gateway
+0.2/ User in APP. In other chain: Delegate deposit to Gateway Contract
 
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 delegateDeposit
@@ -19,7 +19,7 @@ delegateDeposit
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 
 
-3/ Send crosschain deposit
+1/ Operator in xScan app. In other chain: Send cross-chain deposit in Gateway Contract
 
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 sendCrossDeposit
@@ -28,7 +28,8 @@ sendCrossDeposit
 
 https://bscscan.com/tx/0x1830ff63271c0f19fd708e4fef317b3e29a7e367753dfae566a40cc09f7f2ce1
 
-4/ Delegate cross-chain deposit to Zunami
+
+2.1/ Operator in EtherScan app. In ETH chain: Delegate cross-chain deposit to Zunami in Forwarder Contract
     - check to callback executed in forwarder https://etherscan.io/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3/advanced#internaltx
     - check forwarder events: ReceivedCrossDepositProvision & InitCrossDeposit - https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#events
     - delegate crosschain deposit:
@@ -38,7 +39,7 @@ delegateCrossDeposit
 https://etherscan.io/tx/0x5345df21444371058d749fa7c457e42951cfe3f2497448428bb928bb06ddd7e8
 
 
-4/ Complete deposit in Zunami
+2.2/ Operator in EtherScan app. In ETH chain: Complete deposit in Zunami Contract (the most expensive transaction in Gas)
 https://etherscan.com/address/0x2ffCC661011beC72e1A9524E12060983E74D14ce#writeContract
 completeDeposits
     [0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3]
@@ -46,7 +47,7 @@ completeDeposits
 https://etherscan.io/tx/0xa3e098f350ee03a4e723c3a9f19eac16fd199e2800bb8bda1906c30d173fba67
 
 
-5/ Complete deposits in Forwarder
+2.3/ Operator in EtherScan app. In ETH chain: Complete criss-chain deposits in Forwarder Contract
 https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#writeContract
 completeCrossDeposit
     0.001
@@ -54,7 +55,7 @@ completeCrossDeposit
 https://etherscan.io/tx/0x2e7affaae4c693ae5fc94c20b5f82fdc30a14aab41e0b9ae7938f3814172f350
 
 
-6/ Finalize deposit in Gateway
+3/ Operator in xScan app. In other chain: Finalize cross-chain deposit in Gateway Contract
     - check message went through event ReceivedCrossDepositResponse https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#events
     - finalize crosschain deposit
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
@@ -63,9 +64,10 @@ finalizeCrossDeposit
 https://bscscan.com/tx/0x6158bf460aa028a7b295182e969531bed113a378aa065cefb0e72e33de6c07ae
 
 
+
 WITHDRAW
 
-1/ Approve GZLP to gateway
+0.1/ User in APP. In other chain: Approve GZLP in Gateway Contract to Gateway Contract
 
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 increaseAllowance
@@ -75,7 +77,7 @@ increaseAllowance
 https://bscscan.com/tx/0xde0902c09127978a929d7191e2c40135b6a1b15d0e363a2177bd0f265936f748
 
 
-2/ Delegate withdrawal
+0.2/ User in APP. In other chain: Delegate withdrawal in Gateway Contract
 
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 delegateWithdrawal
@@ -84,7 +86,7 @@ delegateWithdrawal
 https://bscscan.com/tx/0xc1d8cb21762cda0d1f6d04b4d51c1c2c63f061e988933bcaf6090fe8fc1c1a5d
 
 
-3/ Send crosschain withdrawal
+1/ Operator in xScan app. In other chain: Send cross-chain withdrawal in Gateway Contract ( delegated to Zunami automaticly)
 
 https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 sendCrossWithdrawal
@@ -94,7 +96,7 @@ sendCrossWithdrawal
 https://bscscan.com/tx/0xd820d2f85ba6ee48604b3d751632043e76e35812588d0fda4db2fc87114086fd
 
 
-4/ Complete withdrawal on master chain
+2.1/ Operator in EtherScan app. In ETH chain: Complete withdrawal in Zunami Contract
     - check message is going through forwarder:
 https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#events
 event CreatedPendingWithdrawal
@@ -107,7 +109,7 @@ completeWithdrawalsOptimized
 https://etherscan.io/tx/0xc8013502e351621e5d5ed5468c8beb780b79c115f2943e83e1b276721f68eb0e
 
 
-5/ Complete crosschain withdrawal in Forwarder
+2.2/ Operator in EtherScan app. In ETH chain: Complete cross-chain withdrawal in Forwarder Contract
 https://etherscan.com/address/0xF5BD12b1E7cd789756d3f922c149C7821B991Ce3#writeContract
 completeCrossWithdrawal
     0.002
@@ -115,7 +117,7 @@ completeCrossWithdrawal
 https://etherscan.io/tx/0xe9f2b8177b06ebbb0c60bb84be0999b79065646b09fe5e6231c246e938a82775
 
 
-6/ Finalize withdrawal in Gateway
+3/ Operator in xScan app. In other chain:  Finalize cross-crosschain withdrawal in Gateway Contract
 - wait event ReceivedCrossWithdrawalProvision & ReceivedCrossWithdrawalResult https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
 - finalize withdrawal
     https://bscscan.com/address/0x4F1ed6687c6C70B9Fb717c496D1d869d78e9B094#writeContract
