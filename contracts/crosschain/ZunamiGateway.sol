@@ -67,6 +67,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
 
     event SentCrossDeposit(uint256 indexed id, uint256 totalTokenAmount);
     event ReceivedCrossDepositResult(uint256 indexed id, uint256 lpShares);
+    event ResetCrossDeposit(uint256 indexed id, uint256 tokenAmount);
 
     event CreatedPendingWithdrawal(address indexed withdrawer, uint256 lpShares);
     event RemovedPendingWithdrawal(address indexed depositor);
@@ -79,6 +80,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     event SentCrossWithdrawal(uint256 indexed id, uint256 totalLpShares);
     event ReceivedCrossWithdrawalProvision(uint256 indexed id, uint256 tokenAmount);
     event ReceivedCrossWithdrawalResult(uint256 indexed id, uint256 tokenAmount);
+    event ResetCrossWithdrawal(uint256 indexed id, uint256 tokenAmount);
 
     event SetForwarderParams(
         uint256 _chainId,
@@ -202,13 +204,21 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
      * @param amount - deposit amounts by user
      */
     function delegateDeposit(uint256 amount) external whenNotPaused {
+        delegateDepositInternal(_msgSender(), _msgSender(), amount);
+    }
+
+    function delegateDepositFor(address beneficiary, uint256 amount) external whenNotPaused {
+        delegateDepositInternal(_msgSender(), beneficiary, amount);
+    }
+
+    function delegateDepositInternal(address tokenOwner, address beneficiary, uint256 amount) internal {
         if (amount > 0) {
-            token.safeTransferFrom(_msgSender(), address(this), amount);
-            _pendingDeposits[_msgSender()] += amount;
+            token.safeTransferFrom(tokenOwner, address(this), amount);
+            _pendingDeposits[beneficiary] += amount;
             totalDepositedAmount += amount;
         }
 
-        emit CreatedPendingDeposit(_msgSender(), amount);
+        emit CreatedPendingDeposit(beneficiary, amount);
     }
 
     /**
@@ -278,6 +288,14 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
             emit Deposited(currentCrossDeposit.users[i], tokenAmount, lpShares);
         }
 
+        delete currentCrossDeposit;
+    }
+
+    function resetCrossDeposit()
+    external
+    onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        emit ResetCrossDeposit(currentCrossDeposit.id, currentCrossDeposit.totalTokenAmount);
         delete currentCrossDeposit;
     }
 
@@ -366,6 +384,14 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
             emit Withdrawn(user, tokenAmount, lpShares);
         }
 
+        delete currentCrossWithdrawal;
+    }
+
+    function resetCrossWithdrawal()
+    external
+    onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        emit ResetCrossWithdrawal(currentCrossWithdrawal.id, currentCrossWithdrawal.totalLpShares);
         delete currentCrossWithdrawal;
     }
 

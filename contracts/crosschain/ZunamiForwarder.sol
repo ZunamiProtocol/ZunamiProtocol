@@ -162,7 +162,6 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
             // Delegate withdrawal request to Zunami
             uint256[POOL_ASSETS] memory tokenAmounts;
-            IERC20Metadata(address(zunami)).safeApprove(address(zunami), tokenAmount);
             zunami.delegateWithdrawal(tokenAmount, tokenAmounts);
 
             emit CreatedPendingWithdrawal(currentWithdrawalId, tokenAmount);
@@ -190,7 +189,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         );
 
         // delegate deposit to Zunami
-        IERC20Metadata(tokens[USDT_TOKEN_ID]).safeApprove(address(zunami), realDepositAmount);
+        IERC20Metadata(tokens[USDT_TOKEN_ID]).safeIncreaseAllowance(address(zunami), realDepositAmount);
 
         uint256[3] memory amounts;
         amounts[uint256(USDT_TOKEN_ID)] = realDepositAmount;

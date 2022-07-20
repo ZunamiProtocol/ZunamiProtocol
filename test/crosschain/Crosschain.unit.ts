@@ -34,7 +34,6 @@ async function stubToken(decimals: number, admin: SignerWithAddress) {
 const mockContract = async (name: string) =>
     deployMockContract(wallet, (await artifacts.readArtifact(name)).abi);
 
-const mockZunami = async () => mockContract('IZunami');
 const mockCurvePool = async () => mockContract('ICurvePool');
 
 // const setTotalHoldings = async (strategy: MockContract, holdings: any) =>
@@ -45,7 +44,7 @@ enum MessageType {
     Withdrawal
 }
 
-describe('Cross', () => {
+describe('Cross-chain', () => {
     let admin: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
