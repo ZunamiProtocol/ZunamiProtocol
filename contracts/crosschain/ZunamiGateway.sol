@@ -325,7 +325,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         IERC20Metadata(address(this)).safeTransferFrom(_msgSender(), address(this), lpShares);
 
         address userAddr = _msgSender();
-        _pendingWithdrawals[userAddr] = lpShares;
+        _pendingWithdrawals[userAddr] += lpShares;
 
         emit CreatedPendingWithdrawal(userAddr, lpShares);
     }
@@ -349,8 +349,8 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         for (uint256 i = 0; i < userList.length; i++) {
             address user = userList[i];
             uint256 lpShares = _pendingWithdrawals[user];
-            lpSharesAmounts[i] = lpShares;
             require(lpShares > 0, "Gateway: wrong withdrawal token amount");
+            lpSharesAmounts[i] = lpShares;
             totalLpShares += lpShares;
             delete _pendingWithdrawals[user];
         }

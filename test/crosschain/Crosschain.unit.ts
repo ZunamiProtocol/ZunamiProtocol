@@ -191,6 +191,9 @@ describe('Cross-chain', () => {
         await gateway.sendCrossDeposit(users.map(user => user.address));
         const depositId = await ethers.provider.getBlockNumber();
 
+        // emulate USDT bakance removal on cross-deposit
+        await gateway.withdrawStuckToken(usdt.address);
+
         // await expectRevert(
         //   gateway.sendCrossDeposit(users.map(user => user.address)),
         //   'Gateway: deposit was sent'
@@ -214,11 +217,22 @@ describe('Cross-chain', () => {
         // await gateway.sendCrossDeposit(users.map(user => user.address));
 
 
-        // withdrawal
+        // withdrawal half
         for (let i = 0; i < users.length; i++) {
-            const tokenBalance = decify(usdtAmounts[i], 18).toFixed();
+            const tokenBalance = decify(usdtAmounts[i] / 2, 18).toFixed();
             await gateway.connect(users[i]).approve(gateway.address, tokenBalance);
             await gateway.connect(users[i]).delegateWithdrawal(tokenBalance);
+        }
+
+        // withdrawal second half
+        for (let i = 0; i < users.length; i++) {
+            const tokenBalance = decify(usdtAmounts[i] / 2, 18).toFixed();
+            await gateway.connect(users[i]).approve(gateway.address, tokenBalance);
+            await gateway.connect(users[i]).delegateWithdrawal(tokenBalance);
+        }
+
+        for (let i = 0; i < users.length; i++) {
+            await expect(await gateway.pendingWithdrawals(users[i].address)).to.be.equal(tokenify(usdtAmounts[i]).toFixed());
         }
 
         await gateway.sendCrossWithdrawal(users.map(user => user.address));
@@ -229,11 +243,13 @@ describe('Cross-chain', () => {
         //   'Gateway: withdrawal was sent'
         // );
 
-        // await usdt.mint(gateway.address, decify(gzlpTotal, 6).toFixed());
+        //emulate USDT balance increasing by
+        const cameTokens = decify(usdtTotal, 6).toFixed();
+        await usdt.mint(gateway.address, cameTokens);
         message = ethers.utils.defaultAbiCoder.encode([ "uint" ], [ withdrawalId ]);
-        await stargate.sgReceive(gateway.address, masterChainId, forwarder.address, 0, usdt.address, decify(usdtTotal, 6).toFixed(), message);
+        await stargate.sgReceive(gateway.address, masterChainId, forwarder.address, 0, usdt.address, cameTokens, message);
 
-        message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Withdrawal, withdrawalId, decify(usdtTotal, 6).toFixed(), 6 ]);
+        message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Withdrawal, withdrawalId, cameTokens, 6 ]);
         await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
 
         await gateway.finalizeCrossWithdrawal();
