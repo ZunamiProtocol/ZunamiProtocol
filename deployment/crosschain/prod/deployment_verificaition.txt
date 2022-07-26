@@ -5,8 +5,8 @@ npx hardhat run --network bsc ./scripts/crosschain/gateway/linkGatewayToETH.js
 npx hardhat run --network mainnet ./scripts/crosschain/forwarder/linkForwarderToBSC.js
 
 Verification:
-npx hardhat verify --network mainnet --constructor-args ./deployment/crosschain/prod/1_forwarder_arguments.js 0x82BE83e303eD594dF25166BF485a57C4cFaAF775
-https://etherscan.io/address/0x82BE83e303eD594dF25166BF485a57C4cFaAF775#code
+npx hardhat verify --network mainnet --constructor-args ./deployment/crosschain/prod/1_forwarder_arguments.js 0xd06712108dAcEe3BfEa6BaCe8f6ee8C06491b843
+https://etherscan.io/address/0xd06712108dAcEe3BfEa6BaCe8f6ee8C06491b843#code
 
-npx hardhat verify --network bsc --constructor-args ./deployment/crosschain/prod/56_gateway_arguments.js 0x02a228D826Cbb1C0E8765A6DB6E7AB64EAA80BFD
-https://bscscan.com/address/0x02a228D826Cbb1C0E8765A6DB6E7AB64EAA80BFD#code
+npx hardhat verify --network bsc --constructor-args ./deployment/crosschain/prod/56_gateway_arguments.js 0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF
+https://bscscan.com/address/0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF#code

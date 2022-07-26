@@ -18,7 +18,6 @@ const config: HardhatUserConfig = {
         coinmarketcap: process.env.COINMARKETCAP_API_KEY,
         showTimeSpent: true,
         enabled: true,
-        outputFile: './gas_report',
     },
     paths: {
         sources: './contracts',
@@ -77,7 +76,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             gas: 'auto',
             gasMultiplier: 1.2,
-            gasPrice: 10000000000,
+            gasPrice: 15000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
             loggingEnabled: true,
         },
@@ -122,8 +121,8 @@ const config: HardhatUserConfig = {
         timeout: 500000,
     },
     etherscan: {
-        // apiKey: `${process.env.BSCSCAN_API_KEY}`,
-        apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        apiKey: `${process.env.BSCSCAN_API_KEY}`,
+        //apiKey: `${process.env.ETHERSCAN_API_KEY}`,
     },
 };
 
