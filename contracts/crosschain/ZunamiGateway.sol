@@ -61,6 +61,11 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     mapping(address => uint256) internal _pendingDeposits;
     mapping(address => uint256) internal _pendingWithdrawals;
 
+    address public zrePaymentAddress = address(0x0);
+    uint256 public crossDepositGas = 130000;
+    uint256 public crossWithdrawalGas = 100000;
+    uint256 public crossProvisionGas = 40000;
+
     event CreatedPendingDeposit(address indexed depositor, uint256 amount);
     event RemovedPendingDeposit(address indexed depositor);
     event Deposited(address indexed depositor, uint256 tokenAmount, uint256 lpShares);
@@ -78,7 +83,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     );
 
     event SentCrossWithdrawal(uint256 indexed id, uint256 totalLpShares);
-    event ReceivedCrossWithdrawalProvision(uint256 indexed id, uint256 tokenAmount);
+    event ReceivedCrossWithdrawalProvision(uint256 tokenAmount);
     event ReceivedCrossWithdrawalResult(uint256 indexed id, uint256 tokenAmount);
     event ResetCrossWithdrawal(uint256 indexed id, uint256 tokenAmount);
 
@@ -92,6 +97,16 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     event SetStargateSlippage(
         uint256 slippage
     );
+
+    event SetZrePaymentAddress(
+        address zrePaymentAddress
+    );
+
+    event SetLayerZeroMessagesGas(
+        uint256 crossDepositGas,
+        uint256 crossWithdrawalGas,
+        uint256 crossProvisionGas
+);
 
     constructor(
         address _token,
@@ -134,6 +149,24 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         emit SetStargateSlippage(_slippage);
     }
 
+    function setZrePaymentAddress(
+        address _zrePaymentAddress
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        zrePaymentAddress = _zrePaymentAddress;
+        emit SetZrePaymentAddress(_zrePaymentAddress);
+    }
+
+    function setLayerZeroMessagesGas(
+        uint256 _crossDepositGas,
+        uint256 _crossWithdrawalGas,
+        uint256 _crossProvisionGas
+) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        crossDepositGas = _crossDepositGas;
+        crossProvisionGas = _crossProvisionGas;
+        crossWithdrawalGas = _crossWithdrawalGas;
+        emit SetLayerZeroMessagesGas(_crossDepositGas, _crossWithdrawalGas, _crossProvisionGas);
+    }
+
     function pendingDeposits(address user) external view returns (uint256) {
         return _pendingDeposits[user];
     }
@@ -166,8 +199,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         require(_srcChainId == forwarderChainId, "Gateway: wrong source chain id");
         require(keccak256(_srcAddress) == keccak256(abi.encodePacked(forwarderStargateBridge)), "Gateway: wrong source address");
 
-        (uint256 withdrawalId) = abi.decode(_payload, (uint256));
-        emit ReceivedCrossWithdrawalProvision(withdrawalId, _amountLD);
+        emit ReceivedCrossWithdrawalProvision(_amountLD);
     }
 
     // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
@@ -190,9 +222,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         if(messageType == uint8(MessageType.Deposit)) {
             currentCrossDeposit.totalLpShares = tokenAmount;
             emit ReceivedCrossDepositResult(messageId, tokenAmount);
-        }
-
-        if(messageType == uint8(MessageType.Withdrawal)) {
+        } else if(messageType == uint8(MessageType.Withdrawal)) {
             currentCrossWithdrawal.totalTokenAmount = convertDecimals(tokenAmount, tokenDecimals, token.decimals());
             emit ReceivedCrossWithdrawalResult(messageId, currentCrossWithdrawal.totalTokenAmount);
         }
@@ -260,15 +290,15 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
             payable(address(this)),                 // refund address. extra gas (if any) is returned to this address
             totalTokenAmount,                       // quantity to swap
             totalTokenAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER,                                      // the min qty you would accept on the destination
-            IStargateRouter.lzTxObj(150000, 0, "0x"),     // 350000 additional gasLimit increase, 0 airdrop, at 0x address
+            IStargateRouter.lzTxObj(crossProvisionGas, 0, "0x"),     // 150000 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(forwarderAddress),     // the address to send the tokens to on the destination
-            abi.encode(depositId)                   // bytes param, if you wish to send additional payload you can abi.encode() them here
+            ""                                      // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
         totalDepositedAmount -= totalTokenAmount;
 
         bytes memory payload = abi.encode(uint8(MessageType.Deposit), depositId, totalTokenAmount, token.decimals());
-        sendCrossMessage(payload, uint256(150000));
+        sendCrossMessage(payload, crossDepositGas);
 
         emit SentCrossDeposit(depositId, totalTokenAmount);
     }
@@ -359,7 +389,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
 
         // send withdrawal by zero layer request to forwarder with total withdrawing ZLP amount
         bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), withdrawalId, totalLpShares, 18);
-        sendCrossMessage(payload, uint256(150000));
+        sendCrossMessage(payload, crossWithdrawalGas);
 
         emit SentCrossWithdrawal(withdrawalId, totalLpShares);
     }
@@ -430,12 +460,22 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         // use adapterParams v1 to specify more gas for the destination
         bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(gas));
 
-        layerZeroEndpoint.send{value: address(this).balance}(
+        (uint messageFee, ) = layerZeroEndpoint.estimateFees(
+            forwarderChainId,
+            address(this),
+            payload,
+            false,
+            adapterParams
+        );
+
+        require(address(this).balance >= messageFee, "Forwarder: not enough native token for cross message");
+
+        layerZeroEndpoint.send{value: messageFee}(
             forwarderChainId, // destination chainId
             abi.encodePacked(forwarderAddress), // destination address
             payload, // abi.encode()'ed bytes
             payable(address(this)),
-            address(0x0), // future param
+            zrePaymentAddress,
             adapterParams // v1 adapterParams, specify custom destination gas qty
         );
     }

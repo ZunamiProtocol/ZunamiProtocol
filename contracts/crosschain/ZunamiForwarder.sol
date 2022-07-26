@@ -51,8 +51,13 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     uint256 public gatewayTokenPoolId;
     address public gatewayStargateBridge;
 
+    address public zrePaymentAddress = address(0x0);
+    uint256 public crossDepositGas = 50000;
+    uint256 public crossWithdrawalGas = 50000;
+    uint256 public crossProvisionGas = 40000;
+
     event InitiatedCrossDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
-    event ReceivedCrossDepositProvision(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
+    event ReceivedCrossDepositProvision(uint256 tokenId, uint256 tokenAmount);
     event CreatedPendingDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
     event Deposited(uint256 indexed id, uint256 lpShares);
 
@@ -68,6 +73,16 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
     event SetStargateSlippage(
         uint256 slippage
+    );
+
+    event SetZrePaymentAddress(
+        address zrePaymentAddress
+    );
+
+    event SetLayerZeroMessagesGas(
+        uint256 crossDepositGas,
+        uint256 crossWithdrawalGas,
+        uint256 crossProvisionGas
     );
 
     constructor(
@@ -115,6 +130,24 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         emit SetStargateSlippage(_slippage);
     }
 
+    function setZrePaymentAddress(
+        address _zrePaymentAddress
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        zrePaymentAddress = _zrePaymentAddress;
+        emit SetZrePaymentAddress(_zrePaymentAddress);
+    }
+
+    function setLayerZeroMessagesGas(
+        uint256 _crossDepositGas,
+        uint256 _crossWithdrawalGas,
+        uint256 _crossProvisionGas
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        crossDepositGas = _crossDepositGas;
+        crossWithdrawalGas = _crossWithdrawalGas;
+        crossProvisionGas = _crossProvisionGas;
+        emit SetLayerZeroMessagesGas(_crossDepositGas, _crossWithdrawalGas, _crossProvisionGas);
+    }
+
     function sgReceive(
         uint16 _srcChainId,              // the remote chainId sending the tokens
         bytes memory _srcAddress,        // the remote sender address
@@ -133,8 +166,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayStargateBridge)), "Forwarder: wrong source address");
         require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
 
-        (uint256 depositId) = abi.decode(_payload, (uint256));
-        emit ReceivedCrossDepositProvision(depositId, USDT_TOKEN_ID, _amountLD);
+        emit ReceivedCrossDepositProvision(USDT_TOKEN_ID, _amountLD);
     }
 
     // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
@@ -165,9 +197,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             zunami.delegateWithdrawal(tokenAmount, tokenAmounts);
 
             emit CreatedPendingWithdrawal(currentWithdrawalId, tokenAmount);
-        }
-
-        if(messageType == uint8(MessageType.Deposit)) {
+        } else if(messageType == uint8(MessageType.Deposit)) {
             require(currentDepositId == 0 && currentDepositAmount == 0, "Forwarder: previous deposit existed");
 
             currentDepositId = messageId;
@@ -213,7 +243,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         // send layer zero message to Gateway with LP shares deposit amount
         bytes memory payload = abi.encode(uint8(MessageType.Deposit), currentDepositId, lpShares, 18);
-        sendCrossMessage(payload, uint256(50000));
+        sendCrossMessage(payload, crossDepositGas);
 
         emit Deposited(currentDepositId, lpShares);
 
@@ -225,12 +255,23 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         // use adapterParams v1 to specify more gas for the destination
         bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(gas));
 
-        layerZeroEndpoint.send{value: address(this).balance}(
+        (uint messageFee, ) = layerZeroEndpoint.estimateFees(
+            gatewayChainId,
+            address(this),
+            payload,
+            false,
+            adapterParams
+        );
+
+        require(address(this).balance >= messageFee, "Forwarder: not enough native token for cross message");
+
+        // send LayerZero message
+        layerZeroEndpoint.send{value: messageFee}(
             gatewayChainId, // destination chainId
             abi.encodePacked(gatewayAddress), // destination address
             payload, // abi.encode()'ed bytes
             payable(address(this)),
-            address(0x0), // future param, unused for this example
+            zrePaymentAddress,
             adapterParams // v1 adapterParams, specify custom destination gas qty
         );
     }
@@ -259,13 +300,13 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
             payable(address(this)),                              // refund address. extra gas (if any) is returned to this address
             tokenTotalAmount,                                   // quantity to swap
             tokenTotalAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER, // the min qty you would accept on the destination
-            IStargateRouter.lzTxObj(50000, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address
+            IStargateRouter.lzTxObj(crossProvisionGas, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(gatewayAddress),                   // the address to send the tokens to on the destination
-            abi.encode(currentWithdrawalId)                            // bytes param, if you wish to send additional payload you can abi.encode() them here
+            ""                                                  // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
         bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals());
-        sendCrossMessage(payload, uint256(50000));
+        sendCrossMessage(payload, crossWithdrawalGas);
 
         storedLpShares -= currentWithdrawalAmount;
         require( IERC20Metadata(address(zunami)).balanceOf(address(this)) == storedLpShares, "Forwarder: withdrawal wasn't completed in Zunami");

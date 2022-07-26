@@ -268,7 +268,7 @@ describe('Cross-chain', () => {
         // await gateway.sendCrossWithdrawal(users.map(user => user.address));
     });
 
-    it('should make deposit and withdrawal in forwarder', async () => {
+    it.only('should make deposit and withdrawal in forwarder', async () => {
         const depositId = 1234;
         const usdtTotal = 600;
         const usdtTotalMinimals = decify(600, 6).toFixed();
