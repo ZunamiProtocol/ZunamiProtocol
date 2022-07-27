@@ -21,7 +21,7 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from '../constants/TestConstants';
+} from '../../constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
 const STRATEGY_NAME = 'AnchorStrat';

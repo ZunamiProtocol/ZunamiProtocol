@@ -4,7 +4,7 @@ import { MockContract } from 'ethereum-waffle';
 import chai from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import BigNumber from 'bignumber.js';
-import {duration} from "../integration_tied/utils";
+import {duration} from "../utils";
 
 const MIN_LOCK_TIME = duration.seconds(86405);
 
@@ -623,7 +623,7 @@ describe('Zunami', () => {
         expect((await zunami.poolInfo(1)).startTime).to.be.equal(startTime);
     });
 
-    it.only('should rebalance randomly initialised pools', async () => {
+    it('should rebalance randomly initialised pools', async () => {
         const tokens = [100, 100, 100];
         const holdings = 300;
         const createStrategy = async () => {

@@ -142,7 +142,7 @@ contract ZunamiForwarder is LzApp {
 
             // Delegate withdrawal request to Zunami
             uint256[POOL_ASSETS] memory tokenAmounts;
-            zunami.delegateWithdrawal(tokenAmount, tokenAmounts);
+            zunami.delegateWithdrawal(tokenAmount, tokenAmounts, IStrategy.WithdrawalType.Base, 0);
 
             emit CreatedPendingWithdrawal(currentWithdrawalId, tokenAmount);
         } else if (messageType == uint8(MessageType.Deposit)) {

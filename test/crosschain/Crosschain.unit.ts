@@ -387,7 +387,7 @@ describe('Cross-chain', () => {
             message
         );
 
-        await zunami.completeWithdrawals([forwarder.address]);
+        await zunami.completeWithdrawalsBase([forwarder.address], [0,0,0]);
         await expect(await zunami.balanceOf(forwarder.address)).to.be.equal(zlpTotalHalf);
         await expect(await usdt.balanceOf(strategy.address)).to.be.equal(
             decify(600 / 2, 6).toFixed()

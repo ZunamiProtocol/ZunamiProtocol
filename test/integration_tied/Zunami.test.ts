@@ -20,7 +20,7 @@ import {
     usdtAddress,
     testCheckSumm,
     DEBUG_MODE,
-} from './constants/TestConstants';
+} from '../constants/TestConstants';
 import { parseUnits } from 'ethers/lib/utils';
 
 import * as config from '../../config.json';

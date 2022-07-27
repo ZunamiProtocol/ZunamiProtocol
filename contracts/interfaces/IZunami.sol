@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./IStrategy.sol";
+
 interface IZunami {
     function totalDeposited() external returns (uint256);
 
@@ -12,5 +14,10 @@ interface IZunami {
 
     function delegateDeposit(uint256[3] memory amounts) external;
 
-    function delegateWithdrawal(uint256 lpShares, uint256[3] memory tokenAmounts) external;
+    function delegateWithdrawal(
+        uint256 lpShares,
+        uint256[3] memory tokenAmounts,
+        IStrategy.WithdrawalType withdrawalType,
+        uint128 tokenIndex
+    ) external;
 }
