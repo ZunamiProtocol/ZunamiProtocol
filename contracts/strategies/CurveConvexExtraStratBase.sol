@@ -28,12 +28,13 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         uint256 poolPID,
         address tokenAddr,
         address extraRewardsAddr,
-        address extraTokenAddr
+        address extraTokenAddr,
+        address[2] memory extraTokenSwapTailAddresses
     ) CurveConvexStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
         token = IERC20Metadata(tokenAddr);
         if (extraTokenAddr != address(0)) {
             extraToken = IERC20Metadata(extraTokenAddr);
-            extraTokenSwapPath = [extraTokenAddr, Constants.WETH_ADDRESS, Constants.USDT_ADDRESS];
+            extraTokenSwapPath = [extraTokenAddr, extraTokenSwapTailAddresses[0], extraTokenSwapTailAddresses[1]];
         }
         extraRewards = IConvexRewards(extraRewardsAddr);
 
@@ -46,17 +47,17 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual override returns (uint256) {
-        uint256 extraEarningsUSDT = 0;
+        uint256 extraEarningsFeeToken = 0;
         if (address(extraToken) != address(0)) {
             uint256 amountIn = extraRewards.earned(address(this)) +
                 extraToken.balanceOf(address(this));
-            extraEarningsUSDT = priceTokenByExchange(amountIn, extraTokenSwapPath);
+            extraEarningsFeeToken = priceTokenByExchange(amountIn, extraTokenSwapPath);
         }
 
         return
             super.totalHoldings() +
-            extraEarningsUSDT *
-            decimalsMultipliers[ZUNAMI_USDT_TOKEN_ID] +
+            extraEarningsFeeToken *
+            decimalsMultipliers[feeTokenId] +
             token.balanceOf(address(this)) *
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }

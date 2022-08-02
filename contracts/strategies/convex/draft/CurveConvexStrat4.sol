@@ -6,9 +6,9 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../utils/Constants.sol';
 import '../../../interfaces/ICurvePool4.sol';
-import '../../CurveConvexExtraStratBase.sol';
+import '../../CurveConvexExtraStratBaseUSDT.sol';
 
-contract CurveConvexStrat4 is CurveConvexExtraStratBase {
+contract CurveConvexStrat4 is CurveConvexExtraStratBaseUSDT {
     using SafeERC20 for IERC20Metadata;
 
     ICurvePool4 public pool;
@@ -23,7 +23,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBase {
         address extraRewardsAddr,
         address extraTokenAddr
     )
-        CurveConvexExtraStratBase(
+        CurveConvexExtraStratBaseUSDT(
             config,
             poolLPAddr,
             rewardsAddr,

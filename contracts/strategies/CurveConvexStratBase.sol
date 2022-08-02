@@ -29,8 +29,8 @@ abstract contract CurveConvexStratBase is Ownable {
         IConvexMinter cvx;
         IUniswapRouter router;
         IConvexBooster booster;
-        address[] cvxToUsdtPath;
-        address[] crvToUsdtPath;
+        address[] cvxToFeeTokenPath;
+        address[] crvToFeeTokenPath;
     }
 
     Config internal _config;
@@ -48,6 +48,7 @@ abstract contract CurveConvexStratBase is Ownable {
     address public feeDistributor;
 
     uint256 public managementFees = 0;
+    uint256 public feeTokenId = ZUNAMI_USDT_TOKEN_ID;
 
     IERC20Metadata public poolLP;
     IConvexRewards public cvxRewards;
@@ -115,7 +116,7 @@ abstract contract CurveConvexStratBase is Ownable {
             transferAmount =
                 _config.tokens[i].balanceOf(address(this)) -
                 prevBalances[i] -
-                ((i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0);
+                ((i == feeTokenId) ? managementFees : 0);
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(withdrawer, transferAmount);
             }
@@ -125,7 +126,7 @@ abstract contract CurveConvexStratBase is Ownable {
     function transferZunamiAllTokens() internal {
         uint256 transferAmount;
         for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0;
+            uint256 managementFee = (i == feeTokenId) ? managementFees : 0;
             transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFee;
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(_msgSender(), transferAmount);
@@ -176,7 +177,7 @@ abstract contract CurveConvexStratBase is Ownable {
         for (uint256 i = 0; i < 3; i++) {
             prevBalances[i] =
                 _config.tokens[i].balanceOf(address(this)) -
-                ((i == ZUNAMI_USDT_TOKEN_ID) ? managementFees : 0);
+                ((i == feeTokenId) ? managementFees : 0);
         }
 
         cvxRewards.withdrawAndUnwrap(removingCrvLps, false);
@@ -229,12 +230,12 @@ abstract contract CurveConvexStratBase is Ownable {
         _config.cvx.safeApprove(address(_config.router), cvxBalance);
         _config.crv.safeApprove(address(_config.router), crvBalance);
 
-        uint256 usdtBalanceBefore = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
+        uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
         _config.router.swapExactTokensForTokens(
             cvxBalance,
             0,
-            _config.cvxToUsdtPath,
+            _config.cvxToFeeTokenPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
@@ -242,16 +243,16 @@ abstract contract CurveConvexStratBase is Ownable {
         _config.router.swapExactTokensForTokens(
             crvBalance,
             0,
-            _config.crvToUsdtPath,
+            _config.crvToFeeTokenPath,
             address(this),
             block.timestamp + Constants.TRADE_DEADLINE
         );
 
         sellRewardsExtra();
 
-        uint256 usdtBalanceAfter = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
+        uint256 feeTokenBalanceAfter = _config.tokens[feeTokenId].balanceOf(address(this));
 
-        managementFees += zunami.calcManagementFee(usdtBalanceAfter - usdtBalanceBefore);
+        managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
         emit SoldRewards(cvxBalance, crvBalance, 0);
     }
 
@@ -263,13 +264,13 @@ abstract contract CurveConvexStratBase is Ownable {
 
         sellRewards();
 
-        uint256 usdtBalance = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this)) -
+        uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this)) -
             managementFees;
 
         uint256[3] memory amounts;
-        amounts[ZUNAMI_USDT_TOKEN_ID] = usdtBalance;
+        amounts[feeTokenId] = feeTokenBalance;
 
-        if (usdtBalance > 0) depositPool(amounts);
+        if (feeTokenBalance > 0) depositPool(amounts);
     }
 
     /**
@@ -291,10 +292,10 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 amountIn = (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
             _config.cvx.balanceOf(address(this));
-        uint256 cvxEarningsUSDT = priceTokenByExchange(amountIn, _config.cvxToUsdtPath);
+        uint256 cvxEarningsInFeeToken = priceTokenByExchange(amountIn, _config.cvxToFeeTokenPath);
 
         amountIn = crvEarned + _config.crv.balanceOf(address(this));
-        uint256 crvEarningsUSDT = priceTokenByExchange(amountIn, _config.crvToUsdtPath);
+        uint256 crvEarningsInFeeToken = priceTokenByExchange(amountIn, _config.crvToFeeTokenPath);
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -304,8 +305,8 @@ abstract contract CurveConvexStratBase is Ownable {
         return
             tokensHoldings +
             crvLpHoldings +
-            (cvxEarningsUSDT + crvEarningsUSDT) *
-            decimalsMultipliers[ZUNAMI_USDT_TOKEN_ID];
+            (cvxEarningsInFeeToken + crvEarningsInFeeToken) *
+            decimalsMultipliers[feeTokenId];
     }
 
     function priceTokenByExchange(uint256 amountIn, address[] memory exchangePath)
@@ -323,10 +324,10 @@ abstract contract CurveConvexStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public returns (uint256) {
-        uint256 usdtBalance = _config.tokens[ZUNAMI_USDT_TOKEN_ID].balanceOf(address(this));
-        uint256 transferBalance = managementFees > usdtBalance ? usdtBalance : managementFees;
+        uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this));
+        uint256 transferBalance = managementFees > feeTokenBalance ? feeTokenBalance : managementFees;
         if (transferBalance > 0) {
-            _config.tokens[ZUNAMI_USDT_TOKEN_ID].safeTransfer(feeDistributor, transferBalance);
+            _config.tokens[feeTokenId].safeTransfer(feeDistributor, transferBalance);
         }
         managementFees = 0;
 
@@ -356,6 +357,10 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function setFeeTokenId(uint256 feeTokenIdParam) external onlyOwner {
+        feeTokenId = feeTokenIdParam;
     }
 
     /**
