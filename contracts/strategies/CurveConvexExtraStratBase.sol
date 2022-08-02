@@ -7,7 +7,6 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
-import '../interfaces/ICurvePool4.sol';
 import '../interfaces/IConvexRewards.sol';
 import './CurveConvexStratBase.sol';
 
