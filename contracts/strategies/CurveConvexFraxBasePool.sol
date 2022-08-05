@@ -20,6 +20,7 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
 
     constructor(
         Config memory config,
+        address poolAddr,
         address poolLPAddr,
         address rewardsAddr,
         uint256 poolPID,
@@ -45,7 +46,10 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         override
         returns (bool isValidDepositAmount)
     {
-        uint256 amountsTotal = tokenAmounts[USDC_ID] * decimalsMultipliers[USDC_ID];
+        uint256 amountsTotal;
+        for (uint256 i = 0; i < 3; i++) {
+            amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
+        }
 
         uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
@@ -62,6 +66,14 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         override
         returns (uint256 lpTokenAmount)
     {
+        if (tokenAmounts[0] > 0) {
+            swapTokenToUSDC(IERC20Metadata(Constants.DAI_ADDRESS));
+        }
+
+        if (tokenAmounts[2] > 0) {
+            swapTokenToUSDC(IERC20Metadata(Constants.USDT_ADDRESS));
+        }
+
         _config.tokens[USDC_ID].safeIncreaseAllowance(address(pool), tokenAmounts[USDC_ID]);
 
         uint256[2] memory amounts;
@@ -128,6 +140,16 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         tokenAmountsDynamic = new uint256[](2);
     }
 
+    function removeCrvLps(
+        uint256 removingCrvLps,
+        uint256[] memory tokenAmountsDynamic,
+        WithdrawalType withdrawalType,
+        uint256[3] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal override {
+        pool.remove_liquidity_one_coin(removingCrvLps, CURVE_POOL_USDC_ID, tokenAmounts[USDC_ID]);
+    }
+
     function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
@@ -140,5 +162,27 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         uint256[2] memory minAmounts;
         sellToken();
         pool.remove_liquidity(lpToken.balanceOf(address(this)), minAmounts);
+    }
+
+    function swapTokenToUSDC(IERC20Metadata token) internal {
+        require(address(token) != address(0), 'Wrong address');
+
+        address[] memory path = new address[](3);
+        path[0] = address(token);
+        path[1] = Constants.WETH_ADDRESS;
+        path[2] = Constants.USDC_ADDRESS;
+
+        uint256 balance = token.balanceOf(address(this));
+
+        if (balance > 0) {
+            token.safeApprove(address(_config.router), balance);
+            _config.router.swapExactTokensForTokens(
+                balance,
+                0,
+                path,
+                address(this),
+                block.timestamp + Constants.TRADE_DEADLINE
+            );
+        }
     }
 }
