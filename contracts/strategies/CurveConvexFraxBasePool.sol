@@ -9,6 +9,8 @@ import '../utils/Constants.sol';
 
 import '../interfaces/ICurvePool2.sol';
 
+import 'hardhat/console.sol';
+
 abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
 
@@ -85,7 +87,9 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
     }
 
     function getCurvePoolPrice() internal view override returns (uint256 curveVirtualPrice) {
+        console.log('Alexey 1');
         curveVirtualPrice = pool.get_virtual_price();
+        console.log('Alexey 2');
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)

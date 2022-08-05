@@ -9,6 +9,7 @@
     "contract:size": "hardhat size-contracts;",
     "fork": "hardhat node",
     "test": "hardhat test",
+    "test:strats": "hardhat test 'test/integration/Strategies.test.ts'",
     "test:coverage": "hardhat coverage  --testfiles 'test/*.ts'",
     "test:verbose": "hardhat test --verbose test/*.ts",
     "deploy:mainnet": "hardhat run --network mainnet  ./scripts/deploy.js",
