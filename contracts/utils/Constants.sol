@@ -28,6 +28,8 @@ library Constants {
     uint256 internal constant CVX_PUSD_PID = 91;
     uint256 internal constant CVX_USDD_PID = 96;
     uint256 internal constant CVX_DOLA_PID = 62;
+    uint256 internal constant FRAXBP_LUSD_PID = 102;
+    uint256 internal constant FRAXBP_ALUSD_PID = 106;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
@@ -43,6 +45,7 @@ library Constants {
     address internal constant MUSD_ADDRESS = 0xe2f2a5C287993345a840Db3B0845fbC70f5935a5;
     address internal constant MIM_ADDRESS = 0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3;
     address internal constant DUSD_ADDRESS = 0x5BC25f649fc4e26069dDF4cF4010F9f706c23831;
+    address internal constant ALUSD_ADDRESS = 0xBC6DA0FE9aD5f3b0d58160288917AA56653660E9;
     address internal constant LUSD_ADDRESS = 0x5f98805A4E8be255a32880FDeC7F6728C6568bA0;
     address internal constant USDP_ADDRESS = 0x1456688345527bE1f37E9e627DA0837D6f08C925;
     address internal constant USDN_ADDRESS = 0x674C6Ad92Fd080e4004b2312b45f796a192D27a0;
@@ -146,4 +149,12 @@ library Constants {
     address internal constant CRV_DOLA_ADDRESS = 0xAA5A67c256e27A5d80712c51971408db3370927D;
     address internal constant CRV_DOLA_LP_ADDRESS = 0xAA5A67c256e27A5d80712c51971408db3370927D;
     address internal constant CRV_DOLA_REWARDS_ADDRESS = 0x835f69e58087E5B6bffEf182fe2bf959Fe253c3c;
+    address internal constant FRAXBP_LUSD_ADDRESS = 0x497CE58F34605B9944E6b15EcafE6b001206fd25;
+    address internal constant FRAXBP_LUSD_LP_ADDRESS = 0x497CE58F34605B9944E6b15EcafE6b001206fd25;
+    address internal constant FRAXBP_LUSD_REWARDS_ADDRESS =
+        0x053e1dad223A206e6BCa24C77786bb69a10e427d;
+    address internal constant FRAXBP_ALUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant FRAXBP_ALUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant FRAXBP_ALUSD_REWARDS_ADDRESS =
+        0x26598e3E511ADFadefD70ab2C3475Ff741741104;
 }
