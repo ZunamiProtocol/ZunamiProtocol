@@ -40,7 +40,10 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             extraTokenAddr,
             [Constants.WETH_ADDRESS, Constants.USDC_ADDRESS]
         )
-    {}
+    {
+        pool = ICurvePool2(poolAddr);
+        poolLP = IERC20Metadata(poolLPAddr);
+    }
 
     function checkDepositSuccessful(uint256[3] memory tokenAmounts)
         internal
@@ -49,16 +52,24 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         returns (bool isValidDepositAmount)
     {
         uint256 amountsTotal;
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < tokenAmounts.length; i++) {
             amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
         }
 
         uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
+        console.log('CurveConvexFraxBasePool.sol -- lpPrice = %s', lpPrice);
 
         uint256[2] memory amounts;
-        amounts[USDC_ID] = tokenAmounts[USDC_ID];
+        amounts[USDC_ID] = amountsTotal;
+
+        console.log('CurveConvexFraxBasePool.sol -- amounts[USDC_ID] = %s', amounts[USDC_ID]);
+
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
+
+        console.log('CurveConvexFraxBasePool.sol -- depositedLp = %s', depositedLp);
+        console.log('CurveConvexFraxBasePool.sol -- left = %s', (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR);
+        console.log('CurveConvexFraxBasePool.sol -- amountsMin = %s', amountsMin);
 
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
@@ -87,9 +98,7 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
     }
 
     function getCurvePoolPrice() internal view override returns (uint256 curveVirtualPrice) {
-        console.log('Alexey 1');
         curveVirtualPrice = pool.get_virtual_price();
-        console.log('Alexey 2');
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
