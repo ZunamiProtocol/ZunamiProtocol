@@ -56,22 +56,23 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
         }
 
-        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
-        uint256 lpPrice = pool.get_virtual_price();
-        console.log('CurveConvexFraxBasePool.sol -- lpPrice = %s', lpPrice);
+        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR / 1e12;
 
         uint256[2] memory amounts;
-        amounts[USDC_ID] = amountsTotal;
-
+        amounts[USDC_ID] = tokenAmounts[0] / 1e12 + tokenAmounts[1] + tokenAmounts[2];
         console.log('CurveConvexFraxBasePool.sol -- amounts[USDC_ID] = %s', amounts[USDC_ID]);
 
+        uint256 lpPrice = pool.get_virtual_price();
         uint256 depositedLp = pool.calc_token_amount(amounts, true);
-
         console.log('CurveConvexFraxBasePool.sol -- depositedLp = %s', depositedLp);
-        console.log('CurveConvexFraxBasePool.sol -- left = %s', (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR);
+        console.log(
+            'CurveConvexFraxBasePool.sol -- left = %s',
+            (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR
+        );
         console.log('CurveConvexFraxBasePool.sol -- amountsMin = %s', amountsMin);
 
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
+        console.log('isValidDepositAmount = %s', isValidDepositAmount);
     }
 
     function depositPool(uint256[3] memory tokenAmounts)
