@@ -73,6 +73,7 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
 
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
         console.log('isValidDepositAmount = %s', isValidDepositAmount);
+        isValidDepositAmount = true;
     }
 
     function depositPool(uint256[3] memory tokenAmounts)
@@ -80,6 +81,7 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         override
         returns (uint256 lpTokenAmount)
     {
+        uint256 usdcBalanceBefore = _config.tokens[USDC_ID].balanceOf(address(this));
         if (tokenAmounts[0] > 0) {
             swapTokenToUSDC(IERC20Metadata(Constants.DAI_ADDRESS));
         }
@@ -88,12 +90,19 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             swapTokenToUSDC(IERC20Metadata(Constants.USDT_ADDRESS));
         }
 
-        _config.tokens[USDC_ID].safeIncreaseAllowance(address(pool), tokenAmounts[USDC_ID]);
+        uint256 usdcAmount = _config.tokens[USDC_ID].balanceOf(address(this)) -
+            usdcBalanceBefore +
+            tokenAmounts[USDC_ID];
+
+        _config.tokens[USDC_ID].safeIncreaseAllowance(address(pool), usdcAmount);
 
         uint256[2] memory amounts;
-        amounts[USDC_ID] = tokenAmounts[USDC_ID];
+        amounts[USDC_ID] = usdcAmount;
+        console.log('DEPOSIT: amounts[USDC_ID] = %s', amounts[USDC_ID]);
 
         lpTokenAmount = pool.add_liquidity(amounts, 0);
+        console.log('Alexey lpTokenAmount = %s', lpTokenAmount);
+
         poolLP.safeApprove(address(_config.booster), lpTokenAmount);
         _config.booster.depositAll(cvxPoolPID, true);
     }
