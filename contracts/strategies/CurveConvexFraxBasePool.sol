@@ -4,21 +4,21 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
+import '../interfaces/ICurvePool2.sol';
 import './CurveConvexExtraStratBase.sol';
 import '../utils/Constants.sol';
 
-import '../interfaces/ICurvePool2.sol';
-
-import 'hardhat/console.sol';
-
-abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
+contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
 
-    ICurvePool2 public pool;
-    IERC20Metadata public lpToken;
+    int128 constant CURVE_POOL_USDC_ID = 1;
+    uint256 constant USDC_ID = 1;
+    uint256 constant CRV_FRAX_ID = 1;
 
-    int128 CURVE_POOL_USDC_ID = 1;
-    uint256 USDC_ID = 1;
+    ICurvePool2 public fraxUSDCPool;
+    IERC20Metadata public crvFraxLp;
+    ICurvePool2 public fraxBasePool;
+    IERC20Metadata public fraxBPLp;
 
     constructor(
         Config memory config,
@@ -41,8 +41,11 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             [Constants.WETH_ADDRESS, Constants.USDC_ADDRESS]
         )
     {
-        pool = ICurvePool2(poolAddr);
-        poolLP = IERC20Metadata(poolLPAddr);
+        fraxUSDCPool = ICurvePool2(Constants.FRAX_USDC_ADDRESS);
+        crvFraxLp = IERC20Metadata(Constants.FRAX_USDC_LP_ADDRESS);
+
+        fraxBasePool = ICurvePool2(poolAddr);
+        fraxBPLp = IERC20Metadata(poolLPAddr);
     }
 
     function checkDepositSuccessful(uint256[3] memory tokenAmounts)
@@ -56,30 +59,21 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
         }
 
-        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR / 1e12;
+        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
 
         uint256[2] memory amounts;
         amounts[USDC_ID] = tokenAmounts[0] / 1e12 + tokenAmounts[1] + tokenAmounts[2];
-        console.log('CurveConvexFraxBasePool.sol -- amounts[USDC_ID] = %s', amounts[USDC_ID]);
 
-        uint256 lpPrice = pool.get_virtual_price();
-        uint256 depositedLp = pool.calc_token_amount(amounts, true);
-        console.log('CurveConvexFraxBasePool.sol -- depositedLp = %s', depositedLp);
-        console.log(
-            'CurveConvexFraxBasePool.sol -- left = %s',
-            (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR
-        );
-        console.log('CurveConvexFraxBasePool.sol -- amountsMin = %s', amountsMin);
+        uint256 lpPrice = fraxUSDCPool.get_virtual_price();
+        uint256 depositedLp = fraxUSDCPool.calc_token_amount(amounts, true);
 
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
-        console.log('isValidDepositAmount = %s', isValidDepositAmount);
-        isValidDepositAmount = true;
     }
 
     function depositPool(uint256[3] memory tokenAmounts)
         internal
         override
-        returns (uint256 lpTokenAmount)
+        returns (uint256 fraxBPLpAmount)
     {
         uint256 usdcBalanceBefore = _config.tokens[USDC_ID].balanceOf(address(this));
         if (tokenAmounts[0] > 0) {
@@ -94,21 +88,21 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             usdcBalanceBefore +
             tokenAmounts[USDC_ID];
 
-        _config.tokens[USDC_ID].safeIncreaseAllowance(address(pool), usdcAmount);
-
         uint256[2] memory amounts;
         amounts[USDC_ID] = usdcAmount;
-        console.log('DEPOSIT: amounts[USDC_ID] = %s', amounts[USDC_ID]);
+        _config.tokens[USDC_ID].safeIncreaseAllowance(address(fraxUSDCPool), usdcAmount);
+        uint256 crvFraxLpAmount = fraxUSDCPool.add_liquidity(amounts, 0);
 
-        lpTokenAmount = pool.add_liquidity(amounts, 0);
-        console.log('Alexey lpTokenAmount = %s', lpTokenAmount);
+        crvFraxLp.safeIncreaseAllowance(address(fraxBasePool), crvFraxLpAmount);
+        amounts[CRV_FRAX_ID] = crvFraxLpAmount;
+        fraxBPLpAmount = fraxBasePool.add_liquidity(amounts, 0);
 
-        poolLP.safeApprove(address(_config.booster), lpTokenAmount);
+        fraxBPLp.safeIncreaseAllowance(address(_config.booster), fraxBPLpAmount);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 
     function getCurvePoolPrice() internal view override returns (uint256 curveVirtualPrice) {
-        curveVirtualPrice = pool.get_virtual_price();
+        curveVirtualPrice = fraxBasePool.get_virtual_price();
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
@@ -118,7 +112,12 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         returns (uint256 tokenAmount)
     {
         uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
-        tokenAmount = pool.calc_withdraw_one_coin(removingCrvLps, CURVE_POOL_USDC_ID);
+        uint256 crvFraxLpAmount = fraxBasePool.calc_withdraw_one_coin(
+            removingCrvLps,
+            CURVE_POOL_USDC_ID
+        );
+
+        tokenAmount = fraxUSDCPool.calc_withdraw_one_coin(crvFraxLpAmount, CURVE_POOL_USDC_ID);
     }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
@@ -128,8 +127,9 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         returns (uint256 sharesAmount)
     {
         uint256[2] memory amounts;
-        amounts[USDC_ID] = tokenAmounts[USDC_ID];
-        sharesAmount = pool.calc_token_amount(amounts, isDeposit);
+        amounts[USDC_ID] = tokenAmounts[0] / 1e12 + tokenAmounts[1] + tokenAmounts[2];
+        amounts[USDC_ID] = fraxUSDCPool.calc_token_amount(amounts, isDeposit);
+        sharesAmount = fraxBasePool.calc_token_amount(amounts, isDeposit);
     }
 
     function calcCrvLps(
@@ -143,21 +143,26 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         override
         returns (
             bool success,
-            uint256 removingCrvLps,
+            uint256 fraxBPLpAmount,
             uint256[] memory tokenAmountsDynamic
         )
     {
-        removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        uint256[2] memory minAmounts;
+        minAmounts[USDC_ID] = tokenAmounts[0] / 1e12 + tokenAmounts[1] + tokenAmounts[2];
+        minAmounts[USDC_ID] = fraxUSDCPool.calc_token_amount(minAmounts, false);
 
-        uint256[2] memory amount;
-        amount[USDC_ID] = tokenAmounts[USDC_ID];
+        fraxBPLpAmount = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
 
-        success = removingCrvLps >= pool.calc_token_amount(amount, false);
+        success = fraxBPLpAmount >= fraxBasePool.calc_token_amount(minAmounts, false);
 
         if (success && withdrawalType == WithdrawalType.OneCoin) {
+            uint256 crvFraxLpAmount = fraxBasePool.calc_withdraw_one_coin(
+                fraxBPLpAmount,
+                CURVE_POOL_USDC_ID
+            );
             success =
                 tokenAmounts[USDC_ID] <=
-                pool.calc_withdraw_one_coin(removingCrvLps, CURVE_POOL_USDC_ID);
+                fraxUSDCPool.calc_withdraw_one_coin(crvFraxLpAmount, CURVE_POOL_USDC_ID);
         }
 
         tokenAmountsDynamic = new uint256[](2);
@@ -170,21 +175,34 @@ abstract contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
-        pool.remove_liquidity_one_coin(removingCrvLps, CURVE_POOL_USDC_ID, tokenAmounts[USDC_ID]);
+        uint256 crvFraxLpAmount = fraxBasePool.remove_liquidity_one_coin(
+            removingCrvLps,
+            CURVE_POOL_USDC_ID,
+            0
+        );
+
+        if (withdrawalType == WithdrawalType.OneCoin) {
+            fraxUSDCPool.remove_liquidity_one_coin(
+                crvFraxLpAmount,
+                CURVE_POOL_USDC_ID,
+                tokenAmounts[USDC_ID]
+            );
+        }
     }
 
     function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
-            token.safeApprove(address(pool), sellBal);
-            pool.exchange_underlying(0, 3, sellBal, 0);
+            token.safeApprove(address(fraxBasePool), sellBal);
+            fraxBasePool.exchange_underlying(0, 1, sellBal, 0);
         }
     }
 
     function withdrawAllSpecific() internal override {
         uint256[2] memory minAmounts;
+        fraxBasePool.remove_liquidity(fraxBPLp.balanceOf(address(this)), minAmounts);
         sellToken();
-        pool.remove_liquidity(lpToken.balanceOf(address(this)), minAmounts);
+        fraxUSDCPool.remove_liquidity(crvFraxLp.balanceOf(address(this)), minAmounts);
     }
 
     function swapTokenToUSDC(IERC20Metadata token) internal {

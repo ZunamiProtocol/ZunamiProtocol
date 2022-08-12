@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
         coinmarketcap: process.env.COINMARKETCAP_API_KEY,
         showTimeSpent: true,
         enabled: true,
+        outputFile: './gas_report',
     },
     paths: {
         sources: './contracts',

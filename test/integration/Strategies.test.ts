@@ -16,8 +16,7 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['LUSDFraxBP'];
-    //const strategyNames = ['LUSDCurveConvex', 'LUSDFraxBP', 'ALUSDFraxBP'];
+    const strategyNames = ['LUSDCurveConvex', 'LUSDFraxBP', 'ALUSDFraxBP'];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -136,7 +135,7 @@ describe('Single strategy tests', () => {
         strategies = [];
     });
 
-    it.only('should deposit assets in optimized mode', async () => {
+    it('should deposit assets in optimized mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {
             await zunami.addPool(strategies[poolId].address);
             await zunami.setDefaultDepositPid(poolId);
@@ -215,7 +214,6 @@ describe('Single strategy tests', () => {
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
-
             await expect(
                 zunami.completeWithdrawals([alice.getAddress(), bob.getAddress()])
             ).to.emit(zunami, 'Withdrawn');
@@ -262,6 +260,7 @@ describe('Single strategy tests', () => {
 
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
+
                 await expect(
                     zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');

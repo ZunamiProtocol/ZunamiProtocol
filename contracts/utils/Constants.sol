@@ -157,4 +157,6 @@ library Constants {
     address internal constant FRAXBP_ALUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
     address internal constant FRAXBP_ALUSD_REWARDS_ADDRESS =
         0x26598e3E511ADFadefD70ab2C3475Ff741741104;
+    address internal constant FRAX_USDC_ADDRESS = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
+    address internal constant FRAX_USDC_LP_ADDRESS = 0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC;
 }
