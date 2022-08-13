@@ -121,6 +121,6 @@ https://etherscan.io/tx/0xe9f2b8177b06ebbb0c60bb84be0999b79065646b09fe5e6231c246
 - wait event ReceivedCrossWithdrawalProvision & ReceivedCrossWithdrawalResult https://bscscan.com/address/0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF#writeContract
 - finalize withdrawal
     https://bscscan.com/address/0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF#writeContract
-    finalizeCrossDeposit
+    finalizeCrossWithdrawal
 
 https://bscscan.com/tx/0xb3a77dade14a5081f10af63a62e4fcf7e943e4150e4d99e8f7ec94a8e222906c

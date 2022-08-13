@@ -5,7 +5,7 @@ import { expect } from 'chai';
 
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import * as addrs from '../address.json';
-import * as config from '../../config.json';
+import * as globalConfig from '../../config.json';
 
 function getMinAmount(): BigNumber[] {
     const amount = '100';
@@ -16,18 +16,20 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = [
-        'USDNCurveConvex',
-        'LUSDCurveConvex',
-        'USTWormholeCurveConvex',
-        'PUSDCurveConvex',
-        'USDDCurveConvex',
-        'DolaCurveConvex',
-    ];
+    const strategyNames = ['LUSDCurveConvex', 'LUSDFraxBP', 'ALUSDFraxBP'];
     enum WithdrawalType {
         Base,
         OneCoin,
     }
+    const config = {
+        tokens: globalConfig.tokens,
+        crv: globalConfig.crv,
+        cvx: globalConfig.cvx,
+        router: globalConfig.router,
+        booster: globalConfig.booster,
+        cvxToFeeTokenPath: globalConfig.cvxToUsdtPath,
+        crvToFeeTokenPath: globalConfig.crvToUsdtPath,
+    };
 
     let admin: Signer;
     let alice: Signer;
@@ -212,7 +214,6 @@ describe('Single strategy tests', () => {
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
-
             await expect(
                 zunami.completeWithdrawals([alice.getAddress(), bob.getAddress()])
             ).to.emit(zunami, 'Withdrawn');
@@ -259,6 +260,7 @@ describe('Single strategy tests', () => {
 
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
+
                 await expect(
                     zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');
