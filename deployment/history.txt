@@ -44,3 +44,7 @@ Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in DolaCurveConvex
 
 USDNCurveConvex strategy deployed to: 0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in USDNCurveConvex strategy
+
+LUSDFraxBP strategy deployed to: 0x185bF3282a99d00791c2Ca562AfAbE1e0bedC9c4
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in LUSDFraxBP strategy
+

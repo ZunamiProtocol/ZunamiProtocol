@@ -156,7 +156,7 @@ contract CurveConvexFraxBasePool is CurveConvexExtraStratBase {
             uint256[] memory tokenAmountsDynamic
         )
     {
-        uint256[2] memory minAmounts = convertZunamiTokensToFraxUSDCs(tokenAmounts, false);;
+        uint256[2] memory minAmounts = convertZunamiTokensToFraxUSDCs(tokenAmounts, false);
 
         fraxBPLpAmount = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
 

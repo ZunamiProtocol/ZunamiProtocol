@@ -1,5 +1,12 @@
-const config = require('../config.json');
+const globalConfig = require('../config.json');
 
-module.exports = [
-    config,
-];
+const config = {
+    tokens: globalConfig.tokens,
+    crv: globalConfig.crv,
+    cvx: globalConfig.cvx,
+    router: globalConfig.router,
+    booster: globalConfig.booster,
+    cvxToFeeTokenPath: globalConfig.cvxToUsdcPath,
+    crvToFeeTokenPath: globalConfig.crvToUsdcPath,
+};
+module.exports = [config];
