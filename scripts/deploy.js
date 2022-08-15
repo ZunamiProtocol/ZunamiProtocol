@@ -1,4 +1,14 @@
-const config = require('../config.json');
+const globalConfig = require('../config.json');
+
+const config = {
+    tokens: globalConfig.tokens,
+    crv: globalConfig.crv,
+    cvx: globalConfig.cvx,
+    router: globalConfig.router,
+    booster: globalConfig.booster,
+    cvxToFeeTokenPath: globalConfig.cvxToUsdcPath,
+    crvToFeeTokenPath: globalConfig.crvToUsdcPath,
+};
 
 async function deployAndLinkPlainStrategy(name, zunami) {
     const factory = await ethers.getContractFactory(name);
@@ -48,7 +58,8 @@ async function main() {
     // await deployAndLinkConvexStrategy('DUSDCurveConvex', zunami);
     // await deployAndLinkStrategy('PUSDCurveConvex', zunami);
     // await deployAndLinkConvexStrategy('USDDCurveConvex', zunami);
-    await deployAndLinkConvexStrategy('DolaCurveConvex', zunami);
+    //await deployAndLinkConvexStrategy('DolaCurveConvex', zunami);
+    await deployAndLinkConvexStrategy('LUSDFraxBP', zunami);
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)
