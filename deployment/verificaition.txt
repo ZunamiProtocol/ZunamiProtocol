@@ -8,3 +8,4 @@ npx hardhat verify --network mainnet --constructor-args ./Deployment/strategy_ar
 npx hardhat verify --network mainnet --constructor-args ./Deployment/strategy_arguments.js --contract contracts/strategies/USDDCurveConvex.sol:USDDCurveConvex 0xE8dB196D31fce86f74c9725D0045f1C0f6287a46
 npx hardhat verify --network mainnet --constructor-args ./Deployment/strategy_arguments.js --contract contracts/strategies/DolaCurveConvex.sol:DolaCurveConvex 0x4a062f1501f5FF149b973b70f7027d87622445F3
 npx hardhat verify --network mainnet --constructor-args ./Deployment/strategy_arguments.js --contract contracts/strategies/LUSDFraxBP.sol:LUSDFraxBP 0x185bF3282a99d00791c2Ca562AfAbE1e0bedC9c4
+npx hardhat verify --network mainnet --constructor-args ./Deployment/strategy_arguments.js --contract contracts/strategies/LUSDFraxCurveConvex.sol:LUSDFraxCurveConvex 0x2101A90b8d1cae280FF8Fb32ad92EdD2F2306aB4
