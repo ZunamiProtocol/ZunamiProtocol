@@ -28,8 +28,8 @@ library Constants {
     uint256 internal constant CVX_PUSD_PID = 91;
     uint256 internal constant CVX_USDD_PID = 96;
     uint256 internal constant CVX_DOLA_PID = 62;
-    uint256 internal constant FRAXBP_LUSD_PID = 102;
-    uint256 internal constant FRAXBP_ALUSD_PID = 106;
+    uint256 internal constant CVX_FRAX_LUSD_PID = 102;
+    uint256 internal constant CVX_FRAX_ALUSD_PID = 106;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
@@ -149,13 +149,13 @@ library Constants {
     address internal constant CRV_DOLA_ADDRESS = 0xAA5A67c256e27A5d80712c51971408db3370927D;
     address internal constant CRV_DOLA_LP_ADDRESS = 0xAA5A67c256e27A5d80712c51971408db3370927D;
     address internal constant CRV_DOLA_REWARDS_ADDRESS = 0x835f69e58087E5B6bffEf182fe2bf959Fe253c3c;
-    address internal constant FRAXBP_LUSD_ADDRESS = 0x497CE58F34605B9944E6b15EcafE6b001206fd25;
-    address internal constant FRAXBP_LUSD_LP_ADDRESS = 0x497CE58F34605B9944E6b15EcafE6b001206fd25;
-    address internal constant FRAXBP_LUSD_REWARDS_ADDRESS =
+    address internal constant CRV_FRAX_LUSD_ADDRESS = 0x497CE58F34605B9944E6b15EcafE6b001206fd25;
+    address internal constant CRV_FRAX_LUSD_LP_ADDRESS = 0x497CE58F34605B9944E6b15EcafE6b001206fd25;
+    address internal constant CVX_FRAX_LUSD_REWARDS_ADDRESS =
         0x053e1dad223A206e6BCa24C77786bb69a10e427d;
-    address internal constant FRAXBP_ALUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
-    address internal constant FRAXBP_ALUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
-    address internal constant FRAXBP_ALUSD_REWARDS_ADDRESS =
+    address internal constant CRV_FRAX_ALUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant CRV_FRAX_ALUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant CVX_FRAX_ALUSD_REWARDS_ADDRESS =
         0x26598e3E511ADFadefD70ab2C3475Ff741741104;
     address internal constant FRAX_USDC_ADDRESS = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
     address internal constant FRAX_USDC_LP_ADDRESS = 0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC;
