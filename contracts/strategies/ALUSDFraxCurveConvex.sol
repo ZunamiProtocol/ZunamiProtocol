@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '../utils/Constants.sol';
-import './CurveConvexFraxStratBase.sol';
+import './FraxCurveConvexStratBase.sol';
 
 contract ALUSDFraxCurveConvex is FraxCurveConvexStratBase {
     constructor(Config memory config)
