@@ -17,7 +17,13 @@ contract ZunamiDepositor {
     IUniswapRouter public immutable router;
     address[] inTokenToOutTokenPath;
 
-    event Converted(uint256 inAmount, uint256 outAmount);
+    event ConvertedDeposit(
+        address indexed depositor,
+        address inToken,
+        uint256 inAmount,
+        address outToken,
+        uint256 outAmount
+    );
 
     constructor(
         address _tokenIn,
@@ -31,6 +37,13 @@ contract ZunamiDepositor {
         gateway = IZunamiGateway(_gateway);
         router = IUniswapRouter(_router);
         inTokenToOutTokenPath = [_tokenIn, _tokenOut];
+    }
+
+    function getAmountOut(uint256 amountIn)
+    external
+    view
+    returns (uint256) {
+        return router.getAmountsOut(amountIn, inTokenToOutTokenPath)[1];
     }
 
     function delegateDepositWithConversion(
@@ -57,6 +70,6 @@ contract ZunamiDepositor {
         tokenOut.safeIncreaseAllowance(address(gateway), amountOut);
         gateway.delegateDepositFor(msg.sender, amountOut);
 
-        emit Converted(amountIn, amountOut);
+        emit ConvertedDeposit(msg.sender, address(tokenIn), amountIn, address(tokenOut), amountOut);
     }
 }

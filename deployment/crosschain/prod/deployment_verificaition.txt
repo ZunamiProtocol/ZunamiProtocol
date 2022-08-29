@@ -13,5 +13,5 @@ https://etherscan.io/address/0xd06712108dAcEe3BfEa6BaCe8f6ee8C06491b843#code
 npx hardhat verify --network bsc --constructor-args ./deployment/crosschain/prod/56_gateway_arguments.js 0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF
 https://bscscan.com/address/0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF#code
 
-npx hardhat verify --network bsc --contract contracts/crosschain/depositor/ZunamiDepositorBUSD.sol:ZunamiDepositorBUSD 0x4a062f1501f5FF149b973b70f7027d87622445F3 0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF
-https://bscscan.com/address/0x4a062f1501f5FF149b973b70f7027d87622445F3#code
+npx hardhat verify --network bsc --contract contracts/crosschain/depositor/ZunamiDepositorBUSD.sol:ZunamiDepositorBUSD 0xbDA7FAb835a8202B89a9C827dbA0224703e90CC9 0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF
+https://bscscan.com/address/0xbDA7FAb835a8202B89a9C827dbA0224703e90CC9#code
