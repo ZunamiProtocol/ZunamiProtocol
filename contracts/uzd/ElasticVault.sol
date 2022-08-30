@@ -47,20 +47,10 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
         return _isVaultCollateralized() ? type(uint256).max : 0;
     }
 
-//    /** @dev See {IERC4262-maxMint}. */
-//    function maxMint(address) public view virtual override returns (uint256) {
-//        return type(uint256).max;
-//    }
-
     /** @dev See {IERC4262-maxWithdraw}. */
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
         return _convertFromNominal(balanceOf(owner), Math.Rounding.Down);
     }
-
-//    /** @dev See {IERC4262-maxRedeem}. */
-//    function maxRedeem(address owner) public view virtual override returns (uint256) {
-//        return balanceOf(owner);
-//    }
 
     /** @dev See {IERC4262-previewDeposit}. */
     function previewDeposit(uint256 assets) public view virtual override returns (uint256) {
@@ -71,15 +61,6 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
         return _convertToNominalCached(assets, Math.Rounding.Down);
     }
 
-//    /** @dev See {IERC4262-previewMint}. */
-//    function previewMint(uint256 shares) public view virtual override returns (uint256) {
-//        return _convertFromNominal(shares, Math.Rounding.Up);
-//    }
-//
-//    function _previewMintCached(uint256 shares) internal virtual override returns (uint256) {
-//        return _convertFromNominalCached(shares, Math.Rounding.Up);
-//    }
-
     /** @dev See {IERC4262-previewWithdraw}. */
     function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
         return _convertToNominal(assets, Math.Rounding.Up);
@@ -88,15 +69,6 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
     function _previewWithdrawCached(uint256 assets) internal virtual returns (uint256) {
         return _convertToNominalCached(assets, Math.Rounding.Up);
     }
-
-//    /** @dev See {IERC4262-previewRedeem}. */
-//    function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
-//        return _convertFromNominal(shares, Math.Rounding.Down);
-//    }
-//
-//    function _previewRedeemCached(uint256 shares) internal virtual override returns (uint256) {
-//        return _convertFromNominalCached(shares, Math.Rounding.Down);
-//    }
 
     /** @dev See {IERC4262-deposit}. */
     function deposit(uint256 assets, address receiver) public virtual override returns (uint256) {
@@ -107,16 +79,6 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
 
         return shares;
     }
-
-//    /** @dev See {IERC4262-mint}. */
-//    function mint(uint256 shares, address receiver) public virtual override returns (uint256) {
-//        require(shares <= maxMint(receiver), "ERC4626: mint more than max");
-//
-//        uint256 assets = _previewMintCached(shares);
-//        _deposit(_msgSender(), receiver, assets, shares);
-//
-//        return assets;
-//    }
 
     /** @dev See {IERC4262-withdraw}. */
     function withdraw(
@@ -131,20 +93,6 @@ abstract contract ElasticVault is ElasticERC20, IElasticVault {
 
         return shares;
     }
-
-//    /** @dev See {IERC4262-redeem}. */
-//    function redeem(
-//        uint256 shares,
-//        address receiver,
-//        address owner
-//    ) public virtual override returns (uint256) {
-//        require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
-//
-//        uint256 assets = _previewRedeemCached(shares);
-//        _withdraw(_msgSender(), receiver, owner, assets, shares);
-//
-//        return assets;
-//    }
 
     /**
      * @dev Deposit/mint common workflow.
