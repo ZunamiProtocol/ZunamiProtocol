@@ -8,7 +8,7 @@ import "./ElasticERC20.sol";
 import "./IElasticVault.sol";
 
 /**
- * @dev OpenZeppline v4.7.0 ERC4626 fork
+ * @dev OpenZeppelin v4.7.0 ERC4626 fork
 */
 abstract contract ElasticVault is ElasticERC20, IElasticVault {
     using Math for uint256;

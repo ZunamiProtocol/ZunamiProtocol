@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/utils/math/Math.sol';
 import "./PricableAsset.sol";
 
 /**
- * @dev OpenZeppline v4.7.0 ERC20 fork
+ * @dev OpenZeppelin v4.7.0 ERC20 fork
 */
 contract ElasticERC20 is Context, IERC20Metadata, PricableAsset {
     using Math for uint256;
