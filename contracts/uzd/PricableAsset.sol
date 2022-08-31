@@ -1,16 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IAssetPriceOracle.sol";
+import '@openzeppelin/contracts/access/Ownable.sol';
+import "./interfaces/IAssetPriceOracle.sol";
 
-contract PricableAsset {
+contract PricableAsset is Ownable {
+
     uint256 private _cachedBlock;
     uint256 private _cachedAssetPrice;
 
-    IAssetPriceOracle public immutable priceOracle;
+    IAssetPriceOracle public priceOracle;
 
-    constructor(IAssetPriceOracle priceOracle_) {
-        priceOracle = priceOracle_;
+    constructor(address priceOracle_) {
+        changePriceOracle(priceOracle_);
+    }
+
+    function changePriceOracle(address priceOracle_) public onlyOwner {
+        require(priceOracle_ != address(0), "Zero price oracle");
+        priceOracle = IAssetPriceOracle(priceOracle_);
     }
 
     function assetPrice() public view returns(uint256) {

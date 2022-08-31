@@ -26,7 +26,7 @@ contract ElasticERC20 is Context, IERC20Metadata, PricableAsset {
     string private _symbol;
 
     constructor(string memory name_, string memory symbol_, address priceOracle_)
-        PricableAsset(IAssetPriceOracle(priceOracle_)) {
+        PricableAsset(priceOracle_) {
 
         _name = name_;
         _symbol = symbol_;

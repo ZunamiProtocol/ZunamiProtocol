@@ -15,7 +15,8 @@ interface IElasticVault is IERC20, IERC20Metadata {
         address indexed receiver,
         address indexed owner,
         uint256 assets,
-        uint256 shares
+        uint256 shares,
+        uint256 fee
     );
 
     /**
