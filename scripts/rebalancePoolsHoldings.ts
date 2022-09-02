@@ -15,6 +15,7 @@ async function main() {
     const zunamiAbi = [
         'function poolCount() external view returns (uint256)',
         'function lpPrice() external view returns (uint256)',
+        'function totalHoldings() external view returns (uint256)',
         'function poolInfo(uint256 pid) external view returns (tuple(address, uint256, uint256))',
     ];
     const strategyAbi = ['function totalHoldings() public view returns (uint256)'];
@@ -25,12 +26,14 @@ async function main() {
     const poolIds = Array.from(Array(poolCount).keys());
     const poolInfos = await Promise.all(poolIds.map((id) => zunami.poolInfo(id)));
 
-    const [zlpPriceInt, holdingsPoolsInt] = await Promise.all([
+    const [zlpPriceInt, zunamiTotalHoldingsInt, holdingsPoolsInt] = await Promise.all([
       zunami.lpPrice(),
+      zunami.totalHoldings(),
       Promise.all(poolIds.map(async (id) => (new ethers.Contract(poolInfos[id][0], strategyAbi, provider)).totalHoldings()))
     ]);
 
     const zlpPrice: BigNumber = new BigNumber(+zlpPriceInt).dividedBy(1e18);
+    const zunamiTotalHoldings: BigNumber = new BigNumber(+zunamiTotalHoldingsInt).dividedBy(1e18);
     const pools: IPoolValueInfo[] = [];
 
     for (let i = 0; i < poolCount; i++) {
@@ -70,6 +73,7 @@ async function main() {
     }
 
     console.log(`Zunami LP: ${zlpPrice.toString()}`);
+    console.log(`Zunami Total Holdings: ${zunamiTotalHoldings.toString()}`);
     console.table(pools);
 }
 
