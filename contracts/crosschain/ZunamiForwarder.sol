@@ -3,15 +3,15 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/access/AccessControl.sol';
-import "./interfaces/layerzero/ILayerZeroReceiver.sol";
+
 import "./interfaces/stargate/IStargateReceiver.sol";
 import "./interfaces/stargate/IStargateRouter.sol";
-import "./interfaces/layerzero/ILayerZeroEndpoint.sol";
 import "../interfaces/IZunami.sol";
 import "../interfaces/ICurvePool.sol";
 
-contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver {
+import "./LzApp.sol";
+
+contract ZunamiForwarder is LzApp, IStargateReceiver {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
@@ -24,7 +24,6 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     IZunami public immutable zunami;
     ICurvePool public immutable curveExchange;
     IStargateRouter public immutable stargateRouter;
-    ILayerZeroEndpoint public immutable layerZeroEndpoint;
 
     uint8 public constant POOL_ASSETS = 3;
 
@@ -51,7 +50,6 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
     uint256 public gatewayTokenPoolId;
     address public gatewayStargateBridge;
 
-    address public zrePaymentAddress = address(0x0);
     uint256 public crossDepositGas = 50000;
     uint256 public crossWithdrawalGas = 50000;
     uint256 public crossProvisionGas = 40000;
@@ -75,10 +73,6 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         uint256 slippage
     );
 
-    event SetZrePaymentAddress(
-        address zrePaymentAddress
-    );
-
     event SetLayerZeroMessagesGas(
         uint256 crossDepositGas,
         uint256 crossWithdrawalGas,
@@ -92,15 +86,13 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         address _curveExchange,
         address _stargateRouter,
         address _layerZeroEndpoint
-    ) public {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    ) public LzApp(_layerZeroEndpoint) {
         _setupRole(OPERATOR_ROLE, _msgSender());
         tokens = _tokens;
         tokenPoolId = _tokenPoolId;
 
         zunami = IZunami(_zunami);
         stargateRouter = IStargateRouter(_stargateRouter);
-        layerZeroEndpoint = ILayerZeroEndpoint(_layerZeroEndpoint);
 
         curveExchange = ICurvePool(_curveExchange);
     }
@@ -128,13 +120,6 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         stargateSlippage = _slippage;
 
         emit SetStargateSlippage(_slippage);
-    }
-
-    function setZrePaymentAddress(
-        address _zrePaymentAddress
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        zrePaymentAddress = _zrePaymentAddress;
-        emit SetZrePaymentAddress(_zrePaymentAddress);
     }
 
     function setLayerZeroMessagesGas(
@@ -169,18 +154,8 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         emit ReceivedCrossDepositProvision(USDT_TOKEN_ID, _amountLD);
     }
 
-    // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
-    // @param _srcChainId - the source endpoint identifier
-    // @param _srcAddress - the source sending contract address from the source chain
-    // @param _nonce - the ordered message nonce
-    // @param _payload - the signed payload is the UA bytes has encoded to be sent
-    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) external {
-        require(
-            _msgSender() == address(layerZeroEndpoint),
-            "Forwarder: only zero layer endpoint can call lzReceive!"
-        );
+    function _lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) internal override {
         require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
-        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayAddress)), "Forwarder: wrong source address");
 
         // Receive request to withdrawal or deposit
         (uint8 messageType, uint256 messageId, uint256 tokenAmount, uint8 tokenDecimals) =
@@ -243,37 +218,12 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
 
         // send layer zero message to Gateway with LP shares deposit amount
         bytes memory payload = abi.encode(uint8(MessageType.Deposit), currentDepositId, lpShares, 18);
-        sendCrossMessage(payload, crossDepositGas);
+        _lzSend(gatewayChainId, payload, crossDepositGas);
 
         emit Deposited(currentDepositId, lpShares);
 
         delete currentDepositId;
         delete currentDepositAmount;
-    }
-
-    function sendCrossMessage(bytes memory payload, uint256 gas) internal {
-        // use adapterParams v1 to specify more gas for the destination
-        bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(gas));
-
-        (uint messageFee, ) = layerZeroEndpoint.estimateFees(
-            gatewayChainId,
-            address(this),
-            payload,
-            false,
-            adapterParams
-        );
-
-        require(address(this).balance >= messageFee, "Forwarder: not enough native token for cross message");
-
-        // send LayerZero message
-        layerZeroEndpoint.send{value: messageFee}(
-            gatewayChainId, // destination chainId
-            abi.encodePacked(gatewayAddress), // destination address
-            payload, // abi.encode()'ed bytes
-            payable(address(this)),
-            zrePaymentAddress,
-            adapterParams // v1 adapterParams, specify custom destination gas qty
-        );
     }
 
     function completeCrossWithdrawal()
@@ -306,7 +256,7 @@ contract ZunamiForwarder is AccessControl, ILayerZeroReceiver, IStargateReceiver
         );
 
         bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals());
-        sendCrossMessage(payload, crossWithdrawalGas);
+        _lzSend(gatewayChainId, payload, crossWithdrawalGas);
 
         storedLpShares -= currentWithdrawalAmount;
         require( IERC20Metadata(address(zunami)).balanceOf(address(this)) == storedLpShares, "Forwarder: withdrawal wasn't completed in Zunami");

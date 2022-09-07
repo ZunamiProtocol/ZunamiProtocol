@@ -20,3 +20,10 @@ Set gateway params:  [
   '0x6694340fc020c5e6b96567843da2df01b2ce1eb6'
 ]
 
+ZunamiForwarder:  0xd06712108dAcEe3BfEa6BaCe8f6ee8C06491b843
+Set gateway params:  [
+  102,
+  '0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF',
+  2,
+  '0x6694340fc020c5e6b96567843da2df01b2ce1eb6'
+]

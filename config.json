@@ -41,21 +41,21 @@
   "crosschain": {
     "1": {
       "lzRouter": "0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675",
-      "lzChainId": 1,
+      "lzChainId": 101,
       "sgRouter": "0x8731d54E9D02c286767d56ac03e8037C07e01e98",
       "sgBridge": "0x296F55F8Fb28E498B858d0BcDA06D955B2Cb3f97",
       "usdtPoolId": 2
     },
     "56": {
       "lzRouter": "0x3c2269811836af69497E5F486A85D7316753cf62",
-      "lzChainId": 2,
+      "lzChainId": 102,
       "sgRouter": "0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8",
       "sgBridge": "0x6694340fc020c5e6b96567843da2df01b2ce1eb6",
       "usdtPoolId": 2
     },
     "137": {
       "lzRouter": "0x3c2269811836af69497E5F486A85D7316753cf62",
-      "lzChainId": 9,
+      "lzChainId": 109,
       "sgRouter": "0x45A01E4e04F14f7A4a6702c74187c5F6222033cd",
       "sgBridge": "0x9d1B1669c73b033DFe47ae5a0164Ab96df25B944",
       "usdtPoolId": 2

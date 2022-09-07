@@ -16,3 +16,11 @@ Set forwarder params:  [
 
 Start deploy ZunamiDepositor
 ZunamiDepositor deployed to: 0xbDA7FAb835a8202B89a9C827dbA0224703e90CC9 0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF
+
+ZunamiGateway:  0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF
+Set forwarder params:  [
+  101,
+  '0xd06712108dAcEe3BfEa6BaCe8f6ee8C06491b843',
+  2,
+  '0x296F55F8Fb28E498B858d0BcDA06D955B2Cb3f97'
+]

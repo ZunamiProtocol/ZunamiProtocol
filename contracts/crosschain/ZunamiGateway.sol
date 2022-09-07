@@ -5,13 +5,13 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
-import '@openzeppelin/contracts/access/AccessControl.sol';
-import "./interfaces/layerzero/ILayerZeroReceiver.sol";
+
 import "./interfaces/stargate/IStargateReceiver.sol";
 import "./interfaces/stargate/IStargateRouter.sol";
-import "./interfaces/layerzero/ILayerZeroEndpoint.sol";
 
-contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IStargateReceiver {
+import "./LzApp.sol";
+
+contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
@@ -38,7 +38,6 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     }
 
     IStargateRouter public immutable stargateRouter;
-    ILayerZeroEndpoint public immutable layerZeroEndpoint;
 
     IERC20Metadata public immutable token;
     uint256 public immutable tokenPoolId;
@@ -61,7 +60,6 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
     mapping(address => uint256) internal _pendingDeposits;
     mapping(address => uint256) internal _pendingWithdrawals;
 
-    address public zrePaymentAddress = address(0x0);
     uint256 public crossDepositGas = 130000;
     uint256 public crossWithdrawalGas = 100000;
     uint256 public crossProvisionGas = 40000;
@@ -98,10 +96,6 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         uint256 slippage
     );
 
-    event SetZrePaymentAddress(
-        address zrePaymentAddress
-    );
-
     event SetLayerZeroMessagesGas(
         uint256 crossDepositGas,
         uint256 crossWithdrawalGas,
@@ -113,15 +107,13 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         uint256 _tokenPoolId,
         address _stargateRouter,
         address _layerZeroEndpoint
-    ) ERC20('Gateway Zunami LP', 'GZLP') {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    ) ERC20('Gateway Zunami LP', 'GZLP') LzApp(_layerZeroEndpoint) {
         _setupRole(OPERATOR_ROLE, _msgSender());
 
         token = IERC20Metadata(_token);
         tokenPoolId = _tokenPoolId;
 
         stargateRouter = IStargateRouter(_stargateRouter);
-        layerZeroEndpoint = ILayerZeroEndpoint(_layerZeroEndpoint);
     }
 
     receive() external payable {}
@@ -147,13 +139,6 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         stargateSlippage = _slippage;
 
         emit SetStargateSlippage(_slippage);
-    }
-
-    function setZrePaymentAddress(
-        address _zrePaymentAddress
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        zrePaymentAddress = _zrePaymentAddress;
-        emit SetZrePaymentAddress(_zrePaymentAddress);
     }
 
     function setLayerZeroMessagesGas(
@@ -202,19 +187,8 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         emit ReceivedCrossWithdrawalProvision(_amountLD);
     }
 
-    // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
-    // @param _srcChainId - the source endpoint identifier
-    // @param _srcAddress - the source sending contract address from the source chain
-    // @param _nonce - the ordered message nonce
-    // @param _payload - the signed payload is the UA bytes has encoded to be sent
-    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) external {
-        require(
-            _msgSender() == address(layerZeroEndpoint),
-            "Gateway: only zero layer endpoint can call lzReceive!"
-        );
-
+    function _lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) internal override {
         require(_srcChainId == forwarderChainId, "Gateway: wrong source chain id");
-        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(forwarderAddress)), "Gateway: wrong source address");
 
         (uint8 messageType, uint256 messageId, uint256 tokenAmount, uint8 tokenDecimals) =
             abi.decode(_payload, (uint8, uint256, uint256, uint8));
@@ -298,7 +272,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         totalDepositedAmount -= totalTokenAmount;
 
         bytes memory payload = abi.encode(uint8(MessageType.Deposit), depositId, totalTokenAmount, token.decimals());
-        sendCrossMessage(payload, crossDepositGas);
+        _lzSend(forwarderChainId, payload, crossDepositGas);
 
         emit SentCrossDeposit(depositId, totalTokenAmount);
     }
@@ -389,7 +363,7 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
 
         // send withdrawal by zero layer request to forwarder with total withdrawing ZLP amount
         bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), withdrawalId, totalLpShares, 18);
-        sendCrossMessage(payload, crossWithdrawalGas);
+        _lzSend(forwarderChainId, payload, crossWithdrawalGas);
 
         emit SentCrossWithdrawal(withdrawalId, totalLpShares);
     }
@@ -454,30 +428,6 @@ contract ZunamiGateway is ERC20, Pausable, AccessControl, ILayerZeroReceiver, IS
         if (balance > 0) {
             payable(_msgSender()).transfer(balance);
         }
-    }
-
-    function sendCrossMessage(bytes memory payload, uint256 gas) internal {
-        // use adapterParams v1 to specify more gas for the destination
-        bytes memory adapterParams = abi.encodePacked(uint16(1), uint256(gas));
-
-        (uint messageFee, ) = layerZeroEndpoint.estimateFees(
-            forwarderChainId,
-            address(this),
-            payload,
-            false,
-            adapterParams
-        );
-
-        require(address(this).balance >= messageFee, "Forwarder: not enough native token for cross message");
-
-        layerZeroEndpoint.send{value: messageFee}(
-            forwarderChainId, // destination chainId
-            abi.encodePacked(forwarderAddress), // destination address
-            payload, // abi.encode()'ed bytes
-            payable(address(this)),
-            zrePaymentAddress,
-            adapterParams // v1 adapterParams, specify custom destination gas qty
-        );
     }
 
     function convertDecimals(
