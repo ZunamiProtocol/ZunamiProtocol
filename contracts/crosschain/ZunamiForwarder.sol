@@ -48,7 +48,6 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
     uint16 public gatewayChainId;
     address public gatewayAddress;
     uint256 public gatewayTokenPoolId;
-    address public gatewayStargateBridge;
 
     uint256 public crossDepositGas = 50000;
     uint256 public crossWithdrawalGas = 50000;
@@ -65,8 +64,7 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
     event SetGatewayParams(
         uint256 chainId,
         address gateway,
-        uint256 tokenPoolId,
-        address gatewayStargateBridge
+        uint256 tokenPoolId
     );
 
     event SetStargateSlippage(
@@ -102,15 +100,13 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
     function setGatewayParams(
         uint16 _chainId,
         address _address,
-        uint256 _tokenPoolId,
-        address _stargateBridge
+        uint256 _tokenPoolId
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         gatewayChainId = _chainId;
         gatewayAddress = _address;
         gatewayTokenPoolId = _tokenPoolId;
-        gatewayStargateBridge = _stargateBridge;
 
-        emit SetGatewayParams(_chainId, _address, _tokenPoolId, _stargateBridge);
+        emit SetGatewayParams(_chainId, _address, _tokenPoolId);
     }
 
     function setStargateSlippage(
@@ -148,7 +144,6 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
 
         // receive stargate deposit in USDT
         require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
-        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(gatewayStargateBridge)), "Forwarder: wrong source address");
         require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
 
         emit ReceivedCrossDepositProvision(USDT_TOKEN_ID, _amountLD);

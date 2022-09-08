@@ -17,7 +17,6 @@ async function main() {
         config["crosschain"][forwarderNetworkId.toString()]["lzChainId"],
         forwarderAddress,
         config["crosschain"][forwarderNetworkId.toString()]["usdtPoolId"],
-        config["crosschain"][forwarderNetworkId.toString()]["sgBridge"],
     ];
 
     await gateway.setForwarderParams(...setParams);

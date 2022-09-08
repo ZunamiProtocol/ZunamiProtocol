@@ -50,7 +50,6 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
     uint16 public forwarderChainId;
     address public forwarderAddress;
     uint256 public forwarderTokenPoolId;
-    address public forwarderStargateBridge;
 
     uint256 public totalDepositedAmount;
 
@@ -88,8 +87,7 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
     event SetForwarderParams(
         uint256 _chainId,
         address _address,
-        uint256 _tokenPoolId,
-        address _bridgeAddress
+        uint256 _tokenPoolId
     );
 
     event SetStargateSlippage(
@@ -121,15 +119,13 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
     function setForwarderParams(
         uint16 _chainId,
         address _address,
-        uint256 _tokenPoolId,
-        address _stargateBridge
+        uint256 _tokenPoolId
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         forwarderChainId = _chainId;
         forwarderAddress = _address;
         forwarderTokenPoolId =  _tokenPoolId;
-        forwarderStargateBridge =  _stargateBridge;
 
-        emit SetForwarderParams(_chainId, _address, _tokenPoolId, _stargateBridge);
+        emit SetForwarderParams(_chainId, _address, _tokenPoolId);
     }
 
     function setStargateSlippage(
@@ -182,7 +178,6 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
         );
 
         require(_srcChainId == forwarderChainId, "Gateway: wrong source chain id");
-        require(keccak256(_srcAddress) == keccak256(abi.encodePacked(forwarderStargateBridge)), "Gateway: wrong source address");
 
         emit ReceivedCrossWithdrawalProvision(_amountLD);
     }

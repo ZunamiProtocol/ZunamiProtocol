@@ -17,7 +17,6 @@ async function main() {
         config["crosschain"][gatewayNetworkId.toString()]["lzChainId"],
         gatewaAddress,
         config["crosschain"][gatewayNetworkId.toString()]["usdtPoolId"],
-        config["crosschain"][gatewayNetworkId.toString()]["sgBridge"],
     ];
 
     await forwarder.setGatewayParams(...setParams);
@@ -28,7 +27,7 @@ async function main() {
     console.log("Set gateway trusted Remote: ", gatewayNetworkId.toString(), gatewayTrustedAddress);
 
     const forwarderTrustedAddress = hre.ethers.utils.solidityPack(['address','address'],[forwarderAddress, gatewayAddress]);
-    await forwarder.setTrustedRemote(forwarderNetworkId.toString(), gatewayTrustedAddress);
+    await forwarder.setTrustedRemote(forwarderNetworkId.toString(), forwarderTrustedAddress);
     console.log("Set gateway trusted Remote: ", forwarderNetworkId.toString(), forwarderTrustedAddress);
 }
 

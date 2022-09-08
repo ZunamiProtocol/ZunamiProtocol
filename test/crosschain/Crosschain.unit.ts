@@ -63,6 +63,9 @@ describe('Cross-chain', () => {
     let usdc: Contract;
     let dai: Contract;
 
+    let gatewayTrustedAddress: string;
+    let forwarderTrustedAddress: string;
+
     const masterChainId = 1;
     const otherChainId = 2;
     const masterUSDTPoolId = 3;
@@ -138,19 +141,26 @@ describe('Cross-chain', () => {
         await gateway.deployed();
         expect(gateway.address).to.properAddress;
 
+        gatewayTrustedAddress = ethers.utils.solidityPack(['address','address'],[gateway.address, forwarder.address]);
+        forwarderTrustedAddress = ethers.utils.solidityPack(['address','address'],[forwarder.address, gateway.address]);
+
         await forwarder.setGatewayParams(
           otherChainId,
           gateway.address,
           otherUSDTPoolId,
-          gateway.address,
         );
+
+        await forwarder.setTrustedRemote(otherChainId, gatewayTrustedAddress);
+        await forwarder.setTrustedRemote(masterChainId, forwarderTrustedAddress);
 
         await gateway.setForwarderParams(
           masterChainId,
           forwarder.address,
           masterUSDTPoolId,
-          forwarder.address,
         );
+
+        await gateway.setTrustedRemote(otherChainId, gatewayTrustedAddress);
+        await gateway.setTrustedRemote(masterChainId, forwarderTrustedAddress);
     });
 
     it('should be created rightly', async () => {
@@ -161,7 +171,7 @@ describe('Cross-chain', () => {
         await expect(await forwarder.tokenPoolId()).to.be.equal(masterUSDTPoolId);
         await expect(await forwarder.zunami()).to.be.equal(zunami.address);
         await expect(await forwarder.stargateRouter()).to.be.equal(stargate.address);
-        await expect(await forwarder.layerZeroEndpoint()).to.be.equal(layerzero.address);
+        await expect(await forwarder.lzEndpoint()).to.be.equal(layerzero.address);
         await expect(await forwarder.curveExchange()).to.be.equal(curvePool.address);
 
         await expect(await forwarder.gatewayChainId()).to.be.equal(otherChainId);
@@ -170,7 +180,7 @@ describe('Cross-chain', () => {
 
         await expect(await gateway.tokenPoolId()).to.be.equal(otherUSDTPoolId);
         await expect(await gateway.stargateRouter()).to.be.equal(stargate.address);
-        await expect(await gateway.layerZeroEndpoint()).to.be.equal(layerzero.address);
+        await expect(await gateway.lzEndpoint()).to.be.equal(layerzero.address);
 
         await expect(await gateway.forwarderChainId()).to.be.equal(masterChainId);
         await expect(await gateway.forwarderAddress()).to.be.equal(forwarder.address);
@@ -201,7 +211,7 @@ describe('Cross-chain', () => {
 
         //TODO: return 500 instead of 600 zlp
         let message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Deposit, depositId, tokenify(usdtTotal).toFixed(), 18 ]);
-        await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
+        await layerzero.lzReceive(gateway.address, masterChainId, forwarderTrustedAddress, 0, message);
         await gateway.finalizeCrossDeposit();
 
         for (let i = 0; i < users.length; i++) {
@@ -247,10 +257,10 @@ describe('Cross-chain', () => {
         const cameTokens = decify(usdtTotal, 6).toFixed();
         await usdt.mint(gateway.address, cameTokens);
         message = ethers.utils.defaultAbiCoder.encode([ "uint" ], [ withdrawalId ]);
-        await stargate.sgReceive(gateway.address, masterChainId, forwarder.address, 0, usdt.address, cameTokens, message);
+        await stargate.sgReceive(gateway.address, masterChainId, "", 0, usdt.address, cameTokens, message);
 
         message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Withdrawal, withdrawalId, cameTokens, 6 ]);
-        await layerzero.lzReceive(gateway.address, masterChainId, forwarder.address, 0, message);
+        await layerzero.lzReceive(gateway.address, masterChainId, forwarderTrustedAddress, 0, message);
 
         await gateway.finalizeCrossWithdrawal();
 
@@ -268,7 +278,7 @@ describe('Cross-chain', () => {
         // await gateway.sendCrossWithdrawal(users.map(user => user.address));
     });
 
-    it.only('should make deposit and withdrawal in forwarder', async () => {
+    it('should make deposit and withdrawal in forwarder', async () => {
         const depositId = 1234;
         const usdtTotal = 600;
         const usdtTotalMinimals = decify(600, 6).toFixed();
@@ -276,10 +286,10 @@ describe('Cross-chain', () => {
         // deposit
         await usdt.mint(forwarder.address, usdtTotalMinimals);
         let message = ethers.utils.defaultAbiCoder.encode([ "uint256" ], [ depositId ]);
-        await stargate.sgReceive(forwarder.address, otherChainId, gateway.address, 0, usdt.address, usdtTotalMinimals, message);
+        await stargate.sgReceive(forwarder.address, otherChainId, "", 0, usdt.address, usdtTotalMinimals, message);
 
         message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Deposit, depositId, tokenify(usdtTotal).toFixed(), 18 ]);
-        await layerzero.lzReceive(forwarder.address, otherChainId, gateway.address, 0, message);
+        await layerzero.lzReceive(forwarder.address, otherChainId, gatewayTrustedAddress, 0, message);
 
         await forwarder.delegateCrossDeposit();
         await expect(await usdt.balanceOf(zunami.address)).to.be.equal(usdtTotalMinimals);
@@ -296,7 +306,7 @@ describe('Cross-chain', () => {
         const witdrawalId = 4321;
         const zlpTotalHalf = tokenify(600 / 2).toFixed();
         message = ethers.utils.defaultAbiCoder.encode([ "uint8", "uint256", "uint256", "uint8" ], [ MessageType.Withdrawal, witdrawalId, zlpTotalHalf, 18 ]);
-        await layerzero.lzReceive(forwarder.address, otherChainId, gateway.address, 0, message);
+        await layerzero.lzReceive(forwarder.address, otherChainId, gatewayTrustedAddress, 0, message);
 
         await zunami.completeWithdrawals([forwarder.address]);
         await expect(await zunami.balanceOf(forwarder.address)).to.be.equal(zlpTotalHalf);
