@@ -45,7 +45,7 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
     uint8 public constant USDT_TOKEN_ID = 2;
 
     uint256 public constant SG_SLIPPAGE_DIVIDER = 10000;
-    uint256 public stargateSlippage = 20;
+    uint256 public stargateSlippage = 50;
 
     uint16 public forwarderChainId;
     address public forwarderAddress;
@@ -261,7 +261,7 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
             totalTokenAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER,                                      // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(crossProvisionGas, 0, "0x"),     // 150000 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(forwarderAddress),     // the address to send the tokens to on the destination
-            ""                                      // bytes param, if you wish to send additional payload you can abi.encode() them here
+            abi.encodePacked(depositId)             // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
         totalDepositedAmount -= totalTokenAmount;

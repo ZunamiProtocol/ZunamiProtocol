@@ -33,7 +33,7 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
 
     uint256 public constant SG_SLIPPAGE_DIVIDER = 10000;
 
-    uint256 public stargateSlippage = 20;
+    uint256 public stargateSlippage = 50;
     IERC20Metadata[POOL_ASSETS] public tokens;
     uint256 public immutable tokenPoolId;
 
@@ -247,7 +247,7 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
             tokenTotalAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER, // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(crossProvisionGas, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(gatewayAddress),                   // the address to send the tokens to on the destination
-            ""                                                  // bytes param, if you wish to send additional payload you can abi.encode() them here
+            abi.encodePacked(currentWithdrawalId)               // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
         bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals());
