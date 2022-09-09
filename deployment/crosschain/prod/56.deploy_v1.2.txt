@@ -1,0 +1,26 @@
+Start deploy ZunamiGateway
+ZunamiGateway deployed to: 0xeAC5e2b6F1d7eBF4a715a235e097b59ACa40b786 [
+  '0x55d398326f99059ff775485246999027b3197955',
+  2,
+  '0x4a364f8c717cAAD9A442737Eb7b8A55cc6cf18D8',
+  '0x3c2269811836af69497E5F486A85D7316753cf62'
+]
+
+Set forwarder params:  [ 101, '0x7bD5ade0975ec1d46D6472bA9dCC2321c4C41311', 2 ]
+Set gateway trusted Remote:  56 0xeac5e2b6f1d7ebf4a715a235e097b59aca40b7867bd5ade0975ec1d46d6472ba9dcc2321c4c41311
+Set gateway trusted Remote:  1 0x7bd5ade0975ec1d46d6472ba9dcc2321c4c41311eac5e2b6f1d7ebf4a715a235e097b59aca40b786
+Set gateway trusted Remote:  102 0xeac5e2b6f1d7ebf4a715a235e097b59aca40b7867bd5ade0975ec1d46d6472ba9dcc2321c4c41311
+Set gateway trusted Remote:  101 0x7bd5ade0975ec1d46d6472ba9dcc2321c4c41311eac5e2b6f1d7ebf4a715a235e097b59aca40b786
+
+
+ZunamiDepositor deployed to: 0x0aeB8D3aA2D806cb7141c1C0accFf1aC8CbCF3AD 0xeAC5e2b6F1d7eBF4a715a235e097b59ACa40b786
+
+Set SG Slippage: 50
+
+Start deploy TokenMigrator
+TokenMigrator deployed to: 0xBCabe08134b6895d7Da8b7a0C0241cfbD29A4bc2 [
+  '0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF',
+  '0xeAC5e2b6F1d7eBF4a715a235e097b59ACa40b786'
+]
+
+

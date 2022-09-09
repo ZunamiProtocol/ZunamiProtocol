@@ -21,13 +21,15 @@ async function main() {
     await gateway.setForwarderParams(...setParams);
     console.log("Set forwarder params: ", setParams);
 
+    const gatewayLzChanId = config["crosschain"][gatewayNetworkId.toString()]["lzChainId"];
     const gatewayTrustedAddress = hre.ethers.utils.solidityPack(['address','address'],[gatewayAddress, forwarderAddress]);
-    await gateway.setTrustedRemote(gatewayNetworkId.toString(), gatewayTrustedAddress);
-    console.log("Set gateway trusted Remote: ", gatewayNetworkId.toString(), gatewayTrustedAddress);
+    await gateway.setTrustedRemote(gatewayLzChanId.toString(), gatewayTrustedAddress);
+    console.log("Set gateway trusted Remote: ", gatewayLzChanId.toString(), gatewayTrustedAddress);
 
+    const forwarderLzChanId = config["crosschain"][forwarderNetworkId.toString()]["lzChainId"];
     const forwarderTrustedAddress = hre.ethers.utils.solidityPack(['address','address'],[forwarderAddress, gatewayAddress]);
-    await gateway.setTrustedRemote(forwarderNetworkId.toString(), gatewayTrustedAddress);
-    console.log("Set gateway trusted Remote: ", forwarderNetworkId.toString(), forwarderTrustedAddress);
+    await gateway.setTrustedRemote(forwarderLzChanId.toString(), gatewayTrustedAddress);
+    console.log("Set gateway trusted Remote: ", forwarderLzChanId.toString(), forwarderTrustedAddress);
 }
 
 main()

@@ -1,0 +1,21 @@
+Start deploy ZunamiForwarder
+ZunamiForwarder deployed to: 0x7bD5ade0975ec1d46D6472bA9dCC2321c4C41311 [
+  [
+    '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+  ],
+  2,
+  '0x2ffCC661011beC72e1A9524E12060983E74D14ce',
+  '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
+  '0x8731d54E9D02c286767d56ac03e8037C07e01e98',
+  '0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675'
+]
+
+Set gateway params:  [ 102, '0xeAC5e2b6F1d7eBF4a715a235e097b59ACa40b786', 2 ]
+Set gateway trusted Remote:  56 0xeac5e2b6f1d7ebf4a715a235e097b59aca40b7867bd5ade0975ec1d46d6472ba9dcc2321c4c41311
+Set gateway trusted Remote:  1 0x7bd5ade0975ec1d46d6472ba9dcc2321c4c41311eac5e2b6f1d7ebf4a715a235e097b59aca40b786
+Set gateway trusted Remote:  102 0xeac5e2b6f1d7ebf4a715a235e097b59aca40b7867bd5ade0975ec1d46d6472ba9dcc2321c4c41311
+Set gateway trusted Remote:  101 0x7bd5ade0975ec1d46d6472ba9dcc2321c4c41311eac5e2b6f1d7ebf4a715a235e097b59aca40b786
+
+Set SG Slippage: 50
