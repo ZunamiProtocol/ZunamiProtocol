@@ -6,12 +6,11 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 
-import "./interfaces/stargate/IStargateReceiver.sol";
 import "./interfaces/stargate/IStargateRouter.sol";
 
 import "./LzApp.sol";
 
-contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
+contract ZunamiGateway is ERC20, Pausable, LzApp {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
@@ -80,7 +79,6 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
     );
 
     event SentCrossWithdrawal(uint256 indexed id, uint256 totalLpShares);
-    event ReceivedCrossWithdrawalProvision(uint256 tokenAmount);
     event ReceivedCrossWithdrawalResult(uint256 indexed id, uint256 tokenAmount);
     event ResetCrossWithdrawal(uint256 indexed id, uint256 tokenAmount);
 
@@ -164,24 +162,6 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
         _unpause();
     }
 
-    function sgReceive(
-        uint16 _srcChainId,              // the remote chainId sending the tokens
-        bytes memory _srcAddress,        // the remote Bridge address
-        uint256 _nonce,
-        address _token,                  // the token contract on the local chain
-        uint256 _amountLD,                // the qty of local _token contract tokens
-        bytes memory _payload
-    ) external {
-        require(
-            _msgSender() == address(stargateRouter),
-            "Gateway: only stargate router can call sgReceive!"
-        );
-
-        require(_srcChainId == forwarderChainId, "Gateway: wrong source chain id");
-
-        emit ReceivedCrossWithdrawalProvision(_amountLD);
-    }
-
     function _lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) internal override {
         require(_srcChainId == forwarderChainId, "Gateway: wrong source chain id");
 
@@ -261,7 +241,7 @@ contract ZunamiGateway is ERC20, Pausable, LzApp, IStargateReceiver {
             totalTokenAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER,                                      // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(crossProvisionGas, 0, "0x"),     // 150000 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(forwarderAddress),     // the address to send the tokens to on the destination
-            abi.encodePacked(depositId)             // bytes param, if you wish to send additional payload you can abi.encode() them here
+            ""                                       // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
         totalDepositedAmount -= totalTokenAmount;

@@ -4,14 +4,13 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import "./interfaces/stargate/IStargateReceiver.sol";
 import "./interfaces/stargate/IStargateRouter.sol";
 import "../interfaces/IZunami.sol";
 import "../interfaces/ICurvePool.sol";
 
 import "./LzApp.sol";
 
-contract ZunamiForwarder is LzApp, IStargateReceiver {
+contract ZunamiForwarder is LzApp {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
@@ -54,7 +53,6 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
     uint256 public crossProvisionGas = 40000;
 
     event InitiatedCrossDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
-    event ReceivedCrossDepositProvision(uint256 tokenId, uint256 tokenAmount);
     event CreatedPendingDeposit(uint256 indexed id, uint256 tokenId, uint256 tokenAmount);
     event Deposited(uint256 indexed id, uint256 lpShares);
 
@@ -127,26 +125,6 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
         crossWithdrawalGas = _crossWithdrawalGas;
         crossProvisionGas = _crossProvisionGas;
         emit SetLayerZeroMessagesGas(_crossDepositGas, _crossWithdrawalGas, _crossProvisionGas);
-    }
-
-    function sgReceive(
-        uint16 _srcChainId,              // the remote chainId sending the tokens
-        bytes memory _srcAddress,        // the remote sender address
-        uint256 _nonce,
-        address _token,                  // the token contract on the local chain
-        uint256 _amountLD,                // the qty of local _token contract tokens
-        bytes memory _payload
-    ) external {
-        require(
-            _msgSender() == address(stargateRouter),
-            "Forwarder: only stargate router can call sgReceive!"
-        );
-
-        // receive stargate deposit in USDT
-        require(_srcChainId == gatewayChainId, "Forwarder: wrong source chain id");
-        require(_token == address(tokens[USDT_TOKEN_ID]), "Forwarder: wrong token address");
-
-        emit ReceivedCrossDepositProvision(USDT_TOKEN_ID, _amountLD);
     }
 
     function _lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) internal override {
@@ -247,7 +225,7 @@ contract ZunamiForwarder is LzApp, IStargateReceiver {
             tokenTotalAmount * (SG_SLIPPAGE_DIVIDER - stargateSlippage) / SG_SLIPPAGE_DIVIDER, // the min qty you would accept on the destination
             IStargateRouter.lzTxObj(crossProvisionGas, 0, "0x"),            // 0 additional gasLimit increase, 0 airdrop, at 0x address
             abi.encodePacked(gatewayAddress),                   // the address to send the tokens to on the destination
-            abi.encodePacked(currentWithdrawalId)               // bytes param, if you wish to send additional payload you can abi.encode() them here
+            ""               // bytes param, if you wish to send additional payload you can abi.encode() them here
         );
 
         bytes memory payload = abi.encode(uint8(MessageType.Withdrawal), currentWithdrawalId, tokenTotalAmount, tokens[USDT_TOKEN_ID].decimals());

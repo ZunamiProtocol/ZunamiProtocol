@@ -26,6 +26,8 @@ contract StargateRouterStab {
         uint256 amountLD,                // the qty of local _token contract tokens
         bytes memory payload
     ) external {
-        IStargateReceiver(_receiver).sgReceive(_srcChainId, _srcAddress, _nonce, _token, amountLD, payload);
+        if(payload.length != 0) {
+            IStargateReceiver(_receiver).sgReceive(_srcChainId, _srcAddress, _nonce, _token, amountLD, payload);
+        }
     }
 }
