@@ -17,6 +17,8 @@ async function main() {
         'function lpPrice() external view returns (uint256)',
         'function totalHoldings() external view returns (uint256)',
         'function poolInfo(uint256 pid) external view returns (tuple(address, uint256, uint256))',
+        'function defaultDepositPid() external view returns (uint256)',
+        'function defaultWithdrawPid() external view returns (uint256)',
     ];
     const strategyAbi = ['function totalHoldings() public view returns (uint256)'];
     const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_NODE_API_KEY);
@@ -26,9 +28,11 @@ async function main() {
     const poolIds = Array.from(Array(poolCount).keys());
     const poolInfos = await Promise.all(poolIds.map((id) => zunami.poolInfo(id)));
 
-    const [zlpPriceInt, zunamiTotalHoldingsInt, holdingsPoolsInt] = await Promise.all([
+    const [zlpPriceInt, zunamiTotalHoldingsInt, defaultDepositPid, defaultWithdrawPid, holdingsPoolsInt] = await Promise.all([
       zunami.lpPrice(),
       zunami.totalHoldings(),
+      zunami.defaultDepositPid(),
+      zunami.defaultWithdrawPid(),
       Promise.all(poolIds.map(async (id) => (new ethers.Contract(poolInfos[id][0], strategyAbi, provider)).totalHoldings()))
     ]);
 
@@ -74,6 +78,8 @@ async function main() {
 
     console.log(`Zunami LP: ${zlpPrice.toString()}`);
     console.log(`Zunami Total Holdings: ${zunamiTotalHoldings.toString()}`);
+    console.log(`Zunami Deposit PID: ${defaultDepositPid.toString()}`);
+    console.log(`Zunami Withdraw PID: ${defaultWithdrawPid.toString()}`);
     console.table(pools);
 }
 
