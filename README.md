@@ -2,56 +2,51 @@
 
 ## The First Decentralized Revenue Aggregator
 
-There is no doubt that high commissions are a fundamental problem on the Ethereum network. The further progress and
-future of DeFi are impossible without overcoming these vital inefficiencies. When a transaction consists of deposits in
-several smart contracts in a row, the commission for its implementation goes beyond all reasonable boundaries. Nowadays,
-the gates to the yield-farming realm are closed for the people who only have small deposits, so they are ultimately
-being cut off from this profitable global finance game. Zunami Protocol team has come up with a solution though.
+Zunami Protocol is the DAO that works with stablecoins and solves the main issues of current yield-farming protocols by streamlining interaction with DeFi, making it easier and cheaper while increasing profitability by differentiating and rebalancing users’ funds.
 
-We have created a multi-layer smart contract or Transaction Streamlining Mechanism (TSM) to counter this issue. How does
-it work? Users deposit funds into the Zunami.sol smart contract using the delegateDeposit() function. Then, at least
-once a day, the mechanism for automatic submission to pools will run the completeDeposit() function and distribute
-users' funds according to designated strategies.
+## Why we created Zunami Protocol
 
-## 1. Finding the most profitable pool
+The technological advancement in the finance area is undergoing a significant reshaping. During the last few years, the overall capitalization of stablecoins skyrocketed. However, the cryptocurrency realm is still regarded as a Wild West, full of traps for new investors interested in making quick profits. Decentralized Finance and stablecoins: the two emerging trends are now combining into a game-changing equation that will benefit tech-savvy users.
 
-The return rates in stablecoin pools are very volatile. One of the pools showing the best APY / APR on the market might
-become an outsider next week. Finding the best pools and transferring funds from pool to pool is too expensive and
-requires constant market research, which is not suitable for generating stable passive income.
+The number of users in Yield-farming applications is growing exponentially, but we are still far from market mass adoption. We, the creators of the Zunami Protocol, have identified a number of problems in existing solutions that repel both inexperienced users and hardened veterans of the crypto world. Our goal is to create an application that will break the barrier between traditional finances and DeFi and will be the best solution for stablecoin holders.
 
-The Zunami protocol uses a couple of formulas to calculate APR / APY and select the most profitable pool while
-depositing funds. When a user wants to withdraw funds, the most unprofitable pool is calculated and funds are withdrawn
-from it. If funds stagnate in an unprofitable strategy, a mechanism for the manual rebalancing of funds starts, which is
-specified in the moveFunds () and moveFundsBatch () functions. Funds from the least profitable strategy are transferred
-to the best-performing pool. There is also a mechanism for withdrawing funds in case of force majeure -
-emergencyWithdraw().
+## What problems does Zunami Protocol solve?
 
-## 2. Strategies
+#### 1. Complicated UX due to the number of functioning stablecoin pools.
+#### 2. Frequent interest rates changes in yield-farming pools.
+#### 3. Deposit and funds withdrawal is too expensive.
+#### 4. Costly & inconvenient rewards selling on your own.
 
-The DeFi ecosystem is becoming more complex and intricate. One of the best solutions for farming stablecoins available
-today is Curve Protocol. However, to reach maximum profitability, it is not enough to simply deposit only on Curve -
-profitability boosters (Yearn, Convex) have entered the market and raised the bar for one's income. The user must
-deposit into Curve first and then acquire LP tokens at Yearn or Convex.
+## Zunami Protocol benefits
 
-The Zunami team created a number of strategies and automated this process into a single transaction, making the DeFi
-experience more straightforward for users. As a reward, users will receive rewards in the platform's tokens. For users
-with small deposits, the sale of rewards is generally unprofitable due to the high commissions on the ETH network.
-Zunami Protocol sells rewards and all you have to do is enjoy the compound interest to the fullest.
+#### 1. Simplified usage. New UI makes user journey in DeFi smooth & easy. Perform complex interactions in one step.
+#### 2. Automated revenue aggregator. Less hassle, more profit. A sophisticated decentralized system makes sure your savings work even while you sleep. Delegate, automate, enjoy.
+#### 3. Low entry threshold. Zunami Protocol establishes a new gateway to the DeFi realm making yield-farming accessible not only to the crypto whales.
+#### 4. Cross-chain liquidity providing. Earn in the best pools and protocols, no matter what blockchain they are on.
+#### 5. DAO-oriented project.
 
-## 3. Pools
+## How it works?
 
-Zunami Protocol works with the following pools in Convex:
+Zunami Protocol uses the Transaction Batching Mechanism (TBM) which accumulates users’ funds in one batch and distributes it according to our strategies, reducing the commissions for individual transactions. Users deposit funds into the initial smart contract using the delegateDeposit() function. Then, at least once a day, the mechanism of automatic sending to the pools will be launched by the completeDeposit() function and allocate user funds to strategies. Users don’t pay anything at this point. 
 
-MIM, USDP, MUSD, OUSD, FRAX, Iron Bank, SUSD, BUSD, BUSD V2, RSV, USDK, ALUSD, DUSD, USDN, TUSD
+Rewards accrued by the user in DeFi protocols are automatically sold and the profits are reinvested. Key issues such as the choice/adding of new strategies, rebalancing of funds and the amount of management fee are decided by Zunami DAO.
+
+In July 2022 we launched BSC Cross-Chain Gateway and liquidity providing to the ETH network from the BSC (based on LayerZero and StarGate). Now users can get the profitability and reliability of our ETH version for less than $1! The transaction accumulator allows you to reduce the transaction costs up to 1000 times.
 
 ## Our contacts
 
-#### 1. Twitter - https://twitter.com/zunamiprotocol?s=21
+#### 1. Website - https://www.zunami.io/
 
-#### 2. Medium - https://zunamiprotocol.medium.com/
+#### 2. dApp - https://app.zunami.io/
 
-#### 3. Telegram - https://t.me/ZunamiCommunityChat
+#### 3. Github - https://github.com/ZunamiLab/ZunamiProtocol
 
-#### 4. Discord - https://discord.gg/BnC6kTWkUe
+#### 4. Discord - https://discord.com/invite/BnC6kTWkUe
 
-#### 5. Email - hello@zunami.io
+#### 5. Twitter - https://twitter.com/zunamiprotocol
+
+#### 6. Telegram - https://t.me/ZunamiCommunityChat
+
+#### 7. Blog - https://zunamiprotocol.medium.com/
+
+#### 8. Email - hello@zunami.io
