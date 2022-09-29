@@ -16,12 +16,13 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
+    const strategyNames = ['MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
     enum WithdrawalType {
         Base,
         OneCoin,
     }
-    const config = {
+
+    const configConvex = {
         tokens: globalConfig.tokens,
         crv: globalConfig.crv,
         cvx: globalConfig.cvx,
@@ -29,6 +30,15 @@ describe('Single strategy tests', () => {
         booster: globalConfig.booster,
         cvxToFeeTokenPath: globalConfig.cvxToUsdtPath,
         crvToFeeTokenPath: globalConfig.crvToUsdtPath,
+    };
+
+    const configStakeDao = {
+        tokens: globalConfig.tokens,
+        crv: globalConfig.crv,
+        sdt: globalConfig.sdt,
+        router: globalConfig.router,
+        crvToFeeTokenPath: globalConfig.crvToUsdtPath,
+        sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
     };
 
     let admin: Signer;
@@ -113,6 +123,7 @@ describe('Single strategy tests', () => {
         // Init all stratigies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
+            const config = strategyName.includes("Convex") ? configConvex : configStakeDao;
             const strategy = await factory.deploy(config);
             await strategy.deployed();
 
