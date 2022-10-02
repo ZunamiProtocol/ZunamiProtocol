@@ -1,0 +1,7 @@
+Verification:
+
+npx hardhat verify --network mainnet --constructor-args ./Deployment/zunami_arguments.js 0xbb2A2E62ce6ab74EF15b697c33860982de3D02Eb
+https://etherscan.io/address/0xbb2A2E62ce6ab74EF15b697c33860982de3D02Eb#code
+
+npx hardhat verify --network mainnet --constructor-args ./Deployment/stakedao_strategy_arguments.js --contract contracts/strategies/stakedao/MIMCurveStakeDao.sol:MIMCurveStakeDao 0x9Ac6c3c4dC3fD3e976d37e1FBc43e13C239FD8c9
+https://etherscan.io/address/0x9Ac6c3c4dC3fD3e976d37e1FBc43e13C239FD8c9#code

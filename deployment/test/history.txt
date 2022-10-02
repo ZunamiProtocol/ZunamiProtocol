@@ -1,0 +1,10 @@
+Start deploy
+Zunami deployed to: 0x932370b862599798f3D9A88C59D3D23cc5d07197
+
+0 RebalancingStrat strategy deployed to: 0xbb2A2E62ce6ab74EF15b697c33860982de3D02Eb
+Added RebalancingStrat pool to Zunami
+Set zunami address 0x932370b862599798f3D9A88C59D3D23cc5d07197 in RebalancingStrat strategy
+
+1 MIMCurveStakeDao strategy deployed to: 0x9Ac6c3c4dC3fD3e976d37e1FBc43e13C239FD8c9
+Added MIMCurveStakeDao pool to Zunami
+Set zunami address 0x932370b862599798f3D9A88C59D3D23cc5d07197 in MIMCurveStakeDao strategy
