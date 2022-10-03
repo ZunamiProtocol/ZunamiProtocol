@@ -219,29 +219,33 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function sellRewards() internal virtual {
         uint256 sdtBalance = _config.sdt.balanceOf(address(this));
         uint256 crvBalance = _config.crv.balanceOf(address(this));
-        if (sdtBalance == 0 || crvBalance == 0) {
+        if (sdtBalance == 0 && crvBalance == 0) {
             return;
         }
-        _config.sdt.safeApprove(address(_config.router), sdtBalance);
-        _config.crv.safeApprove(address(_config.router), crvBalance);
 
         uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
-        _config.router.swapExactTokensForTokens(
-            sdtBalance,
-            0,
-            _config.sdtToFeeTokenPath,
-            address(this),
-            block.timestamp + Constants.TRADE_DEADLINE
-        );
+        if (sdtBalance != 0) {
+            _config.sdt.safeApprove(address(_config.router), sdtBalance);
+            _config.router.swapExactTokensForTokens(
+                sdtBalance,
+                0,
+                _config.sdtToFeeTokenPath,
+                address(this),
+                block.timestamp + Constants.TRADE_DEADLINE
+            );
+        }
 
-        _config.router.swapExactTokensForTokens(
-            crvBalance,
-            0,
-            _config.crvToFeeTokenPath,
-            address(this),
-            block.timestamp + Constants.TRADE_DEADLINE
-        );
+        if (crvBalance != 0) {
+            _config.crv.safeApprove(address(_config.router), crvBalance);
+            _config.router.swapExactTokensForTokens(
+                crvBalance,
+                0,
+                _config.crvToFeeTokenPath,
+                address(this),
+                block.timestamp + Constants.TRADE_DEADLINE
+            );
+        }
 
         sellRewardsExtra();
 
