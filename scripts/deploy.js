@@ -6,6 +6,16 @@ const configConvex = {
     cvx: globalConfig.cvx,
     router: globalConfig.router,
     booster: globalConfig.booster,
+    cvxToFeeTokenPath: globalConfig.cvxToUsdtPath,
+    crvToFeeTokenPath: globalConfig.crvToUsdtPath,
+};
+
+const configConvexUsdc = {
+    tokens: globalConfig.tokens,
+    crv: globalConfig.crv,
+    cvx: globalConfig.cvx,
+    router: globalConfig.router,
+    booster: globalConfig.booster,
     cvxToFeeTokenPath: globalConfig.cvxToUsdcPath,
     crvToFeeTokenPath: globalConfig.crvToUsdcPath,
 };
@@ -15,7 +25,7 @@ const configStakeDao = {
     crv: globalConfig.crv,
     sdt: globalConfig.sdt,
     router: globalConfig.router,
-    crvToFeeTokenPath: globalConfig.crvToUsdcPath,
+    crvToFeeTokenPath: globalConfig.crvToUsdtPath,
     sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
 };
 
@@ -24,8 +34,8 @@ async function deployAndLinkStrategy(name, zunami, config) {
     const strategy = await factory.deploy(config);
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
-    await zunami.addPool(strategy.address);
-    console.log(`Added ${name} pool to Zunami`);
+    // await zunami.addPool(strategy.address);
+    // console.log(`Added ${name} pool to Zunami`);
     await strategy.setZunami(zunami.address);
     console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
 }
@@ -43,7 +53,7 @@ async function main() {
     console.log('Start deploy');
     const Zunami = await ethers.getContractFactory('Zunami');
     // const zunami = await Zunami.deploy(globalConfig.tokens);
-    const zunami = await Zunami.attach('0x2ffCC661011beC72e1A9524E12060983E74D14ce'); // prod
+    // const zunami = await Zunami.attach('0x2ffCC661011beC72e1A9524E12060983E74D14ce'); // prod
     // const zunami = await Zunami.attach('0x932370b862599798f3D9A88C59D3D23cc5d07197'); // test
 
     await zunami.deployed();

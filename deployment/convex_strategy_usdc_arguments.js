@@ -6,7 +6,7 @@ const config = {
     cvx: globalConfig.cvx,
     router: globalConfig.router,
     booster: globalConfig.booster,
-    cvxToFeeTokenPath: globalConfig.cvxToUsdtPath,
-    crvToFeeTokenPath: globalConfig.crvToUsdtPath,
+    cvxToFeeTokenPath: globalConfig.cvxToUsdcPath,
+    crvToFeeTokenPath: globalConfig.crvToUsdcPath,
 };
 module.exports = [config];

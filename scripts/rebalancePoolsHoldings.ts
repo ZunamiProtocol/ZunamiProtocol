@@ -11,7 +11,7 @@ interface IPoolValueInfo {
 }
 
 async function main() {
-    const zunamiAddr = '0x2ffCC661011beC72e1A9524E12060983E74D14ce'; // prod
+    // const zunamiAddr = '0x2ffCC661011beC72e1A9524E12060983E74D14ce'; // prod
     // const zunamiAddr = '0x932370b862599798f3D9A88C59D3D23cc5d07197'; // test
     const zunamiAbi = [
         'function poolCount() external view returns (uint256)',

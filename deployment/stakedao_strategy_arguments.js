@@ -5,7 +5,7 @@ const config = {
     crv: globalConfig.crv,
     sdt: globalConfig.sdt,
     router: globalConfig.router,
-    crvToFeeTokenPath: globalConfig.crvToUsdcPath,
+    crvToFeeTokenPath: globalConfig.crvToUsdtPath,
     sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
 };
 module.exports = [config];

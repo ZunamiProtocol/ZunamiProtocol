@@ -8,3 +8,11 @@ Set zunami address 0x932370b862599798f3D9A88C59D3D23cc5d07197 in RebalancingStra
 1 MIMCurveStakeDao strategy deployed to: 0x9Ac6c3c4dC3fD3e976d37e1FBc43e13C239FD8c9
 Added MIMCurveStakeDao pool to Zunami
 Set zunami address 0x932370b862599798f3D9A88C59D3D23cc5d07197 in MIMCurveStakeDao strategy
+
+2 MIMCurveStakeDao strategy deployed to: 0xc0CF6baE796d8BB3687914290428F60aEceDDB71
+Added MIMCurveStakeDao pool to Zunami
+Set zunami address 0x932370b862599798f3D9A88C59D3D23cc5d07197 in MIMCurveStakeDao strategy
+
+3 MIMCurveStakeDao strategy deployed to: 0x6408E8C9b06D5Eda2b00AD205EF981C523eB7Bcd
+Added MIMCurveStakeDao pool to Zunami
+Set zunami address 0x932370b862599798f3D9A88C59D3D23cc5d07197 in MIMCurveStakeDao strategy
