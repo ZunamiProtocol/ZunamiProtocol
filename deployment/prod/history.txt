@@ -54,5 +54,6 @@ Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in LUSDFraxBP stra
 LUSDFraxCurveConvex strategy deployed to: 0x2101A90b8d1cae280FF8Fb32ad92EdD2F2306aB4
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in LUSDFraxCurveConvex strategy
 
-12 MIMCurveStakeDao strategy deployed to: 0x9848EDb097Bee96459dFf7609fb582b80A8F8EfD
+12
+MIMCurveStakeDao strategy deployed to: 0x9848EDb097Bee96459dFf7609fb582b80A8F8EfD
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in MIMCurveStakeDao strategy
