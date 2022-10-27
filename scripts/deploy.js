@@ -29,6 +29,17 @@ const configStakeDao = {
     sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
 };
 
+const configGoldfinch = {
+    tokens: globalConfig.tokens,
+    curve3Pool: globalConfig.curve3Pool,
+    seniorPool: globalConfig.goldfinchSeniorPool,
+    stakingRewards: globalConfig.goldfinchStakingRewards,
+    gfi: globalConfig.gfi,
+    fidu: globalConfig.fidu,
+    router: globalConfig.router,
+    gfiToFeeTokenPath: globalConfig.gfiToFeeTokenPath,
+};
+
 async function deployAndLinkStrategy(name, zunami, config) {
     const factory = await ethers.getContractFactory(name);
     const strategy = await factory.deploy(config);
@@ -69,6 +80,7 @@ async function main() {
     // await deployAndLinkStrategy('DolaCurveConvex', zunami, configConvex);
     // await deployAndLinkStrategy('LUSDFraxCurveConvex', zunami, configConvex);
     // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, configStakeDao);
+    // await deployAndLinkStrategy('GoldfinchStrat', zunami, configGoldfinch);
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

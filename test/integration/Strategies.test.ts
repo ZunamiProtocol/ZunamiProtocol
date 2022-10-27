@@ -16,7 +16,7 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
+    const strategyNames = ['GoldfinchStrat', 'MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -39,6 +39,17 @@ describe('Single strategy tests', () => {
         router: globalConfig.router,
         crvToFeeTokenPath: globalConfig.crvToUsdtPath,
         sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
+    };
+
+    const configGoldfinch = {
+        tokens: globalConfig.tokens,
+        curve3Pool: globalConfig.curve3Pool,
+        seniorPool: globalConfig.goldfinchSeniorPool,
+        stakingRewards: globalConfig.goldfinchStakingRewards,
+        gfi: globalConfig.gfi,
+        fidu: globalConfig.fidu,
+        router: globalConfig.router,
+        gfiToFeeTokenPath: globalConfig.gfiToFeeTokenPath,
     };
 
     let admin: Signer;
@@ -123,7 +134,7 @@ describe('Single strategy tests', () => {
         // Init all stratigies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
-            const config = strategyName.includes("Convex") ? configConvex : configStakeDao;
+            const config = strategyName.includes("Convex") ? configConvex : strategyName.includes("Goldfinch") ? configGoldfinch: configStakeDao;
             const strategy = await factory.deploy(config);
             await strategy.deployed();
 
