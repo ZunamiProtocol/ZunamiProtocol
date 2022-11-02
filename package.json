@@ -1,6 +1,6 @@
 {
   "name": "zunami-protocol",
-  "version": "1.3.8",
+  "version": "2.0.0",
   "description": "",
   "scripts": {
     "lint": "prettier --write 'contracts/**/*.sol' && prettier --write 'scripts/**/*.js' && prettier --write 'test/**/*.ts'",

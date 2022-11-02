@@ -46,7 +46,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         IStrategy strategy;
         uint256 startTime;
         uint256 lpShares;
-        bool disabled;
+        bool enabled;
     }
 
     PoolInfo[] internal _poolInfo;
@@ -107,10 +107,10 @@ contract Zunami is ERC20, Pausable, AccessControl {
     event SetDefaultWithdrawPid(uint256 pid);
     event ClaimedAllManagementFee(uint256 feeValue);
     event AutoCompoundAll(uint256 compoundedValue);
-    event ToggledDisabledPoolStatus(address pool, bool newStatus);
+    event ToggledEnabledPoolStatus(address pool, bool newStatus);
 
     modifier startedPool() {
-        require(_poolInfo.length != 0, 'Zunami: pool not existed!');
+        require(_poolInfo.length != 0, 'Zunami: pools not existed!');
         require(
             block.timestamp >= _poolInfo[defaultDepositPid].startTime,
             'Zunami: default deposit pool not started yet!'
@@ -122,8 +122,8 @@ contract Zunami is ERC20, Pausable, AccessControl {
         _;
     }
 
-    modifier isPoolDisabled(uint256 poolIndex) {
-        require(_poolInfo[poolIndex].disabled == false, 'Zunami: Operations with a disabled pool');
+    modifier enabledPool(uint256 poolIndex) {
+        require(_poolInfo[poolIndex].enabled, 'Zunami: operations with not enabled pool');
         _;
     }
 
@@ -235,7 +235,9 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 length = _poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; pid++) {
-            totalHold += _poolInfo[pid].strategy.totalHoldings();
+            if (_poolInfo[pid].lpShares > 0) {
+                totalHold += _poolInfo[pid].strategy.totalHoldings();
+            }
         }
         return totalHold;
     }
@@ -826,7 +828,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
                 strategy: IStrategy(_strategyAddr),
                 startTime: startTime,
                 lpShares: 0,
-                disabled: false
+                enabled: true
             })
         );
         emit AddedPool(_poolInfo.length - 1, _strategyAddr, startTime);
@@ -839,7 +841,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     function setDefaultDepositPid(uint256 _newPoolId)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
-        isPoolDisabled(_newPoolId)
+        enabledPool(_newPoolId)
     {
         require(_newPoolId < _poolInfo.length, 'Zunami: incorrect default deposit pool id');
 
@@ -854,7 +856,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     function setDefaultWithdrawPid(uint256 _newPoolId)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
-        isPoolDisabled(_newPoolId)
+        enabledPool(_newPoolId)
     {
         require(_newPoolId < _poolInfo.length, 'Zunami: incorrect default withdraw pool id');
 
@@ -876,7 +878,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256[] memory _strategies,
         uint256[] memory withdrawalsPercents,
         uint256 _receiverStrategyId
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) isPoolDisabled(_receiverStrategyId) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) enabledPool(_receiverStrategyId) {
         require(
             _strategies.length == withdrawalsPercents.length,
             'Zunami: incorrect arguments for the moveFundsBatch'
@@ -987,11 +989,11 @@ contract Zunami is ERC20, Pausable, AccessControl {
             'Zunami: current pool is set as deposit/withdraw default pool'
         );
 
-        _poolInfo[poolIndex].disabled = !_poolInfo[poolIndex].disabled;
+        _poolInfo[poolIndex].enabled = !_poolInfo[poolIndex].enabled;
 
-        emit ToggledDisabledPoolStatus(
+        emit ToggledEnabledPoolStatus(
             address(_poolInfo[poolIndex].strategy),
-            _poolInfo[poolIndex].disabled
+            _poolInfo[poolIndex].enabled
         );
     }
 }
