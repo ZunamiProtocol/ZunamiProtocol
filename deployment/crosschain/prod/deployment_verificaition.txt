@@ -1,8 +1,8 @@
 Deployment:
-npx hardhat run --network mainnet ./scripts/crosschain/forwarder/deployForwarderInETH.js
-npx hardhat run --network bsc ./scripts/crosschain/gateway/deployGatewayInBSC.js
-npx hardhat run --network bsc ./scripts/crosschain/gateway/linkGatewayToETH.js
-npx hardhat run --network mainnet ./scripts/crosschain/forwarder/linkForwarderToBSC.js
+npx hardhat run --network mainnet ./scripts/crosschain/forwarder/deployForwarderETH.js
+npx hardhat run --network bsc ./scripts/crosschain/gateway/deployGatewayBSC.js
+npx hardhat run --network bsc ./scripts/crosschain/gateway/linkGatewayBSCToETH.js
+npx hardhat run --network mainnet ./scripts/crosschain/forwarder/linkForwarderETHToBSC.js
 
 npx hardhat run --network bsc ./scripts/crosschain/depositor/deployDepositorInBSC.js
 

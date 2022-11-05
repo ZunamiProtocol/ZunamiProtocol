@@ -19,13 +19,13 @@ async function main() {
         config["crosschain"][gatewayNetworkId.toString()]["usdtPoolId"],
     ];
 
-    // await forwarder.setGatewayParams(...setParams);
-    // console.log("Set gateway params: ", setParams);
+    await forwarder.setGatewayParams(...setParams);
+    console.log("Set gateway params: ", setParams);
 
-    // const gatewayLzChanId = config["crosschain"][gatewayNetworkId.toString()]["lzChainId"];
-    // const gatewayTrustedAddress = hre.ethers.utils.solidityPack(['address','address'],[gatewayAddress, forwarderAddress]);
-    // await forwarder.setTrustedRemote(gatewayLzChanId.toString(), gatewayTrustedAddress);
-    // console.log("Set gateway trusted Remote: ", gatewayLzChanId.toString(), gatewayTrustedAddress);
+    const gatewayLzChanId = config["crosschain"][gatewayNetworkId.toString()]["lzChainId"];
+    const gatewayTrustedAddress = hre.ethers.utils.solidityPack(['address','address'],[gatewayAddress, forwarderAddress]);
+    await forwarder.setTrustedRemote(gatewayLzChanId.toString(), gatewayTrustedAddress);
+    console.log("Set gateway trusted Remote: ", gatewayLzChanId.toString(), gatewayTrustedAddress);
 
     const forwarderLzChanId = config["crosschain"][forwarderNetworkId.toString()]["lzChainId"];
     const forwarderTrustedAddress = hre.ethers.utils.solidityPack(['address','address'],[forwarderAddress, gatewayAddress]);
