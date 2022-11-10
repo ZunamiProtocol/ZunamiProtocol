@@ -3,10 +3,10 @@ const hre = require("hardhat");
 const config = require('../../../config.json');
 
 async function main() {
-    const gatewayNetworkId = 56;
-    const gatewayAddress = "0xeAC5e2b6F1d7eBF4a715a235e097b59ACa40b786";
+    const gatewayNetworkId = 137;
+    const gatewayAddress = "0x8141d8f73c837acab6F4736Cc51143E002985Cf5";
     const forwarderNetworkId = 1;
-    const forwarderAddress = "0x7bD5ade0975ec1d46D6472bA9dCC2321c4C41311";
+    const forwarderAddress = "0x9a9F10C8d28FAF74358434Ec7916ACc25dBB41ca";
 
     const ZunamiGateway = await ethers.getContractFactory('ZunamiGateway');
     const gateway = await ZunamiGateway.attach(gatewayAddress);

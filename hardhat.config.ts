@@ -77,7 +77,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             gas: 'auto',
             gasMultiplier: 1.2,
-            gasPrice: 6000000000,
+            gasPrice: 30000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
             loggingEnabled: true,
         },
@@ -87,7 +87,7 @@ const config: HardhatUserConfig = {
             accounts: [`${process.env.PRIVATE_KEY}`],
             gas: 'auto',
             gasMultiplier: 1.2,
-            gasPrice: 50000000000,
+            gasPrice: 100000000000,
             loggingEnabled: true,
         },
         bsc: {
@@ -123,7 +123,8 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         // apiKey: `${process.env.BSCSCAN_API_KEY}`,
-        apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        // apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        apiKey: `${process.env.POLYGON_API_KEY}`,
     },
 };
 

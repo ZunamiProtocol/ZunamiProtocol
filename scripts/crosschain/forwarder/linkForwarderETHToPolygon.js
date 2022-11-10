@@ -4,9 +4,9 @@ const config = require('../../../config.json');
 
 async function main() {
     const gatewayNetworkId = 137;
-    const gatewayAddress = "";
+    const gatewayAddress = "0x8141d8f73c837acab6F4736Cc51143E002985Cf5";
     const forwarderNetworkId = 1;
-    const forwarderAddress = "";
+    const forwarderAddress = "0x9a9F10C8d28FAF74358434Ec7916ACc25dBB41ca";
 
     const ZunamiForwarder = await ethers.getContractFactory('ZunamiForwarder');
     const forwarder = await ZunamiForwarder.attach(forwarderAddress);

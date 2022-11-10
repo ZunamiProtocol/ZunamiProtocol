@@ -19,4 +19,12 @@ npx hardhat verify --network bsc --contract contracts/crosschain/depositor/Zunam
 https://bscscan.com/address/0x0aeB8D3aA2D806cb7141c1C0accFf1aC8CbCF3AD#code
 
 npx hardhat verify --network bsc --contract contracts/crosschain/TokenMigrator.sol:TokenMigrator 0xBCabe08134b6895d7Da8b7a0C0241cfbD29A4bc2 0xFEdcBA60B3842e3F9Ed8BC56De171da5426AF8CF 0xeAC5e2b6F1d7eBF4a715a235e097b59ACa40b786
-https://bscscan.com/address/0xBCabe08134b6895d7Da8b7a0C0241cfbD29A4bc2
+https://bscscan.com/address/0xBCabe08134b6895d7Da8b7a0C0241cfbD29A4bc2#code
+
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/crosschain/prod/1_forwarder_arguments.js 0x9a9F10C8d28FAF74358434Ec7916ACc25dBB41ca
+https://etherscan.io/address/0x9a9F10C8d28FAF74358434Ec7916ACc25dBB41ca#code
+
+npx hardhat verify --network polygon --constructor-args ./deployment/crosschain/prod/137_gateway_arguments.js 0x8141d8f73c837acab6F4736Cc51143E002985Cf5
+https://polygonscan.com/address/0x8141d8f73c837acab6F4736Cc51143E002985Cf5#code
+

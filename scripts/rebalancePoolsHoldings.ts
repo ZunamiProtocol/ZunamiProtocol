@@ -37,7 +37,9 @@ async function main() {
       Promise.all(poolIds.map(async (id) => (new ethers.Contract(poolInfos[id][0], strategyAbi, provider)).totalHoldings()))
     ]);
 
-    const zlpPrice: BigNumber = new BigNumber(+zlpPriceInt).dividedBy(1e18);
+    const zlpPriceCurrent: BigNumber = new BigNumber(+zlpPriceInt).dividedBy(1e18);
+    const zlpPrice: BigNumber = zlpPriceCurrent; //new BigNumber(1.11679926379888973558);
+
     const zunamiTotalHoldings: BigNumber = new BigNumber(+zunamiTotalHoldingsInt).dividedBy(1e18);
     const pools: IPoolValueInfo[] = [];
 
@@ -78,6 +80,7 @@ async function main() {
     }
 
     console.log(`Zunami LP: ${zlpPrice.toString()}`);
+    console.log(`Zunami LP (current): ${zlpPriceCurrent.toString()}`);
     console.log(`Zunami Total Holdings: ${zunamiTotalHoldings.toString()}`);
     console.log(`Zunami Deposit PID: ${defaultDepositPid.toString()}`);
     console.log(`Zunami Withdraw PID: ${defaultWithdrawPid.toString()}`);
