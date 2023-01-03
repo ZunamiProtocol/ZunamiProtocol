@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../utils/Constants.sol';
 import './CurveConvexStrat2.sol';
 
 contract MIMCurveConvex is CurveConvexStrat2 {

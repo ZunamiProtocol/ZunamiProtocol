@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../utils/Constants.sol';
+import '../../contracts/utils/Constants.sol';
 import './CurveConvexStrat.sol';
 
 contract AaveCurveConvex is CurveConvexStrat {

@@ -4,9 +4,8 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../interfaces/ICurvePool2.sol';
-import './CurveConvexExtraStratBaseUSDC.sol';
-import '../utils/Constants.sol';
+import "../../interfaces/ICurvePool2.sol";
+import "../CurveConvexExtraStratBaseUSDC.sol";
 
 abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
     using SafeERC20 for IERC20Metadata;
@@ -110,7 +109,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
         return crvFraxTokenPool.get_virtual_price();
     }
 
-    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128)
         external
         view
         override
@@ -145,10 +144,10 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
     }
 
     function calcCrvLps(
-        WithdrawalType withdrawalType,
+        WithdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory tokenAmounts,
-        uint128 tokenIndex
+        uint128
     )
         internal
         view
@@ -169,10 +168,10 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
 
     function removeCrvLps(
         uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic,
-        WithdrawalType withdrawalType,
+        uint256[] memory,
+        WithdrawalType,
         uint256[3] memory tokenAmounts,
-        uint128 tokenIndex
+        uint128
     ) internal override {
         removeCrvLpsInternal(removingCrvLps, tokenAmounts[ZUNAMI_USDC_TOKEN_ID]);
     }

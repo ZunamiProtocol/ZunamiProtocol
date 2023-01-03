@@ -4,49 +4,51 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../utils/Constants.sol';
-import '../../interfaces/ICurvePool.sol';
-import './CurveStakeDaoExtraStratBaseUSDT.sol';
-import "../../interfaces/ICurvePool2.sol";
+import './CurveConvexExtraStratBaseUSDT.sol';
+import "../../../interfaces/ICurvePool.sol";
+import "../interfaces/ICurvePool2.sol";
 
-contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
+contract CurveConvexStrat2 is CurveConvexExtraStratBaseUSDT {
     using SafeERC20 for IERC20Metadata;
 
     uint128 public constant CURVE_3POOL_LP_TOKEN_ID = 1;
     int128 public constant CURVE_3POOL_LP_TOKEN_ID_INT = int128(CURVE_3POOL_LP_TOKEN_ID);
 
+    ICurvePool2 public pool;
     ICurvePool public pool3;
     IERC20Metadata public pool3LP;
-    ICurvePool2 public pool;
 
     constructor(
         Config memory config,
-        address vaultAddr,
-        address poolLPAddr,
-        address tokenAddr,
-        address pool3Addr,
-        address pool3LPAddr,
         address poolAddr,
+        address poolLPAddr,
+        address rewardsAddr,
+        uint256 poolPID,
+        address tokenAddr,
+        address extraRewardsAddr,
         address extraTokenAddr
     )
-        CurveStakeDaoExtraStratBaseUSDT(
+        CurveConvexExtraStratBaseUSDT(
             config,
-            vaultAddr,
             poolLPAddr,
+            rewardsAddr,
+            poolPID,
             tokenAddr,
+            extraRewardsAddr,
             extraTokenAddr
         )
     {
-        pool3 = ICurvePool(pool3Addr);
-        pool3LP = IERC20Metadata(pool3LPAddr);
         pool = ICurvePool2(poolAddr);
+
+        pool3 = ICurvePool(Constants.CRV_3POOL_ADDRESS);
+        pool3LP = IERC20Metadata(Constants.CRV_3POOL_LP_ADDRESS);
     }
 
     function checkDepositSuccessful(uint256[3] memory amounts)
-    internal
-    view
-    override
-    returns (bool)
+        internal
+        view
+        override
+        returns (bool)
     {
         uint256 amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
@@ -70,8 +72,8 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
         pool3LP.safeIncreaseAllowance(address(pool), amounts2[CURVE_3POOL_LP_TOKEN_ID]);
         poolLPs = pool.add_liquidity(amounts2, 0);
 
-        poolLP.safeApprove(address(vault), poolLPs);
-        vault.deposit(address(this), poolLPs, true);
+        poolLP.safeApprove(address(_config.booster), poolLPs);
+        _config.booster.depositAll(cvxPoolPID, true);
     }
 
     function getCurvePoolPrice() internal view override returns (uint256) {
@@ -79,21 +81,21 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
-    external
-    view
-    override
-    returns (uint256 tokenAmount)
+        external
+        view
+        override
+        returns (uint256 tokenAmount)
     {
-        uint256 removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
         uint256 pool3Lps = pool.calc_withdraw_one_coin(removingCrvLps, CURVE_3POOL_LP_TOKEN_ID_INT);
         return pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
     }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
-    external
-    view
-    override
-    returns (uint256 sharesAmount)
+        external
+        view
+        override
+        returns (uint256 sharesAmount)
     {
         uint256[2] memory tokenAmounts2;
         tokenAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(tokenAmounts, isDeposit);
@@ -106,19 +108,19 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     )
-    internal
-    view
-    override
-    returns (
-        bool success,
-        uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic
-    )
+        internal
+        view
+        override
+        returns (
+            bool success,
+            uint256 removingCrvLps,
+            uint256[] memory tokenAmountsDynamic
+        )
     {
         uint256[2] memory minAmounts2;
         minAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(tokenAmounts, false);
 
-        removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
 
         success = removingCrvLps >= pool.calc_token_amount(minAmounts2, false);
 
@@ -128,8 +130,8 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
                 CURVE_3POOL_LP_TOKEN_ID_INT
             );
             success =
-            tokenAmounts[tokenIndex] <=
-            pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
+                tokenAmounts[tokenIndex] <=
+                pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
         }
 
         tokenAmountsDynamic = new uint256[](2);

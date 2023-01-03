@@ -6,8 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../utils/Constants.sol';
-import '../interfaces/ICurveLandingPool.sol';
+import './interfaces/ICurveLandingPool.sol';
 import './CurveConvexStratBase.sol';
 
 contract CurveConvexStrat is Context, CurveConvexStratBase {
@@ -106,7 +105,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
 
     function removeCrvLps(
         uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic,
+        uint256[] memory,
         WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
