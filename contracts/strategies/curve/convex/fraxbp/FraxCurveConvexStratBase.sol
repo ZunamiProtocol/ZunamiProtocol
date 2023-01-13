@@ -5,9 +5,9 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import "../../interfaces/ICurvePool2.sol";
-import "../CurveConvexExtraStratBaseUSDC.sol";
+import "../CurveConvexExtraStratBase.sol";
 
-abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
+abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
 
     uint256 constant SAME_POOL_TOKEN_ID = 1;
@@ -25,17 +25,17 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
         Config memory config,
         address fraxUsdcPoolAddr,
         address fraxUsdcPoolLpAddr,
-        address poolAddr,
-        address poolLPAddr,
+        address crvFraxTokenPoolAddr,
+        address crvFraxTokenPoolLpAddr,
         address rewardsAddr,
         uint256 poolPID,
         address tokenAddr,
         address extraRewardsAddr,
         address extraTokenAddr
     )
-        CurveConvexExtraStratBaseUSDC(
+        CurveConvexExtraStratBase(
             config,
-            poolLPAddr,
+            crvFraxTokenPoolLpAddr,
             rewardsAddr,
             poolPID,
             tokenAddr,
@@ -46,8 +46,8 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
         fraxUsdcPool = ICurvePool2(fraxUsdcPoolAddr);
         fraxUsdcPoolLp = IERC20Metadata(fraxUsdcPoolLpAddr);
 
-        crvFraxTokenPool = ICurvePool2(poolAddr);
-        crvFraxTokenPoolLp = IERC20Metadata(poolLPAddr);
+        crvFraxTokenPool = ICurvePool2(crvFraxTokenPoolAddr);
+        crvFraxTokenPoolLp = IERC20Metadata(crvFraxTokenPoolLpAddr);
 
         feeTokenId = ZUNAMI_USDC_TOKEN_ID;
     }
@@ -209,21 +209,10 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBaseUSDC {
     }
 
     function swapTokenToUSDC(IERC20Metadata token) internal {
-        address[] memory path = new address[](3);
-        path[0] = address(token);
-        path[1] = Constants.WETH_ADDRESS;
-        path[2] = Constants.USDC_ADDRESS;
-
         uint256 balance = token.balanceOf(address(this));
         if (balance == 0) return;
 
-        token.safeApprove(address(_config.router), balance);
-        _config.router.swapExactTokensForTokens(
-            balance,
-            0,
-            path,
-            address(this),
-            block.timestamp + Constants.TRADE_DEADLINE
-        );
+        token.safeTransfer(address(address(rewardManager)), balance);
+        rewardManager.handle(address(token), balance, address(_config.tokens[feeTokenId]));
     }
 }

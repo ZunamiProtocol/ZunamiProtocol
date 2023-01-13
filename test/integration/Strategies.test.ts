@@ -26,19 +26,12 @@ describe('Single strategy tests', () => {
         tokens: globalConfig.tokens,
         crv: globalConfig.crv,
         cvx: globalConfig.cvx,
-        router: globalConfig.router,
-        booster: globalConfig.booster,
-        cvxToFeeTokenPath: globalConfig.cvxToUsdtPath,
-        crvToFeeTokenPath: globalConfig.crvToUsdtPath,
+        booster: globalConfig.booster
     };
 
     const configStakeDao = {
         tokens: globalConfig.tokens,
-        crv: globalConfig.crv,
-        sdt: globalConfig.sdt,
-        router: globalConfig.router,
-        crvToFeeTokenPath: globalConfig.crvToUsdtPath,
-        sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
+        rewards: [globalConfig.crv, globalConfig.sdt],
     };
 
     let admin: Signer;
@@ -49,6 +42,7 @@ describe('Single strategy tests', () => {
     let usdc: Contract;
     let usdt: Contract;
     let strategies = Array<Contract>();
+    let rewardManager: Contract;
 
     before(async () => {
         [admin, alice, bob] = await ethers.getSigners();
@@ -109,6 +103,14 @@ describe('Single strategy tests', () => {
             method: 'hardhat_stopImpersonatingAccount',
             params: [addrs.holders.usdtHolder],
         });
+
+        const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
+
+        rewardManager = await RewardManagerFactory.deploy(
+            globalConfig.router,
+            globalConfig.weth,
+        );
+        await rewardManager.deployed();
     });
 
     beforeEach(async () => {
@@ -120,7 +122,7 @@ describe('Single strategy tests', () => {
         ]);
         await zunami.deployed();
 
-        // Init all stratigies
+        // Init all strategies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
             const config = strategyName.includes("Convex") ? configConvex : configStakeDao;
@@ -128,6 +130,9 @@ describe('Single strategy tests', () => {
             await strategy.deployed();
 
             strategy.setZunami(zunami.address);
+
+            strategy.setRewardManager(rewardManager.address);
+
             strategies.push(strategy);
         }
 

@@ -1,35 +1,19 @@
 const globalConfig = require('../config.json');
+const {ethers} = require("hardhat");
 
 const configConvex = {
     tokens: globalConfig.tokens,
     crv: globalConfig.crv,
     cvx: globalConfig.cvx,
-    router: globalConfig.router,
     booster: globalConfig.booster,
-    cvxToFeeTokenPath: globalConfig.cvxToUsdtPath,
-    crvToFeeTokenPath: globalConfig.crvToUsdtPath,
-};
-
-const configConvexUsdc = {
-    tokens: globalConfig.tokens,
-    crv: globalConfig.crv,
-    cvx: globalConfig.cvx,
-    router: globalConfig.router,
-    booster: globalConfig.booster,
-    cvxToFeeTokenPath: globalConfig.cvxToUsdcPath,
-    crvToFeeTokenPath: globalConfig.crvToUsdcPath,
 };
 
 const configStakeDao = {
     tokens: globalConfig.tokens,
-    crv: globalConfig.crv,
-    sdt: globalConfig.sdt,
-    router: globalConfig.router,
-    crvToFeeTokenPath: globalConfig.crvToUsdtPath,
-    sdtToFeeTokenPath: globalConfig.sdtToUsdtPath,
+    rewards: [globalConfig.crv, globalConfig.sdt],
 };
 
-async function deployAndLinkStrategy(name, zunami, config) {
+async function deployAndLinkStrategy(name, zunami, rewardManager, config) {
     const factory = await ethers.getContractFactory(name);
     const strategy = await factory.deploy(config);
     await strategy.deployed();
@@ -37,6 +21,9 @@ async function deployAndLinkStrategy(name, zunami, config) {
     // await zunami.addPool(strategy.address);
     // console.log(`Added ${name} pool to Zunami`);
     await strategy.setZunami(zunami.address);
+    if(rewardManager) {
+        await strategy.setRewardManager(rewardManager);
+    }
     console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
 }
 
@@ -58,17 +45,27 @@ async function main() {
 
     await zunami.deployed();
     console.log('Zunami deployed to:', zunami.address);
+
+    const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
+    const rewardManager = await RewardManagerFactory.deploy(
+        globalConfig.router,
+        globalConfig.weth,
+    );
+    await rewardManager.deployed();
+    console.log('SellingRewardManager deployed to:', rewardManager.address);
+
+    const rewardManagerAddress = rewardManager.address;
     
-    // await deployAndLinkStrategy('RebalancingStrat', zunami, globalConfig.tokens);
-    // await deployAndLinkStrategy('MIMCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('USDNCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('LUSDCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('DUSDCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('PUSDCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('USDDCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('DolaCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('LUSDFraxCurveConvex', zunami, configConvex);
-    // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, configStakeDao);
+    // await deployAndLinkStrategy('RebalancingStrat', zunami, undefined, globalConfig.tokens);
+    // await deployAndLinkStrategy('MIMCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('USDNCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('LUSDCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('DUSDCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('PUSDCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('USDDCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('DolaCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('LUSDFraxCurveConvex', zunami, undefined, configConvex);
+    // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, rewardManagerAddress, configStakeDao);
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

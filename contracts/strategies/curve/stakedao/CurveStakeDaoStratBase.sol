@@ -11,6 +11,9 @@ import '../../../interfaces/IUniswapRouter.sol';
 import '../../../interfaces/IZunami.sol';
 
 import "./iterfaces/IStakeDaoVault.sol";
+import "../interfaces/IRewardManager.sol";
+
+//import "hardhat/console.sol";
 
 abstract contract CurveStakeDaoStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -22,16 +25,13 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
     struct Config {
         IERC20Metadata[3] tokens;
-        IERC20Metadata crv;
-        IERC20Metadata sdt;
-        IUniswapRouter router;
-        address[] crvToFeeTokenPath;
-        address[] sdtToFeeTokenPath;
+        IERC20Metadata[] rewards;
     }
 
     Config internal _config;
 
     IZunami public zunami;
+    IRewardManager public rewardManager;
 
     uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
@@ -51,7 +51,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
     uint256[4] public decimalsMultipliers;
 
-    event SoldRewards(uint256 sdtBalance, uint256 crvBalance, uint256 extraBalance);
+    event SetRewardManager(address rewardManager);
 
     /**
      * @dev Throws if called by any account other than the Zunami
@@ -216,34 +216,24 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @dev anyone can sell rewards, func do nothing if config crv&sdt balance is zero
      */
     function sellRewards() internal virtual {
-        uint256 sdtBalance = _config.sdt.balanceOf(address(this));
-        uint256 crvBalance = _config.crv.balanceOf(address(this));
-        if (sdtBalance == 0 && crvBalance == 0) {
+        uint256[] memory rewardBalances = new uint256[](_config.rewards.length);
+        bool allRewardsEmpty = true;
+        for(uint256 i = 0; i < _config.rewards.length; i++) {
+            rewardBalances[i] = _config.rewards[i].balanceOf(address(this));
+            if(rewardBalances[i] > 0) {
+                allRewardsEmpty = false;
+            }
+        }
+        if (allRewardsEmpty) {
             return;
         }
 
         uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
-        if (sdtBalance != 0) {
-            _config.sdt.safeApprove(address(_config.router), sdtBalance);
-            _config.router.swapExactTokensForTokens(
-                sdtBalance,
-                0,
-                _config.sdtToFeeTokenPath,
-                address(this),
-                block.timestamp + Constants.TRADE_DEADLINE
-            );
-        }
-
-        if (crvBalance != 0) {
-            _config.crv.safeApprove(address(_config.router), crvBalance);
-            _config.router.swapExactTokensForTokens(
-                crvBalance,
-                0,
-                _config.crvToFeeTokenPath,
-                address(this),
-                block.timestamp + Constants.TRADE_DEADLINE
-            );
+        for(uint256 i = 0; i < _config.rewards.length; i++) {
+            if(rewardBalances[i] == 0) continue;
+            _config.rewards[i].transfer(address(address(rewardManager)), rewardBalances[i]);
+            rewardManager.handle(address(_config.rewards[i]), rewardBalances[i], address(_config.tokens[feeTokenId]));
         }
 
         sellRewardsExtra();
@@ -251,7 +241,6 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint256 feeTokenBalanceAfter = _config.tokens[feeTokenId].balanceOf(address(this));
 
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
-        emit SoldRewards(sdtBalance, crvBalance, 0);
     }
 
     function sellRewardsExtra() internal virtual {}
@@ -279,13 +268,12 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) * getCurvePoolPrice()) /
             CURVE_PRICE_DENOMINATOR;
 
-        uint256 sdtEarned = vault.liquidityGauge().claimable_reward(address(this), address(_config.sdt));
-        uint256 amountIn = sdtEarned + _config.sdt.balanceOf(address(this));
-        uint256 sdtEarningsInFeeToken = priceTokenByExchange(amountIn, _config.sdtToFeeTokenPath);
-
-        uint256 crvEarned = vault.liquidityGauge().claimable_reward(address(this), address(_config.crv));
-        amountIn = crvEarned + _config.crv.balanceOf(address(this));
-        uint256 crvEarningsInFeeToken = priceTokenByExchange(amountIn, _config.crvToFeeTokenPath);
+        uint256 rewardEarningInFeeToken;
+        for(uint256 i = 0; i < _config.rewards.length; i++) {
+            uint256 rewardTokenEarned = vault.liquidityGauge().claimable_reward(address(this), address(_config.rewards[i]));
+            uint256 amountIn = rewardTokenEarned + _config.rewards[i].balanceOf(address(this));
+            rewardEarningInFeeToken += rewardManager.valuate(address(_config.rewards[i]), amountIn, address(_config.tokens[feeTokenId]));
+        }
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -295,18 +283,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         return
             tokensHoldings +
             crvLpHoldings +
-            (sdtEarningsInFeeToken + crvEarningsInFeeToken) *
-            decimalsMultipliers[feeTokenId];
-    }
-
-    function priceTokenByExchange(uint256 amountIn, address[] memory exchangePath)
-        internal
-        view
-        returns (uint256)
-    {
-        if (amountIn == 0) return 0;
-        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, exchangePath);
-        return amounts[amounts.length - 1];
+            rewardEarningInFeeToken * decimalsMultipliers[feeTokenId];
     }
 
     /**
@@ -349,6 +326,11 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         zunami = IZunami(zunamiAddr);
     }
 
+    function setRewardManager(address rewardManagerAddr) external onlyOwner {
+        rewardManager = IRewardManager(rewardManagerAddr);
+        emit SetRewardManager(rewardManagerAddr);
+    }
+
     function setFeeTokenId(uint256 feeTokenIdParam) external onlyOwner {
         feeTokenId = feeTokenIdParam;
     }
@@ -370,44 +352,5 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      */
     function changeFeeDistributor(address _feeDistributor) external onlyOwner {
         feeDistributor = _feeDistributor;
-    }
-
-    function toArr2(uint256[] memory arrInf) internal pure returns (uint256[2] memory arr) {
-        arr[0] = arrInf[0];
-        arr[1] = arrInf[1];
-    }
-
-    function fromArr2(uint256[2] memory arr) internal pure returns (uint256[] memory arrInf) {
-        arrInf = new uint256[](2);
-        arrInf[0] = arr[0];
-        arrInf[1] = arr[1];
-    }
-
-    function toArr3(uint256[] memory arrInf) internal pure returns (uint256[3] memory arr) {
-        arr[0] = arrInf[0];
-        arr[1] = arrInf[1];
-        arr[2] = arrInf[2];
-    }
-
-    function fromArr3(uint256[3] memory arr) internal pure returns (uint256[] memory arrInf) {
-        arrInf = new uint256[](3);
-        arrInf[0] = arr[0];
-        arrInf[1] = arr[1];
-        arrInf[2] = arr[2];
-    }
-
-    function toArr4(uint256[] memory arrInf) internal pure returns (uint256[4] memory arr) {
-        arr[0] = arrInf[0];
-        arr[1] = arrInf[1];
-        arr[2] = arrInf[2];
-        arr[3] = arrInf[3];
-    }
-
-    function fromArr4(uint256[4] memory arr) internal pure returns (uint256[] memory arrInf) {
-        arrInf = new uint256[](4);
-        arrInf[0] = arr[0];
-        arrInf[1] = arr[1];
-        arrInf[2] = arr[2];
-        arrInf[3] = arr[3];
     }
 }

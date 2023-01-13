@@ -12,6 +12,7 @@ import "../../../interfaces/IUniswapRouter.sol";
 import './interfaces/IConvexMinter.sol';
 import "./interfaces/IConvexBooster.sol";
 import "./interfaces/IConvexRewards.sol";
+import "../interfaces/IRewardManager.sol";
 
 abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -26,15 +27,13 @@ abstract contract CurveConvexStratBase is Ownable {
         IERC20Metadata[3] tokens;
         IERC20Metadata crv;
         IConvexMinter cvx;
-        IUniswapRouter router;
         IConvexBooster booster;
-        address[] cvxToFeeTokenPath;
-        address[] crvToFeeTokenPath;
     }
 
     Config internal _config;
 
     IZunami public zunami;
+    IRewardManager public rewardManager;
 
     uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
@@ -55,7 +54,7 @@ abstract contract CurveConvexStratBase is Ownable {
 
     uint256[4] public decimalsMultipliers;
 
-    event SoldRewards(uint256 cvxBalance, uint256 crvBalance, uint256 extraBalance);
+    event SetRewardManager(address rewardManager);
 
     /**
      * @dev Throws if called by any account other than the Zunami
@@ -226,33 +225,24 @@ abstract contract CurveConvexStratBase is Ownable {
         if (cvxBalance == 0 || crvBalance == 0) {
             return;
         }
-        _config.cvx.safeApprove(address(_config.router), cvxBalance);
-        _config.crv.safeApprove(address(_config.router), crvBalance);
 
         uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
-        _config.router.swapExactTokensForTokens(
-            cvxBalance,
-            0,
-            _config.cvxToFeeTokenPath,
-            address(this),
-            block.timestamp + Constants.TRADE_DEADLINE
-        );
+        if(cvxBalance > 0) {
+            _config.cvx.transfer(address(address(rewardManager)), cvxBalance);
+            rewardManager.handle(address(_config.cvx), cvxBalance, address(_config.tokens[feeTokenId]));
+        }
 
-        _config.router.swapExactTokensForTokens(
-            crvBalance,
-            0,
-            _config.crvToFeeTokenPath,
-            address(this),
-            block.timestamp + Constants.TRADE_DEADLINE
-        );
+        if(crvBalance > 0) {
+            _config.crv.transfer(address(address(rewardManager)), crvBalance);
+            rewardManager.handle(address(_config.crv), crvBalance, address(_config.tokens[feeTokenId]));
+        }
 
         sellRewardsExtra();
 
         uint256 feeTokenBalanceAfter = _config.tokens[feeTokenId].balanceOf(address(this));
 
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
-        emit SoldRewards(cvxBalance, crvBalance, 0);
     }
 
     function sellRewardsExtra() internal virtual {
@@ -282,19 +272,18 @@ abstract contract CurveConvexStratBase is Ownable {
             CURVE_PRICE_DENOMINATOR;
 
         uint256 crvEarned = cvxRewards.earned(address(this));
+        uint256 amountIn = crvEarned + _config.crv.balanceOf(address(this));
+        uint256 crvEarningsInFeeToken = rewardManager.valuate(address(_config.crv), amountIn, address(_config.tokens[feeTokenId]));
 
         uint256 cvxTotalCliffs = _config.cvx.totalCliffs();
         uint256 cvxRemainCliffs = cvxTotalCliffs -
             _config.cvx.totalSupply() /
             _config.cvx.reductionPerCliff();
 
-        uint256 amountIn = (crvEarned * cvxRemainCliffs) /
+        amountIn = (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
             _config.cvx.balanceOf(address(this));
-        uint256 cvxEarningsInFeeToken = priceTokenByExchange(amountIn, _config.cvxToFeeTokenPath);
-
-        amountIn = crvEarned + _config.crv.balanceOf(address(this));
-        uint256 crvEarningsInFeeToken = priceTokenByExchange(amountIn, _config.crvToFeeTokenPath);
+        uint256 cvxEarningsInFeeToken = rewardManager.valuate(address(_config.cvx), amountIn, address(_config.tokens[feeTokenId]));
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -306,16 +295,6 @@ abstract contract CurveConvexStratBase is Ownable {
             crvLpHoldings +
             (cvxEarningsInFeeToken + crvEarningsInFeeToken) *
             decimalsMultipliers[feeTokenId];
-    }
-
-    function priceTokenByExchange(uint256 amountIn, address[] memory exchangePath)
-        internal
-        view
-        returns (uint256)
-    {
-        if (amountIn == 0) return 0;
-        uint256[] memory amounts = _config.router.getAmountsOut(amountIn, exchangePath);
-        return amounts[amounts.length - 1];
     }
 
     /**
@@ -356,6 +335,11 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function setRewardManager(address rewardManagerAddr) external onlyOwner {
+        rewardManager = IRewardManager(rewardManagerAddr);
+        emit SetRewardManager(rewardManagerAddr);
     }
 
     function setFeeTokenId(uint256 feeTokenIdParam) external onlyOwner {

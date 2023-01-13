@@ -5,10 +5,10 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../interfaces/ICurvePool.sol';
-import './CurveStakeDaoExtraStratBaseUSDT.sol';
 import '../interfaces/ICurvePool2.sol';
+import "./CurveStakeDaoExtraStratBase.sol";
 
-contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
+contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     using SafeERC20 for IERC20Metadata;
 
     uint128 public constant CURVE_3POOL_LP_TOKEN_ID = 1;
@@ -28,7 +28,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBaseUSDT {
         address poolAddr,
         address extraTokenAddr
     )
-        CurveStakeDaoExtraStratBaseUSDT(
+        CurveStakeDaoExtraStratBase(
             config,
             vaultAddr,
             poolLPAddr,
