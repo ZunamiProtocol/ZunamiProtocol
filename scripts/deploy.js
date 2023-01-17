@@ -8,6 +8,12 @@ const configConvex = {
     booster: globalConfig.booster,
 };
 
+const configStakingConvex = {
+    tokens: globalConfig.tokens,
+    rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
+    booster: globalConfig.stakingBooster
+};
+
 const configStakeDao = {
     tokens: globalConfig.tokens,
     rewards: [globalConfig.crv, globalConfig.sdt],
@@ -18,8 +24,8 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, config) {
     const strategy = await factory.deploy(config);
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
-    // await zunami.addPool(strategy.address);
-    // console.log(`Added ${name} pool to Zunami`);
+    await zunami.addPool(strategy.address);
+    console.log(`Added ${name} pool to Zunami`);
     await strategy.setZunami(zunami.address);
     if(rewardManager) {
         await strategy.setRewardManager(rewardManager);
@@ -46,16 +52,17 @@ async function main() {
     await zunami.deployed();
     console.log('Zunami deployed to:', zunami.address);
 
-    const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-    const rewardManager = await RewardManagerFactory.deploy(
-        globalConfig.router,
-        globalConfig.weth,
-    );
-    await rewardManager.deployed();
-    console.log('SellingRewardManager deployed to:', rewardManager.address);
+    // const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
+    // const rewardManager = await RewardManagerFactory.deploy(
+    //     globalConfig.router,
+    //     globalConfig.weth,
+    // );
+    // await rewardManager.deployed();
+    // console.log('SellingRewardManager deployed to:', rewardManager.address);
+    // const rewardManagerAddress = rewardManager.address;
 
-    const rewardManagerAddress = rewardManager.address;
-    
+    const rewardManagerAddress = "0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE";
+
     // await deployAndLinkStrategy('RebalancingStrat', zunami, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('MIMCurveConvex', zunami, undefined, configConvex);
     // await deployAndLinkStrategy('USDNCurveConvex', zunami, undefined, configConvex);
@@ -66,6 +73,7 @@ async function main() {
     // await deployAndLinkStrategy('DolaCurveConvex', zunami, undefined, configConvex);
     // await deployAndLinkStrategy('LUSDFraxCurveConvex', zunami, undefined, configConvex);
     // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, rewardManagerAddress, configStakeDao);
+    // await deployAndLinkStrategy('XAIStakingFraxCurveConvex', zunami, rewardManagerAddress, configStakingConvex);
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

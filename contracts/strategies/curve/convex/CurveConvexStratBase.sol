@@ -222,7 +222,7 @@ abstract contract CurveConvexStratBase is Ownable {
     function sellRewards() internal virtual {
         uint256 cvxBalance = _config.cvx.balanceOf(address(this));
         uint256 crvBalance = _config.crv.balanceOf(address(this));
-        if (cvxBalance == 0 || crvBalance == 0) {
+        if (cvxBalance == 0 && crvBalance == 0) {
             return;
         }
 

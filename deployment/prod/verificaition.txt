@@ -1,12 +1,12 @@
 Verification:
-npx hardhat verify --network mainnet --constructor-args ./Deployment/zunami_arguments.js address
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/USDNCurveConvex.sol:USDNCurveConvex address
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/DUSDCurveConvex.sol:DUSDCurveConvex address
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/MIMCurveConvex.sol:MIMCurveConvex address
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/PUSDCurveConvex.sol:PUSDCurveConvex 0x7e3e10eA28affD3Fc47c5491fEf8351ACB530d71
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/USDDCurveConvex.sol:USDDCurveConvex 0x63d82eCd6C4819BCf3BB291eB27fd93356eAA694
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/USDDCurveConvex.sol:USDDCurveConvex 0xE8dB196D31fce86f74c9725D0045f1C0f6287a46
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/DolaCurveConvex.sol:DolaCurveConvex 0x4a062f1501f5FF149b973b70f7027d87622445F3
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/LUSDFraxBP.sol:LUSDFraxBP 0x185bF3282a99d00791c2Ca562AfAbE1e0bedC9c4
-npx hardhat verify --network mainnet --constructor-args ./Deployment/convex_strategy_arguments.js --contract contracts/strategies/LUSDFraxCurveConvex.sol:LUSDFraxCurveConvex 0x2101A90b8d1cae280FF8Fb32ad92EdD2F2306aB4
-npx hardhat verify --network mainnet --constructor-args ./Deployment/stakedao_strategy_arguments.js --contract contracts/strategies/stakedao/MIMCurveStakeDao.sol:MIMCurveStakeDao 0x9848EDb097Bee96459dFf7609fb582b80A8F8EfD
+npx hardhat verify --network mainnet --constructor-args ./deployment/zunami_arguments.js address
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/USDNCurveConvex.sol:USDNCurveConvex address
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/DUSDCurveConvex.sol:DUSDCurveConvex address
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/MIMCurveConvex.sol:MIMCurveConvex address
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/PUSDCurveConvex.sol:PUSDCurveConvex 0x7e3e10eA28affD3Fc47c5491fEf8351ACB530d71
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/USDDCurveConvex.sol:USDDCurveConvex 0x63d82eCd6C4819BCf3BB291eB27fd93356eAA694
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/USDDCurveConvex.sol:USDDCurveConvex 0xE8dB196D31fce86f74c9725D0045f1C0f6287a46
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/DolaCurveConvex.sol:DolaCurveConvex 0x4a062f1501f5FF149b973b70f7027d87622445F3
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/LUSDFraxBP.sol:LUSDFraxBP 0x185bF3282a99d00791c2Ca562AfAbE1e0bedC9c4
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_strategy_arguments.js --contract contracts/strategies/curve/convex/LUSDFraxCurveConvex.sol:LUSDFraxCurveConvex 0x2101A90b8d1cae280FF8Fb32ad92EdD2F2306aB4
+npx hardhat verify --network mainnet --constructor-args ./deployment/stakedao_strategy_arguments.js --contract contracts/strategies/curve/stakedao/MIMCurveStakeDao.sol:MIMCurveStakeDao 0x9848EDb097Bee96459dFf7609fb582b80A8F8EfD

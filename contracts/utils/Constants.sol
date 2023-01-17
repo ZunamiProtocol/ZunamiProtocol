@@ -21,6 +21,7 @@ library Constants {
     uint256 internal constant CVX_FRAX_PID = 32;
     uint256 internal constant CVX_LUSD_PID = 33;
     uint256 internal constant CVX_BUSDV2_PID = 34;
+    uint256 internal constant CVX_FRAX_XAI_PID = 38;
     uint256 internal constant CVX_MIM_PID = 40;
     uint256 internal constant CVX_OUSD_PID = 56;
     uint256 internal constant CVX_UST_PID = 59;
@@ -161,4 +162,7 @@ library Constants {
     address internal constant FRAX_USDC_LP_ADDRESS = 0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC;
     address internal constant SDT_MIM_VAULT_ADDRESS = 0x98dd95D0ac5b70B0F4ae5080a1C2EeA8c5c48387;
     address internal constant SDT_MIM_SPELL_ADDRESS = 0x090185f2135308BaD17527004364eBcC2D37e5F6;
+
+    address internal constant CRV_FRAX_XAI_ADDRESS = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
+    address internal constant CRV_FRAX_XAI_LP_ADDRESS  = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
 }

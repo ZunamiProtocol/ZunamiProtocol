@@ -1,6 +1,7 @@
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
+import '@nomiclabs/hardhat-web3';
 
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
@@ -30,7 +31,7 @@ const config: HardhatUserConfig = {
         hardhat: {
             forking: {
                 url: `${process.env.ETH_NODE_API_KEY}`,
-                blockNumber: 15183276,
+                blockNumber: 16200000, //15183276,
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each
@@ -77,7 +78,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             gas: 'auto',
             gasMultiplier: 1.2,
-            gasPrice: 30000000000,
+            gasPrice: 15000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
             loggingEnabled: true,
         },
@@ -123,8 +124,8 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         // apiKey: `${process.env.BSCSCAN_API_KEY}`,
-        // apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-        apiKey: `${process.env.POLYGON_API_KEY}`,
+        apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        // apiKey: `${process.env.POLYGON_API_KEY}`,
     },
 };
 

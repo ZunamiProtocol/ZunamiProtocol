@@ -1,5 +1,7 @@
 Verification:
 
-npx hardhat verify --network mainnet --constructor-args ./Deployment/zunami_arguments.js address
+npx hardhat verify --network mainnet --constructor-args ./deployment/zunami_arguments.js address
 
-npx hardhat verify --network mainnet --constructor-args ./Deployment/stakedao_strategy_arguments.js --contract contracts/strategies/stakedao/MIMCurveStakeDao.sol:MIMCurveStakeDao address
+npx hardhat verify --network mainnet --constructor-args ./deployment/stakedao_strategy_arguments.js --contract contracts/strategies/stakedao/MIMCurveStakeDao.sol:MIMCurveStakeDao address
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_staking_strategy_arguments.js --contract contracts/strategies/curve/convex/stakingFraxbp/XAIStakingFraxCurveConvex.sol:XAIStakingFraxCurveConvex 0x5321004bC752ce1d1390b7adA25C823C99062AE5

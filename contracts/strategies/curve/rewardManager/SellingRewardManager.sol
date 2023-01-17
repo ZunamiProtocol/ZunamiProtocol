@@ -33,7 +33,7 @@ contract SellingRewardManager {
             amount,
             0,
             fromAddressArr3([reward, middleSwapToken, feeToken]),
-            address(this),
+            msg.sender,
             block.timestamp + Constants.TRADE_DEADLINE
         );
     }

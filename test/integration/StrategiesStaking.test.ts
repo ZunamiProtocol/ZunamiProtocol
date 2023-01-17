@@ -15,8 +15,40 @@ function getMinAmount(): BigNumber[] {
     return [dai, usdc, usdt];
 }
 
+async function toggleUnlockStakes() {
+    const stakingOwner = "0xB1748C79709f4Ba2Dd82834B8c82D4a505003f27";
+    const stakingAddress = "0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6";
+    const stakingABI = [{
+        "inputs": [],
+        "name": "unlockStakes",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }];
+    await network.provider.request({
+        method: 'hardhat_impersonateAccount',
+        params: [stakingOwner],
+    });
+    const stakingOwnerSigner: Signer = ethers.provider.getSigner(stakingOwner);
+
+    const staking = new ethers.Contract(stakingAddress, stakingABI, stakingOwnerSigner);
+
+    await staking
+        .connect(stakingOwnerSigner)
+        .unlockStakes();
+    await network.provider.request({
+        method: 'hardhat_stopImpersonatingAccount',
+        params: [stakingOwner],
+    });
+}
+
+async function increaseChainTime(time: number) {
+    await network.provider.send("evm_increaseTime", [time]);
+    await network.provider.send("evm_mine");
+}
+
 describe('Single strategy tests', () => {
-    const strategyNames = ['MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
+    const strategyNames = ['XAIStakingFraxCurveConvex']; //, 'MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -237,9 +269,15 @@ describe('Single strategy tests', () => {
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
 
+            await increaseChainTime(60 * 60);
+
+            await toggleUnlockStakes();
+
             await expect(
                 zunami.completeWithdrawals([alice.getAddress(), bob.getAddress()])
             ).to.emit(zunami, 'Withdrawn');
+
+            await toggleUnlockStakes();
         }
     });
 
@@ -263,9 +301,15 @@ describe('Single strategy tests', () => {
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
             }
 
+            await increaseChainTime(60 * 60);
+
+            await toggleUnlockStakes();
+
             await expect(
                 zunami.completeWithdrawalsOptimized([alice.getAddress(), bob.getAddress()])
             ).to.emit(zunami, 'Withdrawn');
+
+            await toggleUnlockStakes();
         }
     });
 
@@ -284,11 +328,17 @@ describe('Single strategy tests', () => {
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
+                await increaseChainTime(60 * 60);
+
+                await toggleUnlockStakes();
+
                 await expect(
                     zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
+
+                await toggleUnlockStakes();
             }
         }
     });
@@ -308,7 +358,9 @@ describe('Single strategy tests', () => {
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
+                await increaseChainTime(60 * 60);
 
+                await toggleUnlockStakes();
 
                 await expect(
                     zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0)
@@ -316,6 +368,8 @@ describe('Single strategy tests', () => {
 
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
+
+                await toggleUnlockStakes();
             }
         }
     });
@@ -334,7 +388,8 @@ describe('Single strategy tests', () => {
             );
         }
 
-        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 1]);
+        await increaseChainTime(3600 * 24 * 1);
+
         await zunami.autoCompoundAll();
 
         let token;

@@ -74,7 +74,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
 
     /**
      * @dev can be called by Zunami contract.
-     * This function need for moveFunds between strategys.
+     * This function need for moveFunds between strategies.
      */
     function withdrawAll() external virtual onlyZunami {
         cvxRewards.withdrawAllAndUnwrap(true);
