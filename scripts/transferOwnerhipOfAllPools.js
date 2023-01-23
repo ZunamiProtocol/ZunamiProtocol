@@ -4,7 +4,7 @@ async function main() {
     const Zunami = await ethers.getContractFactory('Zunami');
     const zunami = await Zunami.attach('0x2ffCC661011beC72e1A9524E12060983E74D14ce');
 
-    const Strat = await ethers.getContractFactory('RebalancingStrat');
+    const Strat = await ethers.getContractFactory('LUSDCurveConvex');
 
     await zunami.deployed();
     console.log('Zunami deployed to:', zunami.address);
@@ -17,8 +17,12 @@ async function main() {
         const strat = await Strat.attach(stratAddr);
         console.log("Strat id", i);
         console.log("Strat addr", stratAddr);
+        console.log("Fee distributor before", await strat.feeDistributor());
+        let tx = await strat.changeFeeDistributor(newAdmin);
+        await tx.wait();
+        console.log("Fee distributor after", await strat.feeDistributor());
         console.log("Strat owner before", await strat.owner());
-        const tx = await strat.transferOwnership(newAdmin);
+        tx = await strat.transferOwnership(newAdmin);
         await tx.wait();
         console.log("Strat owner after", await strat.owner());
         console.log(" ");
