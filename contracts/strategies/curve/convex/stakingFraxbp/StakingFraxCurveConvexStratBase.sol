@@ -447,7 +447,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         return crvFraxTokenPool.get_virtual_price();
     }
 
-    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128)
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
     external
     view
     returns (uint256)
@@ -459,7 +459,10 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
             CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT
         );
 
-        return fraxUsdcPool.calc_withdraw_one_coin(crvFraxAmount, FRAX_USDC_POOL_USDC_ID_INT);
+        uint256 usdcAmount = fraxUsdcPool.calc_withdraw_one_coin(crvFraxAmount, FRAX_USDC_POOL_USDC_ID_INT);
+
+        if(tokenIndex == ZUNAMI_USDC_TOKEN_ID) return usdcAmount;
+        return rewardManager.valuate(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), usdcAmount, address(_config.tokens[tokenIndex]));
     }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
@@ -506,11 +509,15 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
     function removeCrvLps(
         uint256 removingCrvLps,
         uint256[] memory,
-        WithdrawalType,
+        WithdrawalType withdrawalType,
         uint256[3] memory tokenAmounts,
-        uint128
+        uint128 tokenIndex
     ) internal {
         removeCrvLpsInternal(removingCrvLps, tokenAmounts[ZUNAMI_USDC_TOKEN_ID]);
+
+        if(withdrawalType == WithdrawalType.OneCoin && tokenIndex != ZUNAMI_USDC_TOKEN_ID) {
+            swapUSDCToToken(_config.tokens[tokenIndex]);
+        }
     }
 
     function removeCrvLpsInternal(
@@ -542,6 +549,14 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         if (balance == 0) return;
 
         token.safeTransfer(address(address(rewardManager)), balance);
-        rewardManager.handle(address(token), balance, address(_config.tokens[feeTokenId]));
+        rewardManager.handle(address(token), balance, address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]));
+    }
+
+    function swapUSDCToToken(IERC20Metadata token) internal {
+        uint256 balance = _config.tokens[ZUNAMI_USDC_TOKEN_ID].balanceOf(address(this));
+        if (balance == 0) return;
+
+        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(address(rewardManager)), balance);
+        rewardManager.handle(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), balance, address(token));
     }
 }
