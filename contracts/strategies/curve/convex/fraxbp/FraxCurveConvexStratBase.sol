@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import "../../interfaces/ICurvePool2.sol";
 import "../CurveConvexExtraStratBase.sol";
+import "../../../interfaces/IStableConverter.sol";
 
 abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
@@ -21,6 +22,10 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     // crvFraxTokenPool = crvFrax + Token
     ICurvePool2 public crvFraxTokenPool;
     IERC20Metadata public crvFraxTokenPoolLp;
+
+    IStableConverter public stableConverter;
+
+    event SetStableConverter(address stableConverter);
 
     constructor(
         Config memory config,
@@ -51,6 +56,11 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         crvFraxTokenPoolLp = IERC20Metadata(crvFraxTokenPoolLpAddr);
 
         feeTokenId = ZUNAMI_USDC_TOKEN_ID;
+    }
+
+    function setStableConverter(address stableConverterAddr) external onlyOwner {
+        stableConverter = IStableConverter(stableConverterAddr);
+        emit SetStableConverter(stableConverterAddr);
     }
 
     function checkDepositSuccessful(uint256[3] memory tokenAmounts)
@@ -125,7 +135,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 usdcAmount = fraxUsdcPool.calc_withdraw_one_coin(crvFraxAmount, FRAX_USDC_POOL_USDC_ID_INT);
 
         if(tokenIndex == ZUNAMI_USDC_TOKEN_ID) return usdcAmount;
-        return rewardManager.valuate(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), usdcAmount, address(_config.tokens[tokenIndex]));
+        return stableConverter.valuate(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), address(_config.tokens[tokenIndex]), usdcAmount);
     }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
@@ -219,15 +229,15 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 balance = token.balanceOf(address(this));
         if (balance == 0) return;
 
-        token.safeTransfer(address(address(rewardManager)), balance);
-        rewardManager.handle(address(token), balance, address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]));
+        token.safeTransfer(address(address(stableConverter)), balance);
+        stableConverter.handle(address(token), address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), balance, 0);
     }
 
     function swapUSDCToToken(IERC20Metadata token) internal {
         uint256 balance = _config.tokens[ZUNAMI_USDC_TOKEN_ID].balanceOf(address(this));
         if (balance == 0) return;
 
-        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(address(rewardManager)), balance);
-        rewardManager.handle(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), balance, address(token));
+        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(address(stableConverter)), balance);
+        stableConverter.handle(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), address(token), balance, 0);
     }
 }

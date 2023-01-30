@@ -12,7 +12,7 @@ import "../../../interfaces/IUniswapRouter.sol";
 import './interfaces/IConvexMinter.sol';
 import "./interfaces/IConvexBooster.sol";
 import "./interfaces/IConvexRewards.sol";
-import "../interfaces/IRewardManager.sol";
+import "../../interfaces/IRewardManager.sol";
 
 abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;

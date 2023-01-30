@@ -8,10 +8,11 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../../utils/Constants.sol';
 import "../../../../interfaces/IZunami.sol";
-import "../../interfaces/IRewardManager.sol";
+import "../../../interfaces/IRewardManager.sol";
 import "../../interfaces/ICurvePool2.sol";
 import "../interfaces/IConvexStakingBooster.sol";
 import "../interfaces/IStakingProxyConvex.sol";
+import "../../../interfaces/IStableConverter.sol";
 
 //import "hardhat/console.sol";
 
@@ -33,6 +34,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
 
     IZunami public zunami;
     IRewardManager public rewardManager;
+    IStableConverter public stableConverter;
 
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
@@ -70,6 +72,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
     uint256 public lockingIntervalSec = 594000; // 6.875 * 86400 (~7 day)
 
     event SetRewardManager(address rewardManager);
+    event SetStableConverter(address stableConverter);
 
     /**
      * @dev Throws if called by any account other than the Zunami
@@ -332,6 +335,11 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         emit SetRewardManager(rewardManagerAddr);
     }
 
+    function setStableConverter(address stableConverterAddr) external onlyOwner {
+        stableConverter = IStableConverter(stableConverterAddr);
+        emit SetStableConverter(stableConverterAddr);
+    }
+
     function setFeeTokenId(uint256 feeTokenIdParam) external onlyOwner {
         feeTokenId = feeTokenIdParam;
     }
@@ -462,7 +470,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         uint256 usdcAmount = fraxUsdcPool.calc_withdraw_one_coin(crvFraxAmount, FRAX_USDC_POOL_USDC_ID_INT);
 
         if(tokenIndex == ZUNAMI_USDC_TOKEN_ID) return usdcAmount;
-        return rewardManager.valuate(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), usdcAmount, address(_config.tokens[tokenIndex]));
+        return stableConverter.valuate(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), address(_config.tokens[tokenIndex]), usdcAmount);
     }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
@@ -548,15 +556,15 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         uint256 balance = token.balanceOf(address(this));
         if (balance == 0) return;
 
-        token.safeTransfer(address(address(rewardManager)), balance);
-        rewardManager.handle(address(token), balance, address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]));
+        token.safeTransfer(address(address(stableConverter)), balance);
+        stableConverter.handle(address(token), address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), balance, 0);
     }
 
     function swapUSDCToToken(IERC20Metadata token) internal {
         uint256 balance = _config.tokens[ZUNAMI_USDC_TOKEN_ID].balanceOf(address(this));
         if (balance == 0) return;
 
-        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(address(rewardManager)), balance);
-        rewardManager.handle(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), balance, address(token));
+        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(address(stableConverter)), balance);
+        stableConverter.handle(address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]), address(token), balance, 0);
     }
 }

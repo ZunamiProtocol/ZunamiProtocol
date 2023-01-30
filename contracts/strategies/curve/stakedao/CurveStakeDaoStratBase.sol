@@ -11,7 +11,7 @@ import '../../../interfaces/IUniswapRouter.sol';
 import '../../../interfaces/IZunami.sol';
 
 import "./iterfaces/IStakeDaoVault.sol";
-import "../interfaces/IRewardManager.sol";
+import "../../interfaces/IRewardManager.sol";
 
 //import "hardhat/console.sol";
 

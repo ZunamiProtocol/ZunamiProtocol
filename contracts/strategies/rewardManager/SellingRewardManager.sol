@@ -4,18 +4,15 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../../utils/Constants.sol';
-import "../../../interfaces/IUniswapRouter.sol";
+import '../../utils/Constants.sol';
+import "../../interfaces/IUniswapRouter.sol";
+import "../interfaces/IRewardManager.sol";
 
-//import "hardhat/console.sol";
-
-contract SellingRewardManager {
+contract SellingRewardManager is IRewardManager{
     using SafeERC20 for IERC20Metadata;
 
     IUniswapRouter public router;
     address public middleSwapToken;
-
-    event SoldReward(address reward, uint256 amound);
 
     constructor(
         address routerAddr,

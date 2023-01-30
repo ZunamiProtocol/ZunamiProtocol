@@ -49,6 +49,7 @@ describe('Single strategy tests', () => {
     let usdt: Contract;
     let strategies = Array<Contract>();
     let rewardManager: Contract;
+    let stableConverter: Contract;
 
     before(async () => {
         [admin, alice, bob] = await ethers.getSigners();
@@ -111,12 +112,15 @@ describe('Single strategy tests', () => {
         });
 
         const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-
         rewardManager = await RewardManagerFactory.deploy(
             globalConfig.router,
             globalConfig.weth,
         );
         await rewardManager.deployed();
+
+        const StableConverterFactory = await ethers.getContractFactory('StableConverter');
+        stableConverter = await StableConverterFactory.deploy();
+        await stableConverter.deployed();
     });
 
     beforeEach(async () => {
@@ -138,6 +142,9 @@ describe('Single strategy tests', () => {
             strategy.setZunami(zunami.address);
 
             strategy.setRewardManager(rewardManager.address);
+            if( strategyName.includes("Frax")) {
+                strategy.setStableConverter(stableConverter.address);
+            }
 
             strategies.push(strategy);
         }
