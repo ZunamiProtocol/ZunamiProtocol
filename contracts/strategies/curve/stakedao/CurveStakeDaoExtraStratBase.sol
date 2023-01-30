@@ -39,9 +39,16 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
     function totalHoldings() public view virtual override returns (uint256) {
         uint256 extraEarningsFeeToken = 0;
         if (address(extraRewardToken) != address(0)) {
-            uint256 extraTokenEarned = vault.liquidityGauge().claimable_reward(address(this), address(extraRewardToken));
+            uint256 extraTokenEarned = vault.liquidityGauge().claimable_reward(
+                address(this),
+                address(extraRewardToken)
+            );
             uint256 amountIn = extraTokenEarned + extraRewardToken.balanceOf(address(this));
-            extraEarningsFeeToken = rewardManager.valuate(address(extraRewardToken), amountIn, address(_config.tokens[feeTokenId]));
+            extraEarningsFeeToken = rewardManager.valuate(
+                address(extraRewardToken),
+                amountIn,
+                address(_config.tokens[feeTokenId])
+            );
         }
 
         return
@@ -52,7 +59,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
 
-    function sellRewardsExtra() internal override virtual {
+    function sellRewardsExtra() internal virtual override {
         if (address(extraRewardToken) == address(0)) {
             return;
         }
@@ -63,7 +70,11 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
         }
 
         extraRewardToken.transfer(address(address(rewardManager)), extraBalance);
-        rewardManager.handle(address(extraRewardToken), extraBalance, address(_config.tokens[feeTokenId]));
+        rewardManager.handle(
+            address(extraRewardToken),
+            extraBalance,
+            address(_config.tokens[feeTokenId])
+        );
     }
 
     /**

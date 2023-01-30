@@ -11,15 +11,9 @@ contract TokenMigrator is AccessControl {
     IERC20Metadata public immutable tokenFrom;
     IERC20Metadata public immutable tokenTo;
 
-    event Migrated(
-        address _user,
-        uint256 _amount
-    );
+    event Migrated(address _user, uint256 _amount);
 
-    constructor(
-        IERC20Metadata _tokenFrom,
-        IERC20Metadata _tokenTo
-    ) {
+    constructor(IERC20Metadata _tokenFrom, IERC20Metadata _tokenTo) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
         tokenFrom = _tokenFrom;

@@ -10,8 +10,8 @@ import '../../../utils/Constants.sol';
 import '../../../interfaces/IUniswapRouter.sol';
 import '../../../interfaces/IZunami.sol';
 
-import "./iterfaces/IStakeDaoVault.sol";
-import "../../interfaces/IRewardManager.sol";
+import './iterfaces/IStakeDaoVault.sol';
+import '../../interfaces/IRewardManager.sol';
 
 //import "hardhat/console.sol";
 
@@ -173,7 +173,6 @@ abstract contract CurveStakeDaoStratBase is Ownable {
                 ((i == feeTokenId) ? managementFees : 0);
         }
 
-
         vault.withdraw(removingCrvLps);
 
         removeCrvLps(removingCrvLps, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
@@ -218,9 +217,9 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function sellRewards() internal virtual {
         uint256[] memory rewardBalances = new uint256[](_config.rewards.length);
         bool allRewardsEmpty = true;
-        for(uint256 i = 0; i < _config.rewards.length; i++) {
+        for (uint256 i = 0; i < _config.rewards.length; i++) {
             rewardBalances[i] = _config.rewards[i].balanceOf(address(this));
-            if(rewardBalances[i] > 0) {
+            if (rewardBalances[i] > 0) {
                 allRewardsEmpty = false;
             }
         }
@@ -230,10 +229,14 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
         uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
-        for(uint256 i = 0; i < _config.rewards.length; i++) {
-            if(rewardBalances[i] == 0) continue;
+        for (uint256 i = 0; i < _config.rewards.length; i++) {
+            if (rewardBalances[i] == 0) continue;
             _config.rewards[i].transfer(address(address(rewardManager)), rewardBalances[i]);
-            rewardManager.handle(address(_config.rewards[i]), rewardBalances[i], address(_config.tokens[feeTokenId]));
+            rewardManager.handle(
+                address(_config.rewards[i]),
+                rewardBalances[i],
+                address(_config.tokens[feeTokenId])
+            );
         }
 
         sellRewardsExtra();
@@ -265,14 +268,21 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual returns (uint256) {
-        uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) * getCurvePoolPrice()) /
-            CURVE_PRICE_DENOMINATOR;
+        uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) *
+            getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
 
         uint256 rewardEarningInFeeToken;
-        for(uint256 i = 0; i < _config.rewards.length; i++) {
-            uint256 rewardTokenEarned = vault.liquidityGauge().claimable_reward(address(this), address(_config.rewards[i]));
+        for (uint256 i = 0; i < _config.rewards.length; i++) {
+            uint256 rewardTokenEarned = vault.liquidityGauge().claimable_reward(
+                address(this),
+                address(_config.rewards[i])
+            );
             uint256 amountIn = rewardTokenEarned + _config.rewards[i].balanceOf(address(this));
-            rewardEarningInFeeToken += rewardManager.valuate(address(_config.rewards[i]), amountIn, address(_config.tokens[feeTokenId]));
+            rewardEarningInFeeToken += rewardManager.valuate(
+                address(_config.rewards[i]),
+                amountIn,
+                address(_config.tokens[feeTokenId])
+            );
         }
 
         uint256 tokensHoldings = 0;
@@ -283,7 +293,8 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         return
             tokensHoldings +
             crvLpHoldings +
-            rewardEarningInFeeToken * decimalsMultipliers[feeTokenId];
+            rewardEarningInFeeToken *
+            decimalsMultipliers[feeTokenId];
     }
 
     /**
@@ -292,7 +303,9 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      */
     function claimManagementFees() public returns (uint256) {
         uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this));
-        uint256 transferBalance = managementFees > feeTokenBalance ? feeTokenBalance : managementFees;
+        uint256 transferBalance = managementFees > feeTokenBalance
+            ? feeTokenBalance
+            : managementFees;
         if (transferBalance > 0) {
             _config.tokens[feeTokenId].safeTransfer(feeDistributor, transferBalance);
         }

@@ -7,12 +7,12 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../utils/Constants.sol';
-import "../../../interfaces/IZunami.sol";
-import "../../../interfaces/IUniswapRouter.sol";
+import '../../../interfaces/IZunami.sol';
+import '../../../interfaces/IUniswapRouter.sol';
 import './interfaces/IConvexMinter.sol';
-import "./interfaces/IConvexBooster.sol";
-import "./interfaces/IConvexRewards.sol";
-import "../../interfaces/IRewardManager.sol";
+import './interfaces/IConvexBooster.sol';
+import './interfaces/IConvexRewards.sol';
+import '../../interfaces/IRewardManager.sol';
 
 abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -228,14 +228,22 @@ abstract contract CurveConvexStratBase is Ownable {
 
         uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
-        if(cvxBalance > 0) {
+        if (cvxBalance > 0) {
             _config.cvx.transfer(address(address(rewardManager)), cvxBalance);
-            rewardManager.handle(address(_config.cvx), cvxBalance, address(_config.tokens[feeTokenId]));
+            rewardManager.handle(
+                address(_config.cvx),
+                cvxBalance,
+                address(_config.tokens[feeTokenId])
+            );
         }
 
-        if(crvBalance > 0) {
+        if (crvBalance > 0) {
             _config.crv.transfer(address(address(rewardManager)), crvBalance);
-            rewardManager.handle(address(_config.crv), crvBalance, address(_config.tokens[feeTokenId]));
+            rewardManager.handle(
+                address(_config.crv),
+                crvBalance,
+                address(_config.tokens[feeTokenId])
+            );
         }
 
         sellRewardsExtra();
@@ -245,8 +253,7 @@ abstract contract CurveConvexStratBase is Ownable {
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
 
-    function sellRewardsExtra() internal virtual {
-    }
+    function sellRewardsExtra() internal virtual {}
 
     function autoCompound() public onlyZunami {
         cvxRewards.getReward();
@@ -273,17 +280,26 @@ abstract contract CurveConvexStratBase is Ownable {
 
         uint256 crvEarned = cvxRewards.earned(address(this));
         uint256 amountIn = crvEarned + _config.crv.balanceOf(address(this));
-        uint256 crvEarningsInFeeToken = rewardManager.valuate(address(_config.crv), amountIn, address(_config.tokens[feeTokenId]));
+        uint256 crvEarningsInFeeToken = rewardManager.valuate(
+            address(_config.crv),
+            amountIn,
+            address(_config.tokens[feeTokenId])
+        );
 
         uint256 cvxTotalCliffs = _config.cvx.totalCliffs();
         uint256 cvxRemainCliffs = cvxTotalCliffs -
             _config.cvx.totalSupply() /
             _config.cvx.reductionPerCliff();
 
-        amountIn = (crvEarned * cvxRemainCliffs) /
+        amountIn =
+            (crvEarned * cvxRemainCliffs) /
             cvxTotalCliffs +
             _config.cvx.balanceOf(address(this));
-        uint256 cvxEarningsInFeeToken = rewardManager.valuate(address(_config.cvx), amountIn, address(_config.tokens[feeTokenId]));
+        uint256 cvxEarningsInFeeToken = rewardManager.valuate(
+            address(_config.cvx),
+            amountIn,
+            address(_config.tokens[feeTokenId])
+        );
 
         uint256 tokensHoldings = 0;
         for (uint256 i = 0; i < 3; i++) {
@@ -303,7 +319,9 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function claimManagementFees() public returns (uint256) {
         uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this));
-        uint256 transferBalance = managementFees > feeTokenBalance ? feeTokenBalance : managementFees;
+        uint256 transferBalance = managementFees > feeTokenBalance
+            ? feeTokenBalance
+            : managementFees;
         if (transferBalance > 0) {
             _config.tokens[feeTokenId].safeTransfer(feeDistributor, transferBalance);
         }

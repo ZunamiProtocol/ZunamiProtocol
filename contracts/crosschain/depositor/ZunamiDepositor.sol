@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import "../interfaces/IZunamiGateway.sol";
-import "../../interfaces/IUniswapRouter.sol";
+import '../interfaces/IZunamiGateway.sol';
+import '../../interfaces/IUniswapRouter.sol';
 import '../../utils/Constants.sol';
 
 contract ZunamiDepositor {
@@ -39,20 +39,12 @@ contract ZunamiDepositor {
         inTokenToOutTokenPath = [_tokenIn, _tokenOut];
     }
 
-    function getAmountOut(uint256 amountIn)
-    external
-    view
-    returns (uint256) {
+    function getAmountOut(uint256 amountIn) external view returns (uint256) {
         return router.getAmountsOut(amountIn, inTokenToOutTokenPath)[1];
     }
 
-    function delegateDepositWithConversion(
-        uint256 amountIn,
-        uint256 amountOutMin
-    )
-    external
-    {
-        require(amountIn > 0, "Zero inTokenAmount");
+    function delegateDepositWithConversion(uint256 amountIn, uint256 amountOutMin) external {
+        require(amountIn > 0, 'Zero inTokenAmount');
 
         tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
         tokenIn.safeIncreaseAllowance(address(router), amountIn);

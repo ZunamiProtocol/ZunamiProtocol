@@ -16,7 +16,12 @@ function getMinAmount(): BigNumber[] {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
+    const strategyNames = [
+        'MIMCurveStakeDao',
+        'LUSDCurveConvex',
+        'LUSDFraxCurveConvex',
+        'ALUSDFraxCurveConvex',
+    ];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -26,13 +31,13 @@ describe('Single strategy tests', () => {
         tokens: globalConfig.tokens,
         crv: globalConfig.crv,
         cvx: globalConfig.cvx,
-        booster: globalConfig.booster
+        booster: globalConfig.booster,
     };
 
     const configStakingConvex = {
         tokens: globalConfig.tokens,
         rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
-        booster: globalConfig.stakingBooster
+        booster: globalConfig.stakingBooster,
     };
 
     const configStakeDao = {
@@ -112,10 +117,7 @@ describe('Single strategy tests', () => {
         });
 
         const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(
-            globalConfig.router,
-            globalConfig.weth,
-        );
+        rewardManager = await RewardManagerFactory.deploy(globalConfig.router, globalConfig.weth);
         await rewardManager.deployed();
 
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
@@ -135,14 +137,18 @@ describe('Single strategy tests', () => {
         // Init all strategies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
-            const config = strategyName.includes("StakeDao") ? configStakeDao : (strategyName.includes("Staking") ? configStakingConvex : configConvex);
+            const config = strategyName.includes('StakeDao')
+                ? configStakeDao
+                : strategyName.includes('Staking')
+                ? configStakingConvex
+                : configConvex;
             const strategy = await factory.deploy(config);
             await strategy.deployed();
 
             strategy.setZunami(zunami.address);
 
             strategy.setRewardManager(rewardManager.address);
-            if( strategyName.includes("Frax")) {
+            if (strategyName.includes('Frax')) {
                 strategy.setStableConverter(stableConverter.address);
             }
 
@@ -314,8 +320,6 @@ describe('Single strategy tests', () => {
 
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
-
-
 
                 await expect(
                     zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0)

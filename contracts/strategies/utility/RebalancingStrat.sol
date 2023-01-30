@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
@@ -12,7 +12,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../../utils/Constants.sol';
 
 import '../../interfaces/IZunami.sol';
-import "../../interfaces/IStrategy.sol";
+import '../../interfaces/IStrategy.sol';
 
 contract RebalancingStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -71,7 +71,7 @@ contract RebalancingStrat is Ownable {
     function deposit(uint256[3] memory amounts) external returns (uint256) {
         uint256 depositedAmount;
         for (uint256 i = 0; i < 3; i++) {
-            if ( amounts[i] > 0) {
+            if (amounts[i] > 0) {
                 depositedAmount += amounts[i] * decimalsMultipliers[i];
             }
         }
@@ -86,7 +86,6 @@ contract RebalancingStrat is Ownable {
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
-
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= PRICE_DENOMINATOR, 'Wrong lp Ratio');
         require(withdrawalType == WithdrawalType.Base, 'Only base');
 
@@ -98,7 +97,7 @@ contract RebalancingStrat is Ownable {
     function transferPortionTokensTo(address withdrawer, uint256 userRatioOfCrvLps) internal {
         uint256 transferAmountOut;
         for (uint256 i = 0; i < 3; i++) {
-            transferAmountOut = tokens[i].balanceOf(address(this)) * userRatioOfCrvLps / 1e18;
+            transferAmountOut = (tokens[i].balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
             if (transferAmountOut > 0) {
                 tokens[i].safeTransfer(withdrawer, transferAmountOut);
             }
@@ -112,9 +111,7 @@ contract RebalancingStrat is Ownable {
         return 10**(18 - decimals);
     }
 
-
-    function autoCompound() public onlyZunami {
-    }
+    function autoCompound() public onlyZunami {}
 
     /**
      * @dev Returns total USD holdings in strategy.
@@ -155,9 +152,9 @@ contract RebalancingStrat is Ownable {
         uint256 _amount,
         address _to
     ) public onlyOwner {
-        require(_token != address(0), "TOKEN");
-        require(_amount > 0, "AMOUNT");
-        require(_to != address(0), "TO");
+        require(_token != address(0), 'TOKEN');
+        require(_amount > 0, 'AMOUNT');
+        require(_to != address(0), 'TO');
 
         IERC20Metadata(_token).safeTransfer(_to, _amount);
     }

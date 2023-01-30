@@ -1,6 +1,5 @@
 const config = require('../../../config.json');
 
-
 async function main() {
     const usdtPoolId = 2;
 
@@ -11,13 +10,11 @@ async function main() {
     const ZunamiGateway = await ethers.getContractFactory('ZunamiGateway');
     const gatewayParams = [
         tokens[usdtPoolId],
-        config["crosschain"][networkId.toString()]["usdtPoolId"],
-        config["crosschain"][networkId.toString()]["sgRouter"],
-        config["crosschain"][networkId.toString()]["lzRouter"],
+        config['crosschain'][networkId.toString()]['usdtPoolId'],
+        config['crosschain'][networkId.toString()]['sgRouter'],
+        config['crosschain'][networkId.toString()]['lzRouter'],
     ];
-    const gateway = await ZunamiGateway.deploy(
-      ...gatewayParams
-    );
+    const gateway = await ZunamiGateway.deploy(...gatewayParams);
     await gateway.deployed();
     console.log('ZunamiGateway deployed to:', gateway.address, gatewayParams);
 }

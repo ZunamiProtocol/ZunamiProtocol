@@ -1,5 +1,5 @@
 const globalConfig = require('../config.json');
-const {ethers} = require("hardhat");
+const { ethers } = require('hardhat');
 
 const configConvex = {
     tokens: globalConfig.tokens,
@@ -11,7 +11,7 @@ const configConvex = {
 const configStakingConvex = {
     tokens: globalConfig.tokens,
     rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
-    booster: globalConfig.stakingBooster
+    booster: globalConfig.stakingBooster,
 };
 
 const configStakeDao = {
@@ -27,10 +27,10 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, stableConverte
     // await zunami.addPool(strategy.address);
     // console.log(`Added ${name} pool to Zunami`);
     await strategy.setZunami(zunami.address);
-    if(rewardManager) {
+    if (rewardManager) {
         await strategy.setRewardManager(rewardManager);
     }
-    if(stableConverter) {
+    if (stableConverter) {
         await strategy.setStableConverter(stableConverter);
     }
     console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
@@ -63,7 +63,7 @@ async function main() {
     // await rewardManager.deployed();
 
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = "0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE";
+    const rewardManagerAddress = '0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE';
 
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
@@ -84,7 +84,13 @@ async function main() {
     // await deployAndLinkStrategy('DolaCurveConvex', zunami, undefined, undefined, configConvex);
     // await deployAndLinkStrategy('LUSDFraxCurveConvex', zunami, undefined, undefined, configConvex);
     // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, rewardManagerAddress, undefined, configStakeDao);
-    await deployAndLinkStrategy('XAIStakingFraxCurveConvex', zunami, rewardManagerAddress, stableConverterAddress, configStakingConvex);
+    await deployAndLinkStrategy(
+        'XAIStakingFraxCurveConvex',
+        zunami,
+        rewardManagerAddress,
+        stableConverterAddress,
+        configStakingConvex
+    );
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

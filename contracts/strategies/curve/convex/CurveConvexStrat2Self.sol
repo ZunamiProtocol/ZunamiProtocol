@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import './CurveConvexStrat2.sol';
 
 contract CurveConvexStrat2Self is CurveConvexStrat2 {
-
     constructor(
         Config memory config,
         address poolAddr,
@@ -25,9 +24,9 @@ contract CurveConvexStrat2Self is CurveConvexStrat2 {
             extraRewardsAddr,
             extraTokenAddr
         )
-    { }
+    {}
 
-    function sellRewardsExtra() internal override virtual {
+    function sellRewardsExtra() internal virtual override {
         super.sellRewardsExtra();
         sellToken();
     }

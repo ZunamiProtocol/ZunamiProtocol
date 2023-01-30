@@ -16,15 +16,17 @@ function getMinAmount(): BigNumber[] {
 }
 
 async function toggleUnlockStakes() {
-    const stakingOwner = "0xB1748C79709f4Ba2Dd82834B8c82D4a505003f27";
-    const stakingAddress = "0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6";
-    const stakingABI = [{
-        "inputs": [],
-        "name": "unlockStakes",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }];
+    const stakingOwner = '0xB1748C79709f4Ba2Dd82834B8c82D4a505003f27';
+    const stakingAddress = '0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6';
+    const stakingABI = [
+        {
+            inputs: [],
+            name: 'unlockStakes',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function',
+        },
+    ];
     await network.provider.request({
         method: 'hardhat_impersonateAccount',
         params: [stakingOwner],
@@ -33,9 +35,7 @@ async function toggleUnlockStakes() {
 
     const staking = new ethers.Contract(stakingAddress, stakingABI, stakingOwnerSigner);
 
-    await staking
-        .connect(stakingOwnerSigner)
-        .unlockStakes();
+    await staking.connect(stakingOwnerSigner).unlockStakes();
     await network.provider.request({
         method: 'hardhat_stopImpersonatingAccount',
         params: [stakingOwner],
@@ -43,8 +43,8 @@ async function toggleUnlockStakes() {
 }
 
 async function increaseChainTime(time: number) {
-    await network.provider.send("evm_increaseTime", [time]);
-    await network.provider.send("evm_mine");
+    await network.provider.send('evm_increaseTime', [time]);
+    await network.provider.send('evm_mine');
 }
 
 describe('Single strategy tests', () => {
@@ -58,13 +58,13 @@ describe('Single strategy tests', () => {
         tokens: globalConfig.tokens,
         crv: globalConfig.crv,
         cvx: globalConfig.cvx,
-        booster: globalConfig.booster
+        booster: globalConfig.booster,
     };
 
     const configStakingConvex = {
         tokens: globalConfig.tokens,
         rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
-        booster: globalConfig.stakingBooster
+        booster: globalConfig.stakingBooster,
     };
 
     const configStakeDao = {
@@ -144,10 +144,7 @@ describe('Single strategy tests', () => {
         });
 
         const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(
-            globalConfig.router,
-            globalConfig.weth,
-        );
+        rewardManager = await RewardManagerFactory.deploy(globalConfig.router, globalConfig.weth);
         await rewardManager.deployed();
 
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
@@ -167,14 +164,18 @@ describe('Single strategy tests', () => {
         // Init all strategies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
-            const config = strategyName.includes("StakeDao") ? configStakeDao : (strategyName.includes("Staking") ? configStakingConvex : configConvex);
+            const config = strategyName.includes('StakeDao')
+                ? configStakeDao
+                : strategyName.includes('Staking')
+                ? configStakingConvex
+                : configConvex;
             const strategy = await factory.deploy(config);
             await strategy.deployed();
 
             strategy.setZunami(zunami.address);
 
             strategy.setRewardManager(rewardManager.address);
-            if( strategyName.includes("Frax")) {
+            if (strategyName.includes('Frax')) {
                 strategy.setStableConverter(stableConverter.address);
             }
 

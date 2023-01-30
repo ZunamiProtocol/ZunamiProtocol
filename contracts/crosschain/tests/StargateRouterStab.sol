@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interfaces/stargate/IStargateRouter.sol";
-import "../interfaces/stargate/IStargateReceiver.sol";
+import '../interfaces/stargate/IStargateRouter.sol';
+import '../interfaces/stargate/IStargateReceiver.sol';
 
 contract StargateRouterStab {
     function swap(
@@ -19,15 +19,22 @@ contract StargateRouterStab {
 
     function sgReceive(
         address _receiver,
-        uint16 _srcChainId,              // the remote chainId sending the tokens
-        bytes memory _srcAddress,        // the remote Bridge address
+        uint16 _srcChainId, // the remote chainId sending the tokens
+        bytes memory _srcAddress, // the remote Bridge address
         uint256 _nonce,
-        address _token,                  // the token contract on the local chain
-        uint256 amountLD,                // the qty of local _token contract tokens
+        address _token, // the token contract on the local chain
+        uint256 amountLD, // the qty of local _token contract tokens
         bytes memory payload
     ) external {
-        if(payload.length != 0) {
-            IStargateReceiver(_receiver).sgReceive(_srcChainId, _srcAddress, _nonce, _token, amountLD, payload);
+        if (payload.length != 0) {
+            IStargateReceiver(_receiver).sgReceive(
+                _srcChainId,
+                _srcAddress,
+                _nonce,
+                _token,
+                amountLD,
+                payload
+            );
         }
     }
 }

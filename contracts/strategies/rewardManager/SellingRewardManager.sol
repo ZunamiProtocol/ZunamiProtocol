@@ -5,26 +5,27 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../utils/Constants.sol';
-import "../../interfaces/IUniswapRouter.sol";
-import "../interfaces/IRewardManager.sol";
+import '../../interfaces/IUniswapRouter.sol';
+import '../interfaces/IRewardManager.sol';
 
-contract SellingRewardManager is IRewardManager{
+contract SellingRewardManager is IRewardManager {
     using SafeERC20 for IERC20Metadata;
 
     IUniswapRouter public router;
     address public middleSwapToken;
 
-    constructor(
-        address routerAddr,
-        address middleSwapTokenAddr
-    ) {
-        require(routerAddr != address(0), "Zero router");
-        require(middleSwapTokenAddr != address(0), "Zero middle swap token");
+    constructor(address routerAddr, address middleSwapTokenAddr) {
+        require(routerAddr != address(0), 'Zero router');
+        require(middleSwapTokenAddr != address(0), 'Zero middle swap token');
         router = IUniswapRouter(routerAddr);
         middleSwapToken = middleSwapTokenAddr;
     }
 
-    function handle(address reward, uint256 amount, address feeToken) public {
+    function handle(
+        address reward,
+        uint256 amount,
+        address feeToken
+    ) public {
         IERC20Metadata(reward).safeApprove(address(router), amount);
         router.swapExactTokensForTokens(
             amount,
@@ -35,21 +36,29 @@ contract SellingRewardManager is IRewardManager{
         );
     }
 
-    function valuate(address reward, uint256 amount, address feeToken) public view returns(uint256) {
+    function valuate(
+        address reward,
+        uint256 amount,
+        address feeToken
+    ) public view returns (uint256) {
         return priceTokenByExchange(amount, fromAddressArr3([reward, middleSwapToken, feeToken]));
     }
 
     function priceTokenByExchange(uint256 amount, address[] memory exchangePath)
-    internal
-    view
-    returns (uint256)
+        internal
+        view
+        returns (uint256)
     {
         if (amount == 0) return 0;
         uint256[] memory amounts = router.getAmountsOut(amount, exchangePath);
         return amounts[amounts.length - 1];
     }
 
-    function fromAddressArr3(address[3] memory arr) internal pure returns (address[] memory arrInf) {
+    function fromAddressArr3(address[3] memory arr)
+        internal
+        pure
+        returns (address[] memory arrInf)
+    {
         arrInf = new address[](3);
         arrInf[0] = arr[0];
         arrInf[1] = arr[1];

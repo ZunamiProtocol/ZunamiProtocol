@@ -47,7 +47,11 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         if (address(extraRewardToken) != address(0)) {
             uint256 amountIn = extraRewards.earned(address(this)) +
                 extraRewardToken.balanceOf(address(this));
-            extraEarningsFeeToken = rewardManager.valuate(address(extraRewardToken), amountIn, address(_config.tokens[feeTokenId]));
+            extraEarningsFeeToken = rewardManager.valuate(
+                address(extraRewardToken),
+                amountIn,
+                address(_config.tokens[feeTokenId])
+            );
         }
 
         return
@@ -58,7 +62,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
 
-    function sellRewardsExtra() internal override virtual {
+    function sellRewardsExtra() internal virtual override {
         if (address(extraRewardToken) == address(0)) {
             return;
         }
@@ -69,7 +73,11 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         }
 
         extraRewardToken.transfer(address(address(rewardManager)), extraBalance);
-        rewardManager.handle(address(extraRewardToken), extraBalance, address(_config.tokens[feeTokenId]));
+        rewardManager.handle(
+            address(extraRewardToken),
+            extraBalance,
+            address(_config.tokens[feeTokenId])
+        );
     }
 
     /**

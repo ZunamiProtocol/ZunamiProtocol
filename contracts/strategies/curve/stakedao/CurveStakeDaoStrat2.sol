@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../interfaces/ICurvePool.sol';
 import '../interfaces/ICurvePool2.sol';
-import "./CurveStakeDaoExtraStratBase.sol";
+import './CurveStakeDaoExtraStratBase.sol';
 
 contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     using SafeERC20 for IERC20Metadata;
@@ -27,25 +27,17 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         address pool3LPAddr,
         address poolAddr,
         address extraTokenAddr
-    )
-        CurveStakeDaoExtraStratBase(
-            config,
-            vaultAddr,
-            poolLPAddr,
-            tokenAddr,
-            extraTokenAddr
-        )
-    {
+    ) CurveStakeDaoExtraStratBase(config, vaultAddr, poolLPAddr, tokenAddr, extraTokenAddr) {
         pool3 = ICurvePool(pool3Addr);
         pool3LP = IERC20Metadata(pool3LPAddr);
         pool = ICurvePool2(poolAddr);
     }
 
     function checkDepositSuccessful(uint256[3] memory amounts)
-    internal
-    view
-    override
-    returns (bool)
+        internal
+        view
+        override
+        returns (bool)
     {
         uint256 amountsTotal;
         for (uint256 i = 0; i < 3; i++) {
@@ -78,21 +70,22 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
-    external
-    view
-    override
-    returns (uint256 tokenAmount)
+        external
+        view
+        override
+        returns (uint256 tokenAmount)
     {
-        uint256 removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        uint256 removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) *
+            userRatioOfCrvLps) / 1e18;
         uint256 pool3Lps = pool.calc_withdraw_one_coin(removingCrvLps, CURVE_3POOL_LP_TOKEN_ID_INT);
         return pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
     }
 
     function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
-    external
-    view
-    override
-    returns (uint256 sharesAmount)
+        external
+        view
+        override
+        returns (uint256 sharesAmount)
     {
         uint256[2] memory tokenAmounts2;
         tokenAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(tokenAmounts, isDeposit);
@@ -105,19 +98,21 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     )
-    internal
-    view
-    override
-    returns (
-        bool success,
-        uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic
-    )
+        internal
+        view
+        override
+        returns (
+            bool success,
+            uint256 removingCrvLps,
+            uint256[] memory tokenAmountsDynamic
+        )
     {
         uint256[2] memory minAmounts2;
         minAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(tokenAmounts, false);
 
-        removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        removingCrvLps =
+            (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) /
+            1e18;
 
         success = removingCrvLps >= pool.calc_token_amount(minAmounts2, false);
 
@@ -127,8 +122,8 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
                 CURVE_3POOL_LP_TOKEN_ID_INT
             );
             success =
-            tokenAmounts[tokenIndex] <=
-            pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
+                tokenAmounts[tokenIndex] <=
+                pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
         }
 
         tokenAmountsDynamic = new uint256[](2);

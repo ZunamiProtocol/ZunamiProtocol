@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../utils/Constants.sol';
-import "../../interfaces/ICurvePool.sol";
-import "../interfaces/IStableConverter.sol";
+import '../../interfaces/ICurvePool.sol';
+import '../interfaces/IStableConverter.sol';
 
 //import "hardhat/console.sol";
 
@@ -35,29 +35,49 @@ contract StableConverter is IStableConverter {
         curve3PoolStableDecimals[Constants.USDT_ADDRESS] = 6;
     }
 
-    function handle(address from, address to, uint256 amount, uint256 slippage) public {
+    function handle(
+        address from,
+        address to,
+        uint256 amount,
+        uint256 slippage
+    ) public {
         IERC20Metadata(from).safeApprove(address(curve3Pool), amount);
 
         curve3Pool.exchange(
             curve3PoolStableIndex[from],
             curve3PoolStableIndex[to],
             amount,
-            applySlippage(amount, slippage, curve3PoolStableDecimals[to] - curve3PoolStableDecimals[from])
+            applySlippage(
+                amount,
+                slippage,
+                curve3PoolStableDecimals[to] - curve3PoolStableDecimals[from]
+            )
         );
 
-        IERC20Metadata(to).safeTransfer(address(msg.sender), IERC20Metadata(to).balanceOf(address(this)));
+        IERC20Metadata(to).safeTransfer(
+            address(msg.sender),
+            IERC20Metadata(to).balanceOf(address(this))
+        );
     }
 
-    function valuate(address from, address to, uint256 amount) public view returns(uint256) {
+    function valuate(
+        address from,
+        address to,
+        uint256 amount
+    ) public view returns (uint256) {
         return curve3Pool.get_dy(curve3PoolStableIndex[from], curve3PoolStableIndex[to], amount);
     }
 
-    function applySlippage(uint256 amount, uint256 slippage, int8 decimalsDiff) internal view returns(uint256) {
-        require(slippage <= SLIPPAGE_DENOMINATOR, "Wrong slippage");
-        if(slippage == 0) slippage = defaultSlippage;
-        uint256 value = amount * (SLIPPAGE_DENOMINATOR - slippage) / SLIPPAGE_DENOMINATOR;
-        if(decimalsDiff == 0) return value;
-        if(decimalsDiff < 0) return value / (10 ** uint8(decimalsDiff * (-1)));
-        return value * (10 ** uint8(decimalsDiff));
+    function applySlippage(
+        uint256 amount,
+        uint256 slippage,
+        int8 decimalsDiff
+    ) internal view returns (uint256) {
+        require(slippage <= SLIPPAGE_DENOMINATOR, 'Wrong slippage');
+        if (slippage == 0) slippage = defaultSlippage;
+        uint256 value = (amount * (SLIPPAGE_DENOMINATOR - slippage)) / SLIPPAGE_DENOMINATOR;
+        if (decimalsDiff == 0) return value;
+        if (decimalsDiff < 0) return value / (10**uint8(decimalsDiff * (-1)));
+        return value * (10**uint8(decimalsDiff));
     }
 }

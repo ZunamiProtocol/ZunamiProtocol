@@ -155,7 +155,8 @@ library Constants {
     address internal constant CVX_FRAX_LUSD_REWARDS_ADDRESS =
         0x053e1dad223A206e6BCa24C77786bb69a10e427d;
     address internal constant CRV_FRAX_ALUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
-    address internal constant CRV_FRAX_ALUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant CRV_FRAX_ALUSD_LP_ADDRESS =
+        0xB30dA2376F63De30b42dC055C93fa474F31330A5;
     address internal constant CVX_FRAX_ALUSD_REWARDS_ADDRESS =
         0x26598e3E511ADFadefD70ab2C3475Ff741741104;
     address internal constant FRAX_USDC_ADDRESS = 0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2;
@@ -164,5 +165,5 @@ library Constants {
     address internal constant SDT_MIM_SPELL_ADDRESS = 0x090185f2135308BaD17527004364eBcC2D37e5F6;
 
     address internal constant CRV_FRAX_XAI_ADDRESS = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
-    address internal constant CRV_FRAX_XAI_LP_ADDRESS  = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
+    address internal constant CRV_FRAX_XAI_LP_ADDRESS = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
 }
