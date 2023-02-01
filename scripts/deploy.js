@@ -24,14 +24,18 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, stableConverte
     const strategy = await factory.deploy(config);
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
+
     // await zunami.addPool(strategy.address);
     // console.log(`Added ${name} pool to Zunami`);
+
     await strategy.setZunami(zunami.address);
     if (rewardManager) {
         await strategy.setRewardManager(rewardManager);
+        console.log(`Set reward manager ${rewardManager}`);
     }
     if (stableConverter) {
         await strategy.setStableConverter(stableConverter);
+        console.log(`Set stable convertor ${rewardManager}`);
     }
     console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
 }
@@ -67,11 +71,12 @@ async function main() {
 
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
-    const StableConverterFactory = await ethers.getContractFactory('StableConverter');
-    const stableConverter = await StableConverterFactory.deploy();
-    await stableConverter.deployed();
+    // const StableConverterFactory = await ethers.getContractFactory('StableConverter');
+    // const stableConverter = await StableConverterFactory.deploy();
+    // await stableConverter.deployed();
+    // const stableConverterAddress = stableConverter.address;
 
-    const stableConverterAddress = stableConverter.address;
+    const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
     console.log('Stable converter deployed to:', stableConverterAddress);
 
     // await deployAndLinkStrategy('RebalancingStrat', zunami, undefined, undefined, globalConfig.tokens);

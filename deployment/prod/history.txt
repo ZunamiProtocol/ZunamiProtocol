@@ -63,3 +63,6 @@ SellingRewardManager deployed to: 0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE
 13
 XAIStakingFraxCurveConvex strategy deployed to: 0x4d258A3Ba2074499c0D9340Ad2Cff0cFD5E8212A
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in XAIStakingFraxCurveConvex strategy
+
+Stable converter deployed to: 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+

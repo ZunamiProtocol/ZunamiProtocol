@@ -203,8 +203,8 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         return true;
     }
 
-    function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
-        uint8 decimals = token.decimals();
+    function calcTokenDecimalsMultiplier(IERC20Metadata _token) internal view returns (uint256) {
+        uint8 decimals = _token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
         return 10**(18 - decimals);
@@ -574,20 +574,20 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         removeCrvLpsInternal(crvFraxTokenPoolLp.balanceOf(address(this)), 0);
     }
 
-    function swapTokenToUSDC(IERC20Metadata token) internal {
-        uint256 balance = token.balanceOf(address(this));
+    function swapTokenToUSDC(IERC20Metadata _token) internal {
+        uint256 balance = _token.balanceOf(address(this));
         if (balance == 0) return;
 
-        token.safeTransfer(address(address(stableConverter)), balance);
+        _token.safeTransfer(address(address(stableConverter)), balance);
         stableConverter.handle(
-            address(token),
+            address(_token),
             address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]),
             balance,
             0
         );
     }
 
-    function swapUSDCToToken(IERC20Metadata token) internal {
+    function swapUSDCToToken(IERC20Metadata _token) internal {
         uint256 balance = _config.tokens[ZUNAMI_USDC_TOKEN_ID].balanceOf(address(this));
         if (balance == 0) return;
 
@@ -597,7 +597,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         );
         stableConverter.handle(
             address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]),
-            address(token),
+            address(_token),
             balance,
             0
         );
