@@ -35,7 +35,7 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, stableConverte
     }
     if (stableConverter) {
         await strategy.setStableConverter(stableConverter);
-        console.log(`Set stable convertor ${rewardManager}`);
+        console.log(`Set stable convertor ${stableConverter}`);
     }
     console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
 }

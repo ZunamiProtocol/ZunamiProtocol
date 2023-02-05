@@ -385,6 +385,10 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
     function withdrawAll() external virtual onlyZunami {
         releaseCurveLp();
 
+        try stakingVault.getReward(true) {} catch {
+            stakingVault.getReward(false);
+        }
+
         sellRewards();
 
         withdrawAllSpecific();
