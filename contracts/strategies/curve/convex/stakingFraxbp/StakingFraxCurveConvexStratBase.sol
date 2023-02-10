@@ -244,6 +244,8 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
     }
 
     function autoCompound() public onlyZunami {
+        if (address(stakingVault) == address(0)) return;
+
         try stakingVault.getReward(true) {} catch {
             stakingVault.getReward(false);
         }
