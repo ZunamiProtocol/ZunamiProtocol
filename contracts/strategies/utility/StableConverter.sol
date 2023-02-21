@@ -41,6 +41,8 @@ contract StableConverter is IStableConverter {
         uint256 amount,
         uint256 slippage
     ) public {
+        if (amount == 0) return;
+
         IERC20Metadata(from).safeApprove(address(curve3Pool), amount);
 
         curve3Pool.exchange(
@@ -65,6 +67,7 @@ contract StableConverter is IStableConverter {
         address to,
         uint256 amount
     ) public view returns (uint256) {
+        if (amount == 0) return 0;
         return curve3Pool.get_dy(curve3PoolStableIndex[from], curve3PoolStableIndex[to], amount);
     }
 

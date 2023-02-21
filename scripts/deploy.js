@@ -59,18 +59,6 @@ async function main() {
     await zunami.deployed();
     console.log('Zunami deployed to:', zunami.address);
 
-    // const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-    // const rewardManager = await RewardManagerFactory.deploy(
-    //     globalConfig.router,
-    //     globalConfig.weth,
-    // );
-    // await rewardManager.deployed();
-
-    // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE';
-
-    console.log('Reward manager deployed to:', rewardManagerAddress);
-
     // const StableConverterFactory = await ethers.getContractFactory('StableConverter');
     // const stableConverter = await StableConverterFactory.deploy();
     // await stableConverter.deployed();
@@ -78,6 +66,15 @@ async function main() {
 
     const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
     console.log('Stable converter deployed to:', stableConverterAddress);
+
+    const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+    const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress);
+    await rewardManager.deployed();
+
+    const rewardManagerAddress = rewardManager.address;
+    // const rewardManagerAddress = '0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE';
+
+    console.log('Reward manager deployed to:', rewardManagerAddress);
 
     // await deployAndLinkStrategy('RebalancingStrat', zunami, undefined, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('MIMCurveConvex', zunami, undefined, undefined, configConvex);
@@ -88,14 +85,14 @@ async function main() {
     // await deployAndLinkStrategy('USDDCurveConvex', zunami, undefined, undefined, configConvex);
     // await deployAndLinkStrategy('DolaCurveConvex', zunami, undefined, undefined, configConvex);
     // await deployAndLinkStrategy('LUSDFraxCurveConvex', zunami, undefined, undefined, configConvex);
-    // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, rewardManagerAddress, undefined, configStakeDao);
-    await deployAndLinkStrategy(
-        'XAIStakingFraxCurveConvex',
-        zunami,
-        rewardManagerAddress,
-        stableConverterAddress,
-        configStakingConvex
-    );
+    // await deployAndLinkStrategy('MIMCurveStakeDao', zunami, rewardManagerAddress, stableConverterAddress, configStakeDao);
+    // await deployAndLinkStrategy(
+    //     'XAIStakingFraxCurveConvex',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     stableConverterAddress,
+    //     configStakingConvex
+    // );
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

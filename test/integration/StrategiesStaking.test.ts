@@ -143,13 +143,13 @@ describe('Single strategy tests', () => {
             params: [addrs.holders.usdtHolder],
         });
 
-        const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(globalConfig.router, globalConfig.weth);
-        await rewardManager.deployed();
-
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
         stableConverter = await StableConverterFactory.deploy();
         await stableConverter.deployed();
+
+        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+        rewardManager = await RewardManagerFactory.deploy(stableConverter.address);
+        await rewardManager.deployed();
     });
 
     beforeEach(async () => {

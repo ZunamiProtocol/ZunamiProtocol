@@ -8,7 +8,7 @@ import * as addrs from '../address.json';
 import * as globalConfig from '../../config.json';
 
 function getMinAmount(): BigNumber[] {
-    const amount = '100';
+    const amount = '1000';
     const dai = ethers.utils.parseUnits(amount, 'ether');
     const usdc = ethers.utils.parseUnits(amount, 'mwei');
     const usdt = ethers.utils.parseUnits(amount, 'mwei');
@@ -116,13 +116,13 @@ describe('Single strategy tests', () => {
             params: [addrs.holders.usdtHolder],
         });
 
-        const RewardManagerFactory = await ethers.getContractFactory('SellingRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(globalConfig.router, globalConfig.weth);
-        await rewardManager.deployed();
-
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
         stableConverter = await StableConverterFactory.deploy();
         await stableConverter.deployed();
+
+        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+        rewardManager = await RewardManagerFactory.deploy(stableConverter.address);
+        await rewardManager.deployed();
     });
 
     beforeEach(async () => {
@@ -160,9 +160,9 @@ describe('Single strategy tests', () => {
             await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
             await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
 
-            await dai.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'ether'));
-            await usdc.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'mwei'));
-            await usdt.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'mwei'));
+            await dai.transfer(user.getAddress(), ethers.utils.parseUnits('10000', 'ether'));
+            await usdc.transfer(user.getAddress(), ethers.utils.parseUnits('10000', 'mwei'));
+            await usdt.transfer(user.getAddress(), ethers.utils.parseUnits('10000', 'mwei'));
         }
     });
 
@@ -345,7 +345,7 @@ describe('Single strategy tests', () => {
             );
         }
 
-        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 1]);
+        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 7]);
         await zunami.autoCompoundAll();
 
         let token;

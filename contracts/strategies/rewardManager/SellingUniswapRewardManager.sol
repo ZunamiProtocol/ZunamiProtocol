@@ -8,7 +8,7 @@ import '../../utils/Constants.sol';
 import '../../interfaces/IUniswapRouter.sol';
 import '../interfaces/IRewardManager.sol';
 
-contract SellingRewardManager is IRewardManager {
+contract SellingUniswapRewardManager is IRewardManager {
     using SafeERC20 for IERC20Metadata;
 
     IUniswapRouter public router;
@@ -26,6 +26,8 @@ contract SellingRewardManager is IRewardManager {
         uint256 amount,
         address feeToken
     ) public {
+        if (amount == 0) return;
+
         IERC20Metadata(reward).safeApprove(address(router), amount);
         router.swapExactTokensForTokens(
             amount,
@@ -41,6 +43,8 @@ contract SellingRewardManager is IRewardManager {
         uint256 amount,
         address feeToken
     ) public view returns (uint256) {
+        if (amount == 0) return 0;
+
         return priceTokenByExchange(amount, fromAddressArr3([reward, middleSwapToken, feeToken]));
     }
 
