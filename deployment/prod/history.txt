@@ -77,3 +77,6 @@ XAIStakingFraxCurveConvex strategy deployed to: 0x12aDa2ba6fE3D0E7c03a2C6B2488b4
 Set reward manager 0x8cC045ea0cb956a01E802f8e4d09bb8B47e696DE
 Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in XAIStakingFraxCurveConvex strategy
+
+Reward manager Curve deployed to: 0x669Ac457A34C01122Ce65dEed0A04D728749c199
+
