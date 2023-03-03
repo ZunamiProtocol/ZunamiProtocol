@@ -67,12 +67,15 @@ async function main() {
     const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
     console.log('Stable converter deployed to:', stableConverterAddress);
 
-    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
-    // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress, {nonce: 628});
-    // await rewardManager.deployed();
-    //
-    // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0x669Ac457A34C01122Ce65dEed0A04D728749c199';
+    const feeCollector = '0xb056B9A45f09b006eC7a69770A65339586231a34';
+    const uzdAddress = '';
+
+    const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+    const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress, uzdAddress, feeCollector);
+    await rewardManager.deployed();
+
+    const rewardManagerAddress = rewardManager.address;
+    // const rewardManagerAddress = '0x669Ac457A34C01122Ce65dEed0A04D728749c199';
 
     console.log('Reward manager deployed to:', rewardManagerAddress);
 

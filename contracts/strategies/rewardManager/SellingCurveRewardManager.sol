@@ -9,6 +9,7 @@ import '../interfaces/IRewardManager.sol';
 import '../interfaces/IStableConverter.sol';
 import '../interfaces/ICurveWethPool.sol';
 import '../interfaces/AggregatorV2V3Interface.sol';
+import "../../interfaces/IElasticRigidVault.sol";
 
 //import "hardhat/console.sol";
 
@@ -33,8 +34,21 @@ contract SellingCurveRewardManager is IRewardManager {
 
     IStableConverter public stableConverter;
 
-    constructor(address stableConverterAddr) {
+    IERC20Metadata public zlp;
+    IElasticRigidVault public uzd;
+    address feeCollector;
+
+    constructor(address stableConverterAddr, address uzdAddr, address feeCollectorAddr) {
+        zlp = IERC20Metadata(0x2ffCC661011beC72e1A9524E12060983E74D14ce);
+
+        require(stableConverterAddr != address(0), "StableConverter");
         stableConverter = IStableConverter(stableConverterAddr);
+
+        require(uzdAddr != address(0), "Uzd");
+        uzd = IElasticRigidVault(uzdAddr);
+
+        require(feeCollectorAddr != address(0), "FeeCollector");
+        feeCollector = feeCollectorAddr;
 
         tricrypto2 = ICurveWethPool(Constants.CRV_TRICRYPTO2_ADDRESS);
 
@@ -63,6 +77,8 @@ contract SellingCurveRewardManager is IRewardManager {
         address feeToken
     ) public {
         if (amount == 0) return;
+
+        amount = extractRigidPart(reward, amount);
 
         ICurveWethPool rewardEthPool = ICurveWethPool(rewardEthCurvePools[reward]);
 
@@ -141,5 +157,16 @@ contract SellingCurveRewardManager is IRewardManager {
             (SLIPPAGE_DENOMINATOR - defaultSlippage)) / SLIPPAGE_DENOMINATOR;
 
         require(feeTokenAmount >= feeTokenAmountByOracleWithSlippage, 'Wrong slippage');
+    }
+
+    function extractRigidPart(address reward, uint256 amount) internal returns(uint256){
+        uint256 zlpSupply = zlp.totalSupply();
+        uint256 zlpLocked = uzd.lockedNominalRigid();
+
+        uint256 rewardLocked = amount * zlpLocked / zlpSupply;
+
+        IERC20Metadata(reward).safeTransfer(feeCollector, rewardLocked);
+
+        return amount - rewardLocked;
     }
 }
