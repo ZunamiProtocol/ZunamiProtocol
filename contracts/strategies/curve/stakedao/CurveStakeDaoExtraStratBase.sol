@@ -13,8 +13,8 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
 
     uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 3;
 
-    IERC20Metadata public token;
-    IERC20Metadata public extraRewardToken;
+    IERC20Metadata public immutable token;
+    IERC20Metadata public immutable extraRewardToken;
 
     constructor(
         Config memory config,
@@ -23,9 +23,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
         address tokenAddr,
         address extraRewardTokenAddr
     ) CurveStakeDaoStratBase(config, vaultAddr, poolLpAddr) {
-        if (extraRewardTokenAddr != address(0)) {
-            extraRewardToken = IERC20Metadata(extraRewardTokenAddr);
-        }
+        extraRewardToken = IERC20Metadata(extraRewardTokenAddr);
 
         token = IERC20Metadata(tokenAddr);
         decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID] = calcTokenDecimalsMultiplier(token);
@@ -37,6 +35,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual override returns (uint256) {
+        uint256 feeTokenId_ = feeTokenId;
         uint256 extraEarningsFeeToken = 0;
         if (address(extraRewardToken) != address(0)) {
             uint256 extraTokenEarned = vault.liquidityGauge().claimable_reward(
@@ -47,14 +46,14 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
             extraEarningsFeeToken = rewardManager.valuate(
                 address(extraRewardToken),
                 amountIn,
-                address(_config.tokens[feeTokenId])
+                address(_config.tokens[feeTokenId_])
             );
         }
 
         return
             super.totalHoldings() +
             extraEarningsFeeToken *
-            decimalsMultipliers[feeTokenId] +
+            decimalsMultipliers[feeTokenId_] +
             token.balanceOf(address(this)) *
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
@@ -69,7 +68,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
             return;
         }
 
-        extraRewardToken.transfer(address(address(rewardManager)), extraBalance);
+        extraRewardToken.safeTransfer(address(address(rewardManager)), extraBalance);
         rewardManager.handle(
             address(extraRewardToken),
             extraBalance,
@@ -79,7 +78,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
 
     /**
      * @dev can be called by Zunami contract.
-     * This function need for moveFunds between strategys.
+     * This function need for moveFunds between strategies.
      */
     function withdrawAll() external virtual onlyZunami {
         vault.withdraw(vault.liquidityGauge().balanceOf(address(this)));

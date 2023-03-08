@@ -15,9 +15,9 @@ contract StableConverter is IStableConverter {
 
     uint256 public constant SLIPPAGE_DENOMINATOR = 10_000;
 
-    ICurvePool public curve3Pool;
+    ICurvePool public immutable curve3Pool;
 
-    uint256 public defaultSlippage = 30; // 0.3%
+    uint256 public constant defaultSlippage = 30; // 0.3%
 
     mapping(address => int128) public curve3PoolStableIndex;
     mapping(address => int8) public curve3PoolStableDecimals;
@@ -43,7 +43,7 @@ contract StableConverter is IStableConverter {
     ) public {
         if (amount == 0) return;
 
-        IERC20Metadata(from).safeApprove(address(curve3Pool), amount);
+        IERC20Metadata(from).safeIncreaseAllowance(address(curve3Pool), amount);
 
         curve3Pool.exchange(
             curve3PoolStableIndex[from],
@@ -55,10 +55,10 @@ contract StableConverter is IStableConverter {
                 curve3PoolStableDecimals[to] - curve3PoolStableDecimals[from]
             )
         );
-
-        IERC20Metadata(to).safeTransfer(
+        IERC20Metadata to_ = IERC20Metadata(to);
+        to_.safeTransfer(
             address(msg.sender),
-            IERC20Metadata(to).balanceOf(address(this))
+            to_.balanceOf(address(this))
         );
     }
 
@@ -75,7 +75,7 @@ contract StableConverter is IStableConverter {
         uint256 amount,
         uint256 slippage,
         int8 decimalsDiff
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         require(slippage <= SLIPPAGE_DENOMINATOR, 'Wrong slippage');
         if (slippage == 0) slippage = defaultSlippage;
         uint256 value = (amount * (SLIPPAGE_DENOMINATOR - slippage)) / SLIPPAGE_DENOMINATOR;

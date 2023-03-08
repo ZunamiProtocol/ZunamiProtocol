@@ -229,7 +229,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
-            token.safeApprove(address(crvFraxTokenPool), sellBal);
+            token.safeIncreaseAllowance(address(crvFraxTokenPool), sellBal);
             crvFraxTokenPool.exchange_underlying(0, 1, sellBal, 0);
         }
     }

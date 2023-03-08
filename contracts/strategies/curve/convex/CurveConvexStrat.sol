@@ -48,7 +48,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
 
         poolLPs = pool.add_liquidity(amounts, 0, true);
 
-        poolLP.safeApprove(address(_config.booster), poolLPs);
+        poolLP.safeIncreaseAllowance(address(_config.booster), poolLPs);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 

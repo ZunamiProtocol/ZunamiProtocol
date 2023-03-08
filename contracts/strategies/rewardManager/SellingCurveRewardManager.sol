@@ -24,19 +24,19 @@ contract SellingCurveRewardManager is IRewardManager {
     uint256 public constant CURVE_TRICRYPTO2_POOL_WETH_ID = 2;
     uint256 public constant CURVE_TRICRYPTO2_POOL_USDT_ID = 0;
 
-    uint256 public defaultSlippage = 300; // 3%
+    uint256 public constant defaultSlippage = 300; // 3%
 
-    ICurveWethPool public tricrypto2;
+    ICurveWethPool public immutable tricrypto2;
 
     mapping(address => address) public rewardEthCurvePools;
 
     mapping(address => address) public rewardUsdChainlinkOracles;
 
-    IStableConverter public stableConverter;
+    IStableConverter public immutable stableConverter;
 
-    IERC20Metadata public zlp;
-    IElasticRigidVault public uzd;
-    address feeCollector;
+    IERC20Metadata public immutable zlp;
+    IElasticRigidVault public immutable uzd;
+    address immutable feeCollector;
 
     constructor(address stableConverterAddr, address uzdAddr, address feeCollectorAddr) {
         zlp = IERC20Metadata(0x2ffCC661011beC72e1A9524E12060983E74D14ce);
@@ -82,7 +82,7 @@ contract SellingCurveRewardManager is IRewardManager {
 
         ICurveWethPool rewardEthPool = ICurveWethPool(rewardEthCurvePools[reward]);
 
-        IERC20Metadata(reward).safeApprove(address(rewardEthPool), amount);
+        IERC20Metadata(reward).safeIncreaseAllowance(address(rewardEthPool), amount);
 
         rewardEthPool.exchange(
             CURVE_WETH_REWARD_POOL_REWARD_ID,
@@ -94,7 +94,7 @@ contract SellingCurveRewardManager is IRewardManager {
         IERC20Metadata weth = IERC20Metadata(Constants.WETH_ADDRESS);
         uint256 wethAmount = weth.balanceOf(address(this));
 
-        weth.safeApprove(address(tricrypto2), wethAmount);
+        weth.safeIncreaseAllowance(address(tricrypto2), wethAmount);
 
         tricrypto2.exchange(
             CURVE_TRICRYPTO2_POOL_WETH_ID,
@@ -164,8 +164,9 @@ contract SellingCurveRewardManager is IRewardManager {
         uint256 zlpLocked = uzd.lockedNominalRigid();
 
         uint256 rewardLocked = amount * zlpLocked / zlpSupply;
-
-        IERC20Metadata(reward).safeTransfer(feeCollector, rewardLocked);
+        if(rewardLocked > 0) {
+            IERC20Metadata(reward).safeTransfer(feeCollector, rewardLocked);
+        }
 
         return amount - rewardLocked;
     }

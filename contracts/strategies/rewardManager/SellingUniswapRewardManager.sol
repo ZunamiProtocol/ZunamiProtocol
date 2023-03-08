@@ -14,10 +14,10 @@ contract SellingUniswapRewardManager is IRewardManager {
 
     uint256 public constant SLIPPAGE_DENOMINATOR = 10_000;
 
-    uint256 public defaultSlippage = 300; // 3%
+    uint256 public constant defaultSlippage = 300; // 3%
 
-    IUniswapRouter public router;
-    address public middleSwapToken;
+    IUniswapRouter public immutable router;
+    address public immutable middleSwapToken;
 
     mapping(address => address) public rewardUsdChainlinkOracles;
 
@@ -48,8 +48,8 @@ contract SellingUniswapRewardManager is IRewardManager {
     ) public {
         if (amount == 0) return;
 
-        IERC20Metadata(reward).safeApprove(address(router), amount);
-        
+        IERC20Metadata(reward).safeIncreaseAllowance(address(router), amount);
+
         uint256[] memory amounts = router.swapExactTokensForTokens(
             amount,
             0,

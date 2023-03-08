@@ -14,9 +14,9 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     uint128 public constant CURVE_3POOL_LP_TOKEN_ID = 1;
     int128 public constant CURVE_3POOL_LP_TOKEN_ID_INT = int128(CURVE_3POOL_LP_TOKEN_ID);
 
-    ICurvePool public pool3;
-    IERC20Metadata public pool3LP;
-    ICurvePool2 public pool;
+    ICurvePool public immutable pool3;
+    IERC20Metadata public immutable pool3LP;
+    ICurvePool2 public immutable pool;
 
     constructor(
         Config memory config,
@@ -61,7 +61,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         pool3LP.safeIncreaseAllowance(address(pool), amounts2[CURVE_3POOL_LP_TOKEN_ID]);
         poolLPs = pool.add_liquidity(amounts2, 0);
 
-        poolLP.safeApprove(address(vault), poolLPs);
+        poolLP.safeIncreaseAllowance(address(vault), poolLPs);
         vault.deposit(address(this), poolLPs, true);
     }
 
@@ -158,7 +158,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
-            token.safeApprove(address(pool), sellBal);
+            token.safeIncreaseAllowance(address(pool), sellBal);
             pool.exchange_underlying(0, 3, sellBal, 0);
         }
     }

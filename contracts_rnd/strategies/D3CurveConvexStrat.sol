@@ -81,7 +81,7 @@ contract D3CurveConvexStrat is CurveConvexStratBase {
 
         d3LPAmount = d3PoolLP.balanceOf(address(this));
 
-        d3PoolLP.safeApprove(address(_config.booster), d3LPAmount);
+        d3PoolLP.safeIncreaseAllowance(address(_config.booster), d3LPAmount);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 

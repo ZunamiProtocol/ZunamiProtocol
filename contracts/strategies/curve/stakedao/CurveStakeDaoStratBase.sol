@@ -10,7 +10,7 @@ import '../../../utils/Constants.sol';
 import '../../../interfaces/IUniswapRouter.sol';
 import '../../../interfaces/IZunami.sol';
 
-import './iterfaces/IStakeDaoVault.sol';
+import './interfaces/IStakeDaoVault.sol';
 import '../../interfaces/IRewardManager.sol';
 
 //import "hardhat/console.sol";
@@ -46,12 +46,14 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     uint256 public managementFees = 0;
     uint256 public feeTokenId = ZUNAMI_USDT_TOKEN_ID;
 
-    IStakeDaoVault public vault;
-    IERC20Metadata public poolLP;
+    IStakeDaoVault public immutable vault;
+    IERC20Metadata public immutable poolLP;
 
     uint256[4] public decimalsMultipliers;
 
     event SetRewardManager(address rewardManager);
+    event MinDepositAmountUpdated(uint256 oldAmount, uint256 newAmount);
+    event FeeDistributorChanged(address oldFeeDistributor, address newFeeDistributor);
 
     /**
      * @dev Throws if called by any account other than the Zunami
@@ -105,13 +107,17 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
     function transferAllTokensOut(address withdrawer, uint256[] memory prevBalances) internal {
         uint256 transferAmount;
+        IERC20Metadata token_;
+        uint256 feeTokenId_ = feeTokenId;
+        uint256 managementFees_ = managementFees;
         for (uint256 i = 0; i < 3; i++) {
+            token_ = _config.tokens[i];
             transferAmount =
-                _config.tokens[i].balanceOf(address(this)) -
+                token_.balanceOf(address(this)) -
                 prevBalances[i] -
-                ((i == feeTokenId) ? managementFees : 0);
+                ((i == feeTokenId_) ? managementFees_ : 0);
             if (transferAmount > 0) {
-                _config.tokens[i].safeTransfer(withdrawer, transferAmount);
+                token_.safeTransfer(withdrawer, transferAmount);
             }
         }
     }
@@ -208,16 +214,20 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint8 decimals = token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-        return 10**(18 - decimals);
+        unchecked{
+            return 10**(18 - decimals);
+        }
     }
 
     /**
      * @dev anyone can sell rewards, func do nothing if config crv&sdt balance is zero
      */
     function sellRewards() internal virtual {
-        uint256[] memory rewardBalances = new uint256[](_config.rewards.length);
+        uint256 rewardsLength_ = _config.rewards.length;
+        uint256[] memory rewardBalances = new uint256[](rewardsLength_);
         bool allRewardsEmpty = true;
-        for (uint256 i = 0; i < _config.rewards.length; i++) {
+
+        for (uint256 i = 0; i < rewardsLength_; i++) {
             rewardBalances[i] = _config.rewards[i].balanceOf(address(this));
             if (rewardBalances[i] > 0) {
                 allRewardsEmpty = false;
@@ -227,21 +237,25 @@ abstract contract CurveStakeDaoStratBase is Ownable {
             return;
         }
 
-        uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
+        IERC20Metadata feeToken_ = _config.tokens[feeTokenId];
+        uint256 feeTokenBalanceBefore = feeToken_.balanceOf(address(this));
 
-        for (uint256 i = 0; i < _config.rewards.length; i++) {
+        IRewardManager rewardManager_ = rewardManager;
+        IERC20Metadata rewardToken_;
+        for (uint256 i = 0; i < rewardsLength_; i++) {
             if (rewardBalances[i] == 0) continue;
-            _config.rewards[i].transfer(address(address(rewardManager)), rewardBalances[i]);
-            rewardManager.handle(
-                address(_config.rewards[i]),
+            rewardToken_ = _config.rewards[i];
+            rewardToken_.transfer(address(address(rewardManager_)), rewardBalances[i]);
+            rewardManager_.handle(
+                address(rewardToken_),
                 rewardBalances[i],
-                address(_config.tokens[feeTokenId])
+                address(feeToken_)
             );
         }
 
         sellRewardsExtra();
 
-        uint256 feeTokenBalanceAfter = _config.tokens[feeTokenId].balanceOf(address(this));
+        uint256 feeTokenBalanceAfter = feeToken_.balanceOf(address(this));
 
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
@@ -253,11 +267,12 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
         sellRewards();
 
-        uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this)) -
+        uint256 feeTokenId_ = feeTokenId;
+        uint256 feeTokenBalance = _config.tokens[feeTokenId_].balanceOf(address(this)) -
             managementFees;
 
         uint256[3] memory amounts;
-        amounts[feeTokenId] = feeTokenBalance;
+        amounts[feeTokenId_] = feeTokenBalance;
 
         if (feeTokenBalance > 0) depositPool(amounts);
     }
@@ -268,20 +283,25 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual returns (uint256) {
+
         uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) *
             getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
 
+        uint256 feeTokenId_ = feeTokenId;
         uint256 rewardEarningInFeeToken;
+        IERC20Metadata rewardToken_;
+        IRewardManager rewardManager_ = rewardManager;
         for (uint256 i = 0; i < _config.rewards.length; i++) {
+            rewardToken_ = _config.rewards[i];
             uint256 rewardTokenEarned = vault.liquidityGauge().claimable_reward(
                 address(this),
-                address(_config.rewards[i])
+                address(rewardToken_)
             );
-            uint256 amountIn = rewardTokenEarned + _config.rewards[i].balanceOf(address(this));
-            rewardEarningInFeeToken += rewardManager.valuate(
-                address(_config.rewards[i]),
+            uint256 amountIn = rewardTokenEarned + rewardToken_.balanceOf(address(this));
+            rewardEarningInFeeToken += rewardManager_.valuate(
+                address(rewardToken_),
                 amountIn,
-                address(_config.tokens[feeTokenId])
+                address(_config.tokens[feeTokenId_])
             );
         }
 
@@ -294,7 +314,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
             tokensHoldings +
             crvLpHoldings +
             rewardEarningInFeeToken *
-            decimalsMultipliers[feeTokenId];
+            decimalsMultipliers[feeTokenId_];
     }
 
     /**
@@ -302,12 +322,14 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public returns (uint256) {
-        uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this));
-        uint256 transferBalance = managementFees > feeTokenBalance
+        IERC20Metadata feeToken_ = _config.tokens[feeTokenId];
+        uint256 managementFees_ = managementFees;
+        uint256 feeTokenBalance = feeToken_.balanceOf(address(this));
+        uint256 transferBalance = managementFees_ > feeTokenBalance
             ? feeTokenBalance
-            : managementFees;
+            : managementFees_;
         if (transferBalance > 0) {
-            _config.tokens[feeTokenId].safeTransfer(feeDistributor, transferBalance);
+            feeToken_.safeTransfer(feeDistributor, transferBalance);
         }
         managementFees = 0;
 
@@ -321,6 +343,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      */
     function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
+        emit MinDepositAmountUpdated(minDepositAmount, _minDepositAmount);
         minDepositAmount = _minDepositAmount;
     }
 
@@ -364,6 +387,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @param _feeDistributor - address feeDistributor that be used for claim fees
      */
     function changeFeeDistributor(address _feeDistributor) external onlyOwner {
+        emit FeeDistributorChanged(feeDistributor, _feeDistributor);
         feeDistributor = _feeDistributor;
     }
 }

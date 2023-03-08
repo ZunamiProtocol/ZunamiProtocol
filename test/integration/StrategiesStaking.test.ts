@@ -75,6 +75,7 @@ describe('Single strategy tests', () => {
     let admin: Signer;
     let alice: Signer;
     let bob: Signer;
+    let feeCollector: Signer;
     let zunami: Contract;
     let dai: Contract;
     let usdc: Contract;
@@ -84,7 +85,7 @@ describe('Single strategy tests', () => {
     let stableConverter: Contract;
 
     before(async () => {
-        [admin, alice, bob] = await ethers.getSigners();
+        [admin, alice, bob, feeCollector] = await ethers.getSigners();
 
         // DAI initialization
         dai = new ethers.Contract(addrs.stablecoins.dai, erc20ABI, admin);
@@ -147,8 +148,12 @@ describe('Single strategy tests', () => {
         stableConverter = await StableConverterFactory.deploy();
         await stableConverter.deployed();
 
+        const StubElasticRigidVault = await ethers.getContractFactory('StubElasticRigidVault');
+        const stubElasticRigidVault = await StubElasticRigidVault.deploy();
+        await stubElasticRigidVault.deployed();
+
         const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(stableConverter.address);
+        rewardManager = await RewardManagerFactory.deploy(stableConverter.address, stubElasticRigidVault.address, feeCollector.getAddress());
         await rewardManager.deployed();
     });
 

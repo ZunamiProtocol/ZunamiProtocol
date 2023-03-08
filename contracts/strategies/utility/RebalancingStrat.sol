@@ -44,7 +44,7 @@ contract RebalancingStrat is Ownable {
         tokens = _tokens;
 
         for (uint256 i; i < 3; i++) {
-            decimalsMultipliers[i] = calcTokenDecimalsMultiplier(tokens[i]);
+            decimalsMultipliers[i] = calcTokenDecimalsMultiplier(_tokens[i]);
         }
     }
 
@@ -54,10 +54,12 @@ contract RebalancingStrat is Ownable {
 
     function transferAllTokensTo(address withdrawer) internal {
         uint256 tokenStratBalance;
+        IERC20Metadata token_;
         for (uint256 i = 0; i < 3; i++) {
-            tokenStratBalance = tokens[i].balanceOf(address(this));
+            token_ = tokens[i];
+            tokenStratBalance = token_.balanceOf(address(this));
             if (tokenStratBalance > 0) {
-                tokens[i].safeTransfer(withdrawer, tokenStratBalance);
+                token_.safeTransfer(withdrawer, tokenStratBalance);
             }
         }
     }
@@ -82,9 +84,9 @@ contract RebalancingStrat is Ownable {
     function withdraw(
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[3] memory,
         WithdrawalType withdrawalType,
-        uint128 tokenIndex
+        uint128
     ) external virtual onlyZunami returns (bool) {
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= PRICE_DENOMINATOR, 'Wrong lp Ratio');
         require(withdrawalType == WithdrawalType.Base, 'Only base');
@@ -108,7 +110,9 @@ contract RebalancingStrat is Ownable {
         uint8 decimals = token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-        return 10**(18 - decimals);
+        unchecked{
+            return 10**(18 - decimals);
+        }
     }
 
     function autoCompound() public onlyZunami {}

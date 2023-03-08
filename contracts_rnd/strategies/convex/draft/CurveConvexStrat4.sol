@@ -66,7 +66,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBaseUSDT {
 
         pool.add_liquidity(amounts4, 0);
         poolLPs = poolLP.balanceOf(address(this));
-        poolLP.safeApprove(address(_config.booster), poolLPs);
+        poolLP.safeIncreaseAllowance(address(_config.booster), poolLPs);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 
@@ -152,7 +152,7 @@ contract CurveConvexStrat4 is CurveConvexExtraStratBaseUSDT {
     function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
-            token.safeApprove(address(pool), sellBal);
+            token.safeIncreaseAllowance(address(pool), sellBal);
             pool.exchange_underlying(3, 2, sellBal, 0);
         }
     }
