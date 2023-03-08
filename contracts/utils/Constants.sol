@@ -14,6 +14,7 @@ library Constants {
     uint256 internal constant CVX_MUSD_PID = 14;
     uint256 internal constant CVX_RSV_PID = 15;
     uint256 internal constant CVX_DUSD_PID = 17;
+    uint256 internal constant CVX_FRAX_alUSD_PID = 19;
     uint256 internal constant CVX_AAVE_PID = 24;
     uint256 internal constant CVX_USDP_PID = 28;
     uint256 internal constant CVX_IRONBANK_PID = 29;
@@ -169,4 +170,7 @@ library Constants {
     address internal constant CRV_FRAX_XAI_ADDRESS = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
     address internal constant CRV_FRAX_XAI_LP_ADDRESS = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
     address internal constant CRV_TRICRYPTO2_ADDRESS = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46;
+
+    address internal constant CRV_FRAX_alUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant CRV_FRAX_alUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
 }
