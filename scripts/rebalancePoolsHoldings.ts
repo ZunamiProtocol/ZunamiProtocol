@@ -4,6 +4,7 @@ import { BigNumber } from 'bignumber.js';
 interface IPoolValueInfo {
     address: string;
     holdings: string;
+    percent: string;
     tokens: string;
     price: string;
     additionalHoldings: string;
@@ -53,6 +54,7 @@ async function main() {
             pools.push({
                 address: stratAddr,
                 holdings: '0',
+                percent: '0',
                 tokens: '0',
                 price: '0',
                 additionalHoldings: '0',
@@ -69,13 +71,16 @@ async function main() {
 
         let rebalancedPrice = holdings.plus(additionalHoldings).dividedBy(+poolZlpAmount);
 
+        let currentPoolPercent = holdings.dividedBy(zunamiTotalHoldings).multipliedBy(100);
+
         pools.push({
             address: stratAddr,
             holdings: holdings.toString(),
+            percent: currentPoolPercent.toString() + "%",
             tokens: poolZlpAmount.toString(),
             price: price.toString(),
-            additionalHoldings: additionalHoldings.toString(),
-            rebalancedPrice: rebalancedPrice.toString(),
+            additionalHoldings: additionalHoldings.precision(12).toString(),
+            rebalancedPrice: rebalancedPrice.precision(6).toString(),
         });
     }
 
