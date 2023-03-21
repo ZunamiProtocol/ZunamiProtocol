@@ -107,7 +107,7 @@ contract SellingCurveRewardManager is IRewardManager {
             IERC20Metadata usdt = IERC20Metadata(Constants.USDT_ADDRESS);
             uint256 usdtAmount = usdt.balanceOf(address(this));
 
-            usdt.safeTransfer(address(address(stableConverter)), usdtAmount);
+            usdt.safeTransfer(address(stableConverter), usdtAmount);
             stableConverter.handle(Constants.USDT_ADDRESS, feeToken, usdtAmount, 0);
         }
 

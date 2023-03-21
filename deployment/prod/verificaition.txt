@@ -20,3 +20,7 @@ npx hardhat verify --network mainnet --contract ./contracts/strategies/rewardMan
 
 npx hardhat verify --network mainnet --constructor-args ./deployment/stakedao_strategy_arguments.js --contract contracts/strategies/curve/stakedao/MIMCurveStakeDao.sol:MIMCurveStakeDao 0xE9ACC52411710e7fAa99c6d41C7CFE07AFfbd2CB
 npx hardhat verify --network mainnet --constructor-args ./deployment/convex_staking_strategy_arguments.js --contract contracts/strategies/curve/convex/stakingFraxbp/alUSDStakingFraxCurveConvex.sol:alUSDStakingFraxCurveConvex 0x1Eb1f8cb4bb6981E6c1c5c36ffAbcdf389761d84
+
+npx hardhat verify --network mainnet 0xE2152984056d410E96688e55B16C84CCa95831BD
+
+npx hardhat verify --network mainnet 0x3D8aBC464D5313a576e78706aC97F79fe1EB0b61 0x2ffCC661011beC72e1A9524E12060983E74D14ce 0xE2152984056d410E96688e55B16C84CCa95831BD

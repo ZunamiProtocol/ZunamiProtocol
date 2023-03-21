@@ -50,4 +50,10 @@ interface ICurvePool2 is ICurvePoolPricable {
     ) external view returns (uint256);
 
     function calc_withdraw_one_coin(uint256 burn_amount, int128 i) external view returns (uint256);
+
+    function get_dy(
+        int128 i,
+        int128 j,
+        uint256 dx
+    ) external view returns (uint256);
 }

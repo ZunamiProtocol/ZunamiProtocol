@@ -238,7 +238,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 balance = token.balanceOf(address(this));
         if (balance == 0) return;
 
-        token.safeTransfer(address(address(stableConverter)), balance);
+        token.safeTransfer(address(stableConverter), balance);
         stableConverter.handle(
             address(token),
             address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]),
@@ -252,7 +252,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         if (balance == 0) return;
 
         _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(
-            address(address(stableConverter)),
+            address(stableConverter),
             balance
         );
         stableConverter.handle(

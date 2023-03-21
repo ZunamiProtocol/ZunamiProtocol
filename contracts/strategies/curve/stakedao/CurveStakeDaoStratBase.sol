@@ -245,7 +245,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         for (uint256 i = 0; i < rewardsLength_; i++) {
             if (rewardBalances[i] == 0) continue;
             rewardToken_ = _config.rewards[i];
-            rewardToken_.transfer(address(address(rewardManager_)), rewardBalances[i]);
+            rewardToken_.transfer(address(rewardManager_), rewardBalances[i]);
             rewardManager_.handle(
                 address(rewardToken_),
                 rewardBalances[i],

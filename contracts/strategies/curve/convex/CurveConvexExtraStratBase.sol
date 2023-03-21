@@ -72,7 +72,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             return;
         }
 
-        extraRewardToken.transfer(address(address(rewardManager)), extraBalance);
+        extraRewardToken.transfer(address(rewardManager), extraBalance);
         rewardManager.handle(
             address(extraRewardToken),
             extraBalance,

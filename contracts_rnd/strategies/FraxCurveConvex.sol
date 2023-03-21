@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import '../../contracts/utils/Constants.sol';
-import './CurveConvexStrat2.sol';
+import "../../contracts/strategies/curve/convex/CurveConvexStrat2.sol";
 
 contract FraxCurveConvex is CurveConvexStrat2 {
     constructor(Config memory config)

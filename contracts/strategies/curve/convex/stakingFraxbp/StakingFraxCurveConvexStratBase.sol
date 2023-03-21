@@ -250,7 +250,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
             uint256 rewardBalance_ = rewardBalances[i];
             if (rewardBalance_ == 0) continue;
             rewardToken_ = _config.rewards[i];
-            rewardToken_.safeTransfer(address(address(rewardManager_)), rewardBalance_);
+            rewardToken_.safeTransfer(address(rewardManager_), rewardBalance_);
             rewardManager_.handle(
                 address(rewardToken_),
                 rewardBalance_,
@@ -618,7 +618,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         if (balance == 0) return;
 
         IStableConverter stableConverter_ = stableConverter;
-        _token.safeTransfer(address(address(stableConverter_)), balance);
+        _token.safeTransfer(address(stableConverter_), balance);
         stableConverter_.handle(
             address(_token),
             address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]),
@@ -634,7 +634,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
 
         IStableConverter stableConverter_ = stableConverter;
         usdcToken_.safeTransfer(
-            address(address(stableConverter_)),
+            address(stableConverter_),
             balance
         );
         stableConverter_.handle(

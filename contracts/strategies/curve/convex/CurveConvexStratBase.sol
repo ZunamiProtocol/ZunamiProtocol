@@ -229,7 +229,7 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
 
         if (cvxBalance > 0) {
-            _config.cvx.transfer(address(address(rewardManager)), cvxBalance);
+            _config.cvx.transfer(address(rewardManager), cvxBalance);
             rewardManager.handle(
                 address(_config.cvx),
                 cvxBalance,
@@ -238,7 +238,7 @@ abstract contract CurveConvexStratBase is Ownable {
         }
 
         if (crvBalance > 0) {
-            _config.crv.transfer(address(address(rewardManager)), crvBalance);
+            _config.crv.transfer(address(rewardManager), crvBalance);
             rewardManager.handle(
                 address(_config.crv),
                 crvBalance,

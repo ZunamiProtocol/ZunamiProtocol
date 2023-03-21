@@ -395,7 +395,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
         lpShareRatio = (outLpShares * LP_RATIO_MULTIPLIER) / strategyLpShares;
         require(
             lpShareRatio > 0 && lpShareRatio <= LP_RATIO_MULTIPLIER,
-            'Zunami: Wrong out lp Ratio'
+            'Zunami: Wrong out lp ratio'
         );
     }
 

@@ -92,3 +92,6 @@ alUSDStakingFraxCurveConvex strategy deployed to: 0x1Eb1f8cb4bb6981E6c1c5c36ffAb
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in alUSDStakingFraxCurveConvex strategy
 Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
 Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+
+FRAX-USDC stable converter deployed to: 0xE2152984056d410E96688e55B16C84CCa95831BD
+Frax Zunami Extension deployed to: 0x3D8aBC464D5313a576e78706aC97F79fe1EB0b61

@@ -68,7 +68,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
             return;
         }
 
-        extraRewardToken.safeTransfer(address(address(rewardManager)), extraBalance);
+        extraRewardToken.safeTransfer(address(rewardManager), extraBalance);
         rewardManager.handle(
             address(extraRewardToken),
             extraBalance,
