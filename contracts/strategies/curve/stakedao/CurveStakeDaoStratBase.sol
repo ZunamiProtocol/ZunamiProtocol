@@ -275,6 +275,8 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         amounts[feeTokenId_] = feeTokenBalance;
 
         if (feeTokenBalance > 0) depositPool(amounts);
+
+        return feeTokenBalance * decimalsMultipliers[feeTokenId];
     }
 
     /**
