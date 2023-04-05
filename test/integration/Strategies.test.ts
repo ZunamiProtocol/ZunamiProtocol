@@ -408,7 +408,7 @@ describe('Single strategy tests', () => {
         await expect((await zunami.poolInfo(poolDst)).enabled).to.be.false;
 
         await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst)).to.be.revertedWith(
-            'Zunami: operations with a disabled pool'
+            'Zunami: operations with a not enabled pool'
         );
 
         await expect(zunami.togglePoolStatus(poolDst))

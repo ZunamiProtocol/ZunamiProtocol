@@ -3,16 +3,9 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import "./IStrategy.sol";
+import "./IZunamiPoolInfo.sol";
 
-interface IZunamiVault is IERC20 {
-    struct PoolInfo {
-        IStrategy strategy;
-        uint256 startTime;
-        uint256 lpShares;
-    }
-
-    function poolInfo(uint256 pid) external view returns (PoolInfo memory);
-
+interface IZunamiVault is IERC20, IZunamiPoolInfo {
     function defaultDepositPid() external view returns (uint256);
 
     function defaultWithdrawPid() external view returns (uint256);

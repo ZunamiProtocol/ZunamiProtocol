@@ -7,10 +7,11 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import './interfaces/IStrategy.sol';
+import "./interfaces/IZunamiRebalancer.sol";
 
 /**
  *
- * @title Zunami Protocol
+ * @title Zunami Protocol v2
  *
  * @notice Contract for Convex&Curve protocols optimize.
  * Users can use this contract for optimize yield and gas.
@@ -66,6 +67,8 @@ contract Zunami is ERC20, Pausable, AccessControl {
     uint256 public managementFee = 100; // 10%
     bool public launched = false;
 
+    IZunamiRebalancer public rebalancer;
+
     event ManagementFeeSet(uint256 oldManagementFee, uint256 newManagementFee);
 
     event CreatedPendingDeposit(address indexed depositor, uint256[POOL_ASSETS] amounts);
@@ -105,6 +108,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     event AddedPool(uint256 pid, address strategyAddr, uint256 startTime);
     event SetDefaultDepositPid(uint256 pid);
     event SetDefaultWithdrawPid(uint256 pid);
+    event SetRebalancer(address rebalancerAddr);
     event ClaimedAllManagementFee(uint256 feeValue);
     event AutoCompoundAll(uint256 compoundedValue);
     event ToggledEnabledPoolStatus(address pool, bool newStatus);
@@ -123,7 +127,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     }
 
     modifier enabledPool(uint256 poolIndex) {
-        require(_poolInfo[poolIndex].enabled, 'Zunami: operations with not enabled pool');
+        require(_poolInfo[poolIndex].enabled, 'Zunami: operations with a not enabled pool');
         _;
     }
 
@@ -134,6 +138,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
         for (uint256 i; i < POOL_ASSETS; i++) {
             uint256 decimals = IERC20Metadata(_tokens[i]).decimals();
+            require(decimals <= 18, "Zunami: Wrong token decimalsx");
             if (decimals < 18) {
                 unchecked{
                     decimalsMultipliers[i] = 10**(18 - decimals);
@@ -220,8 +225,9 @@ contract Zunami is ERC20, Pausable, AccessControl {
     function autoCompoundAll() external {
         uint256 totalCompounded = 0;
         for (uint256 i = 0; i < _poolInfo.length; i++) {
-            if (_poolInfo[i].lpShares > 0) {
-                totalCompounded += _poolInfo[i].strategy.autoCompound();
+            PoolInfo memory poolInfo_ = _poolInfo[i];
+            if (poolInfo_.lpShares > 0 && poolInfo_.enabled) {
+                totalCompounded += poolInfo_.strategy.autoCompound();
             }
         }
         emit AutoCompoundAll(totalCompounded);
@@ -235,8 +241,9 @@ contract Zunami is ERC20, Pausable, AccessControl {
         uint256 length = _poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; pid++) {
-            if (_poolInfo[pid].lpShares > 0) {
-                totalHold += _poolInfo[pid].strategy.totalHoldings();
+            PoolInfo memory poolInfo_ = _poolInfo[pid];
+            if (poolInfo_.lpShares > 0 && poolInfo_.enabled) {
+                totalHold += poolInfo_.strategy.totalHoldings();
             }
         }
         return totalHold;
@@ -250,8 +257,8 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return calcTokenPrice(totalHoldings(), totalSupply());
     }
 
-    function calcTokenPrice(uint256 holdings, uint256 tokens) internal pure returns (uint256) {
-        return (holdings * 1e18) / tokens;
+    function calcTokenPrice(uint256 _holdings, uint256 _tokens) public pure returns (uint256) {
+        return (_holdings * 1e18) / _tokens;
     }
 
     /**
@@ -726,92 +733,6 @@ contract Zunami is ERC20, Pausable, AccessControl {
         return _poolInfo[defaultWithdrawPid].strategy.calcSharesAmount(tokenAmounts, isDeposit);
     }
 
-    struct PriceInfo {
-        uint256 pid;
-        uint256 price;
-        uint256 holdings;
-    }
-
-    function rebalance() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        //calc strategy lp prices
-        uint256 totalHoldings = 0;
-        PriceInfo[] memory prices = new PriceInfo[](_poolInfo.length);
-        for (uint256 i = 0; i < _poolInfo.length; i++) {
-            PoolInfo memory poolInfo = _poolInfo[i];
-            if (poolInfo.lpShares == 0) continue;
-            uint256 holdings = poolInfo.strategy.totalHoldings();
-            prices[i] = PriceInfo(i, calcTokenPrice(holdings, poolInfo.lpShares), holdings);
-            totalHoldings += holdings;
-        }
-
-        //cache protocol lp price
-        uint256 commonPrice = calcTokenPrice(totalHoldings, totalSupply());
-
-        //descendant sort of prices
-        PriceInfo[] memory sortedPrices = sortPrices(prices);
-
-        uint256 boundary = sortedPrices.length - 1;
-        for (uint256 i = 0; i <= boundary; i++) {
-            PriceInfo memory lowerPrice = sortedPrices[i];
-            if (lowerPrice.price == 0) continue;
-            if (lowerPrice.price >= commonPrice) break;
-
-            PoolInfo storage lowerPool = _poolInfo[lowerPrice.pid];
-            uint256 lowerTokenDiff = calcTokenDiff(
-                lowerPool.lpShares,
-                commonPrice,
-                lowerPrice.holdings
-            );
-            lowerPool.lpShares -= lowerTokenDiff;
-
-            for (uint256 j = boundary; j >= i + 1; j--) {
-                PriceInfo memory higherPrice = sortedPrices[j];
-                if (higherPrice.price == 0) continue;
-                if (higherPrice.price <= commonPrice) break;
-
-                PoolInfo storage higherPool = _poolInfo[higherPrice.pid];
-                uint256 higherTokenDiff = calcTokenDiff(
-                    higherPool.lpShares,
-                    commonPrice,
-                    higherPrice.holdings
-                );
-                if (higherTokenDiff >= lowerTokenDiff) {
-                    higherPool.lpShares += lowerTokenDiff;
-                    lowerTokenDiff = 0;
-                    break;
-                }
-
-                higherPool.lpShares += higherTokenDiff;
-                lowerTokenDiff -= higherTokenDiff;
-                boundary -= 1;
-            }
-
-            // give back unused lps
-            if (lowerTokenDiff > 0) {
-                lowerPool.lpShares += lowerTokenDiff;
-            }
-        }
-    }
-
-    function calcTokenDiff(
-        uint256 shares,
-        uint256 price,
-        uint256 value
-    ) internal pure returns (uint256) {
-        uint256 balancedShares = (value * 1e18) / price;
-        return shares > balancedShares ? shares - balancedShares : balancedShares - shares;
-    }
-
-    function sortPrices(PriceInfo[] memory arr) private pure returns (PriceInfo[] memory) {
-        uint256 l = arr.length;
-        for (uint256 i = 0; i < l; i++) {
-            for (uint256 j = i + 1; j < l; j++) {
-                if (arr[i].price > arr[j].price) (arr[i], arr[j]) = (arr[j], arr[i]);
-            }
-        }
-        return arr;
-    }
-
     /**
      * @dev add a new pool, deposits in the new pool are blocked for one day for safety
      * @param _strategyAddr - the new pool strategy address
@@ -866,6 +787,33 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
     function launch() external onlyRole(DEFAULT_ADMIN_ROLE) {
         launched = true;
+    }
+
+    modifier onlyRebalancer() {
+        require(_msgSender() == address(rebalancer), 'must be called by Rebalancer');
+        _;
+    }
+
+    function setRebalancer(address rebalancerAddr)
+    external
+    onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(rebalancerAddr != address(0), 'Zunami: zero address');
+
+        rebalancer = IZunamiRebalancer(rebalancerAddr);
+        emit SetRebalancer(rebalancerAddr);
+    }
+
+    function rebalance() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        rebalancer.rebalance();
+    }
+
+    function increasePoolShares(uint256 pid, uint256 amount) external onlyRebalancer {
+        _poolInfo[pid].lpShares += amount;
+    }
+
+    function decreasePoolShares(uint256 pid, uint256 amount) external onlyRebalancer {
+        _poolInfo[pid].lpShares -= amount;
     }
 
     /**

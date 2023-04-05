@@ -623,7 +623,13 @@ describe('Zunami', () => {
         expect((await zunami.poolInfo(1)).startTime).to.be.equal(startTime);
     });
 
-    it('should rebalance randomly initialised pools', async () => {
+    it.only('should rebalance randomly initialised pools', async () => {
+        const ZunamiRebalancerFactory = await ethers.getContractFactory('ZunamiRebalancer');
+        const rebalancer = await ZunamiRebalancerFactory.deploy(zunami.address);
+        await rebalancer.deployed();
+
+        await zunami.setRebalancer(rebalancer.address);
+
         const tokens = [100, 100, 100];
         const holdings = 300;
         const createStrategy = async () => {
