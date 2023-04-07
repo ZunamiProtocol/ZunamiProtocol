@@ -8,11 +8,12 @@ import * as addrs from '../address.json';
 import * as globalConfig from '../../config.json';
 
 function getMinAmount(): BigNumber[] {
+    const zero = ethers.utils.parseUnits('0', 'ether')
     const amount = '1000';
     const dai = ethers.utils.parseUnits(amount, 'ether');
     const usdc = ethers.utils.parseUnits(amount, 'mwei');
     const usdt = ethers.utils.parseUnits(amount, 'mwei');
-    return [dai, usdc, usdt];
+    return [dai, usdc, usdt, zero, zero];
 }
 
 enum WithdrawalType {
@@ -137,12 +138,14 @@ describe('Single strategy tests', () => {
 
     beforeEach(async () => {
         const ZunamiFactory = await ethers.getContractFactory('Zunami');
-        zunami = await ZunamiFactory.deploy([
+        zunami = await ZunamiFactory.deploy();
+        await zunami.deployed();
+
+        await zunami.addTokens([
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
         ]);
-        await zunami.deployed();
 
         // Init all strategies
         for (const strategyName of strategyNames) {
@@ -258,14 +261,14 @@ describe('Single strategy tests', () => {
                 await expect(
                     zunami
                         .connect(user)
-                        .delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
                 )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
+                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0, 0, 0]);
             }
 
             await expect(
-                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0, 0, 0])
+                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
             ).to.emit(zunami, 'Withdrawn');
         }
     });
@@ -288,14 +291,14 @@ describe('Single strategy tests', () => {
                 await expect(
                     zunami
                         .connect(user)
-                        .delegateWithdrawal(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
                 )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
+                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0, 0, 0]);
             }
 
             await expect(
-                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0, 0, 0])
+                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
             ).to.emit(zunami, 'Withdrawn');
         }
     });
@@ -316,7 +319,7 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.gt(0);
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
+                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
@@ -340,7 +343,7 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.gt(0);
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0)
+                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
                 ).to.emit(zunami, 'Withdrawn');
 
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
@@ -394,11 +397,11 @@ describe('Single strategy tests', () => {
         await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
 
         await expect(zunami.togglePoolStatus(veryBigNumber)).to.be.revertedWith(
-            'Zunami: incorrect an index of the pool'
+            'incorrect pid'
         );
 
         await expect(zunami.togglePoolStatus(poolSrc)).to.be.revertedWith(
-            'Zunami: current pool is set as deposit/withdraw default pool'
+            'default pid'
         );
 
         await expect(zunami.togglePoolStatus(poolDst))
@@ -408,7 +411,7 @@ describe('Single strategy tests', () => {
         await expect((await zunami.poolInfo(poolDst)).enabled).to.be.false;
 
         await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst)).to.be.revertedWith(
-            'Zunami: operations with a not enabled pool'
+            'not enabled'
         );
 
         await expect(zunami.togglePoolStatus(poolDst))

@@ -18,6 +18,8 @@ import '../../interfaces/IRewardManager.sol';
 abstract contract CurveStakeDaoStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
 
+    uint8 public constant POOL_ASSETS = 5;
+
     enum WithdrawalType {
         Base,
         OneCoin
@@ -89,7 +91,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @return Returns deposited amount in USD.
      * @param amounts - amounts in stablecoins that user deposit
      */
-    function deposit(uint256[3] memory amounts) external returns (uint256) {
+    function deposit(uint256[POOL_ASSETS] memory amounts) external returns (uint256) {
         if (!checkDepositSuccessful(amounts)) {
             return 0;
         }
@@ -99,9 +101,9 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal view virtual returns (bool);
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts) internal view virtual returns (bool);
 
-    function depositPool(uint256[3] memory amounts) internal virtual returns (uint256);
+    function depositPool(uint256[POOL_ASSETS] memory amounts) internal virtual returns (uint256);
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
@@ -139,7 +141,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         virtual
         returns (uint256 tokenAmount);
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
         external
         view
         virtual
@@ -156,7 +158,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function withdraw(
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
@@ -191,7 +193,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function calcCrvLps(
         WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     )
         internal
@@ -206,7 +208,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint256 removingCrvLps,
         uint256[] memory tokenAmountsDynamic,
         WithdrawalType withdrawalType,
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     ) internal virtual;
 
@@ -271,7 +273,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint256 feeTokenBalance = _config.tokens[feeTokenId_].balanceOf(address(this)) -
             managementFees;
 
-        uint256[3] memory amounts;
+        uint256[POOL_ASSETS] memory amounts;
         amounts[feeTokenId_] = feeTokenBalance;
 
         if (feeTokenBalance > 0) depositPool(amounts);
@@ -391,5 +393,11 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function changeFeeDistributor(address _feeDistributor) external onlyOwner {
         emit FeeDistributorChanged(feeDistributor, _feeDistributor);
         feeDistributor = _feeDistributor;
+    }
+
+    function toArr3from5(uint256[5] memory arrInf) internal pure returns (uint256[3] memory arr) {
+        arr[0] = arrInf[0];
+        arr[1] = arrInf[1];
+        arr[2] = arrInf[2];
     }
 }

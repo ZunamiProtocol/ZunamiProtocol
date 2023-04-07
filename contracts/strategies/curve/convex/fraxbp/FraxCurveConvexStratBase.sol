@@ -63,14 +63,14 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         emit SetStableConverter(stableConverterAddr);
     }
 
-    function checkDepositSuccessful(uint256[3] memory tokenAmounts)
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory tokenAmounts)
         internal
         view
         override
         returns (bool isValidDepositAmount)
     {
         uint256 amountsTotal;
-        for (uint256 i = 0; i < tokenAmounts.length; i++) {
+        for (uint256 i = 0; i < STRATEGY_ASSETS; i++) {
             amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
         }
 
@@ -85,7 +85,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[3] memory tokenAmounts)
+    function depositPool(uint256[POOL_ASSETS] memory tokenAmounts)
         internal
         override
         returns (uint256 cvxDepositLpAmount)
@@ -149,7 +149,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
             );
     }
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
         external
         view
         override
@@ -159,7 +159,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         return crvFraxTokenPool.calc_token_amount(amounts, isDeposit);
     }
 
-    function convertZunamiTokensToFraxUsdcs(uint256[3] memory tokenAmounts, bool isDeposit)
+    function convertZunamiTokensToFraxUsdcs(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
         internal
         view
         returns (uint256[2] memory amounts)
@@ -175,7 +175,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     function calcCrvLps(
         WithdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128
     )
         internal
@@ -199,7 +199,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 removingCrvLps,
         uint256[] memory,
         WithdrawalType withdrawalType,
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
         removeCrvLpsInternal(removingCrvLps, tokenAmounts[ZUNAMI_USDC_TOKEN_ID]);

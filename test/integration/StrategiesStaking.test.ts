@@ -8,11 +8,12 @@ import * as addrs from '../address.json';
 import * as globalConfig from '../../config.json';
 
 function getMinAmount(): BigNumber[] {
-    const amount = '100';
+    const zero = ethers.utils.parseUnits('0', 'ether')
+    const amount = '1000';
     const dai = ethers.utils.parseUnits(amount, 'ether');
     const usdc = ethers.utils.parseUnits(amount, 'mwei');
     const usdt = ethers.utils.parseUnits(amount, 'mwei');
-    return [dai, usdc, usdt];
+    return [dai, usdc, usdt, zero, zero];
 }
 
 async function toggleUnlockStakes() {
@@ -159,12 +160,14 @@ describe('Single strategy tests', () => {
 
     beforeEach(async () => {
         const ZunamiFactory = await ethers.getContractFactory('Zunami');
-        zunami = await ZunamiFactory.deploy([
+        zunami = await ZunamiFactory.deploy();
+        await zunami.deployed();
+
+        await zunami.addTokens([
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
         ]);
-        await zunami.deployed();
 
         // Init all strategies
         for (const strategyName of strategyNames) {
@@ -262,7 +265,7 @@ describe('Single strategy tests', () => {
         }
     });
 
-    it('should withdraw assets in butch mode', async () => {
+    it('should withdraw assets in optimize in base mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {
             await zunami.addPool(strategies[poolId].address);
             await zunami.setDefaultDepositPid(poolId);
@@ -277,9 +280,13 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0]))
+                await expect(
+                    zunami
+                        .connect(user)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
+                )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
+                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0, 0, 0]);
             }
 
             await increaseChainTime(60 * 60);
@@ -287,14 +294,14 @@ describe('Single strategy tests', () => {
             await toggleUnlockStakes();
 
             await expect(
-                zunami.completeWithdrawals([alice.getAddress(), bob.getAddress()])
+                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
             ).to.emit(zunami, 'Withdrawn');
 
             await toggleUnlockStakes();
         }
     });
 
-    it('should withdraw assets in optimized mode', async () => {
+    it('should withdraw assets in optimized one coin mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {
             await zunami.addPool(strategies[poolId].address);
             await zunami.setDefaultDepositPid(poolId);
@@ -309,9 +316,13 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunami.connect(user).delegateWithdrawal(zlpAmount, [0, 0, 0]))
+                await expect(
+                    zunami
+                        .connect(user)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
+                )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0]);
+                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0, 0, 0]);
             }
 
             await increaseChainTime(60 * 60);
@@ -319,7 +330,7 @@ describe('Single strategy tests', () => {
             await toggleUnlockStakes();
 
             await expect(
-                zunami.completeWithdrawalsOptimized([alice.getAddress(), bob.getAddress()])
+                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
             ).to.emit(zunami, 'Withdrawn');
 
             await toggleUnlockStakes();
@@ -346,7 +357,7 @@ describe('Single strategy tests', () => {
                 await toggleUnlockStakes();
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.Base, 0)
+                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
@@ -376,7 +387,7 @@ describe('Single strategy tests', () => {
                 await toggleUnlockStakes();
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0], WithdrawalType.OneCoin, 0)
+                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
                 ).to.emit(zunami, 'Withdrawn');
 
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
@@ -402,7 +413,6 @@ describe('Single strategy tests', () => {
         }
 
         await increaseChainTime(3600 * 24 * 1);
-
         await zunami.autoCompoundAll();
 
         let token;

@@ -12,12 +12,12 @@ interface IZunamiVault is IERC20, IZunamiPoolInfo {
 
     function withdraw(
         uint256 lpShares,
-        uint256[3] memory tokenAmounts,
+        uint256[5] memory tokenAmounts,
         IStrategy.WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external;
 
-    function deposit(uint256[3] memory amounts) external returns (uint256);
+    function deposit(uint256[5] memory amounts) external returns (uint256);
 
     function calcWithdrawOneCoin(uint256 lpShares, uint128 tokenIndex)
     external

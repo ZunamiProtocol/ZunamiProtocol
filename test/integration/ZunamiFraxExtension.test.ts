@@ -22,12 +22,14 @@ describe('Zunami Frax extension tests', () => {
     beforeEach(async () => {
         [admin, alice, feeCollector] = await ethers.getSigners();
         const ZunamiFactory = await ethers.getContractFactory('Zunami');
-        zunami = await ZunamiFactory.deploy([
+        zunami = await ZunamiFactory.deploy();
+        await zunami.deployed();
+
+        await zunami.addTokens([
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
         ]);
-        await zunami.deployed();
 
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
         const stableConverter = await StableConverterFactory.deploy();

@@ -79,9 +79,11 @@ describe('Zunami', () => {
         usdt = await stubToken(6, admin);
 
         const Zunami = await ethers.getContractFactory('Zunami', admin);
-        zunami = await Zunami.deploy([dai.address, usdc.address, usdt.address]);
+        zunami = await Zunami.deploy();
         await zunami.deployed();
         expect(zunami.address).to.properAddress;
+
+        await zunami.addTokens([dai.address, usdc.address, usdt.address]);
     });
 
     it('should created rightly', async () => {
@@ -630,7 +632,7 @@ describe('Zunami', () => {
 
         await zunami.setRebalancer(rebalancer.address);
 
-        const tokens = [100, 100, 100];
+        const tokens = [100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         const holdings = 300;
         const createStrategy = async () => {
             const tokenBalances = await mintAndApproveTokens(admin, tokens);

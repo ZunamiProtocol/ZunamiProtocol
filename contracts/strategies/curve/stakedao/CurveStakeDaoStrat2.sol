@@ -33,7 +33,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         pool = ICurvePool2(poolAddr);
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts)
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts)
         internal
         view
         override
@@ -45,16 +45,16 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         }
         uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool3.get_virtual_price();
-        uint256 depositedLp = pool3.calc_token_amount(amounts, true);
+        uint256 depositedLp = pool3.calc_token_amount(toArr3from5(amounts), true);
 
         return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
+    function depositPool(uint256[POOL_ASSETS] memory amounts) internal override returns (uint256 poolLPs) {
         for (uint256 i = 0; i < 3; i++) {
             _config.tokens[i].safeIncreaseAllowance(address(pool3), amounts[i]);
         }
-        pool3.add_liquidity(amounts, 0);
+        pool3.add_liquidity(toArr3from5(amounts), 0);
 
         uint256[2] memory amounts2;
         amounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3LP.balanceOf(address(this));
@@ -81,21 +81,21 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         return pool3.calc_withdraw_one_coin(pool3Lps, int128(tokenIndex));
     }
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
         external
         view
         override
         returns (uint256 sharesAmount)
     {
         uint256[2] memory tokenAmounts2;
-        tokenAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(tokenAmounts, isDeposit);
+        tokenAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(toArr3from5(tokenAmounts), isDeposit);
         return pool.calc_token_amount(tokenAmounts2, isDeposit);
     }
 
     function calcCrvLps(
         WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     )
         internal
@@ -108,7 +108,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         )
     {
         uint256[2] memory minAmounts2;
-        minAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(tokenAmounts, false);
+        minAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(toArr3from5(tokenAmounts), false);
 
         removingCrvLps =
             (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) /
@@ -133,7 +133,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         uint256 removingCrvLps,
         uint256[] memory,
         WithdrawalType withdrawalType,
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
         uint256 prevCrv3Balance = pool3LP.balanceOf(address(this));
@@ -142,7 +142,7 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
 
         uint256 crv3LiqAmount = pool3LP.balanceOf(address(this)) - prevCrv3Balance;
         if (withdrawalType == WithdrawalType.Base) {
-            pool3.remove_liquidity(crv3LiqAmount, tokenAmounts);
+            pool3.remove_liquidity(crv3LiqAmount, toArr3from5(tokenAmounts));
         } else if (withdrawalType == WithdrawalType.OneCoin) {
             pool3.remove_liquidity_one_coin(
                 crv3LiqAmount,

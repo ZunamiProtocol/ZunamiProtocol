@@ -42,7 +42,7 @@ contract ZunamiFraxExtension {
         IERC20Metadata usdc = IERC20Metadata(Constants.USDC_ADDRESS);
         uint256 usdcBalance = usdc.balanceOf(address(this));
         usdc.safeIncreaseAllowance(address(zunami), usdcBalance);
-        zunami.deposit([0,usdcBalance,0]);
+        zunami.deposit([0,usdcBalance,0,0,0]);
         // transfer ZLP to user
         uint256 zlpBalance = zunami.balanceOf(address(this));
         if(minZlpAmount > 0) {
@@ -63,7 +63,7 @@ contract ZunamiFraxExtension {
 
         //withdraw from zunami in USDC
         zlp.safeIncreaseAllowance(address(zunami), zlpAmount);
-        zunami.withdraw(zlpAmount, [uint256(0),0,0], IStrategy.WithdrawalType.OneCoin, ZUNAMI_USDC_TOKEN_ID);
+        zunami.withdraw(zlpAmount, [uint256(0),0,0,0,0], IStrategy.WithdrawalType.OneCoin, ZUNAMI_USDC_TOKEN_ID);
 
         // convert USDC to Frax
         IERC20Metadata usdc = IERC20Metadata(Constants.USDC_ADDRESS);

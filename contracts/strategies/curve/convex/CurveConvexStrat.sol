@@ -24,7 +24,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         pool = ICurveLandingPool(poolAddr);
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts)
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts)
         internal
         view
         override
@@ -36,17 +36,17 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         }
         uint256 amountsMin = (_amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
         uint256 lpPrice = pool.get_virtual_price();
-        uint256 depositedLp = pool.calc_token_amount(amounts, true);
+        uint256 depositedLp = pool.calc_token_amount(toArr3from5(amounts), true);
 
         return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[3] memory amounts) internal override returns (uint256 poolLPs) {
+    function depositPool(uint256[POOL_ASSETS] memory amounts) internal override returns (uint256 poolLPs) {
         for (uint256 i = 0; i < 3; i++) {
             _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
         }
 
-        poolLPs = pool.add_liquidity(amounts, 0, true);
+        poolLPs = pool.add_liquidity(toArr3from5(amounts), 0, true);
 
         poolLP.safeIncreaseAllowance(address(_config.booster), poolLPs);
         _config.booster.depositAll(cvxPoolPID, true);
@@ -66,19 +66,19 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         return pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
     }
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
         external
         view
         override
         returns (uint256 sharesAmount)
     {
-        return pool.calc_token_amount(tokenAmounts, isDeposit);
+        return pool.calc_token_amount(toArr3from5(tokenAmounts), isDeposit);
     }
 
     function calcCrvLps(
         WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     )
         internal
@@ -90,7 +90,7 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
             uint256[] memory tokenAmountsDynamic
         )
     {
-        uint256 requiredCrvLPs = pool.calc_token_amount(tokenAmounts, false);
+        uint256 requiredCrvLPs = pool.calc_token_amount(toArr3from5(tokenAmounts), false);
         removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
         success = removingCrvLps >= requiredCrvLPs;
 
@@ -100,18 +100,18 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
                 pool.calc_withdraw_one_coin(removingCrvLps, int128(tokenIndex));
         }
 
-        tokenAmountsDynamic = fromArr3(tokenAmounts);
+        tokenAmountsDynamic = fromArr5(tokenAmounts);
     }
 
     function removeCrvLps(
         uint256 removingCrvLps,
         uint256[] memory,
         WithdrawalType withdrawalType,
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
         if (withdrawalType == WithdrawalType.Base) {
-            pool.remove_liquidity(removingCrvLps, tokenAmounts, true);
+            pool.remove_liquidity(removingCrvLps, toArr3from5(tokenAmounts), true);
         } else if (withdrawalType == WithdrawalType.OneCoin) {
             pool.remove_liquidity_one_coin(
                 removingCrvLps,

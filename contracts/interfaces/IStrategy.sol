@@ -7,12 +7,12 @@ interface IStrategy {
         OneCoin
     }
 
-    function deposit(uint256[3] memory amounts) external returns (uint256);
+    function deposit(uint256[5] memory amounts) external returns (uint256);
 
     function withdraw(
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[5] memory tokenAmounts,
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external returns (bool);
@@ -30,7 +30,7 @@ interface IStrategy {
         view
         returns (uint256 tokenAmount);
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[5] memory tokenAmounts, bool isDeposit)
         external
         view
         returns (uint256 sharesAmount);

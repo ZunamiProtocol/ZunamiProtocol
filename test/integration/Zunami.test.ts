@@ -25,12 +25,14 @@ describe('Zunami core functionality tests', () => {
     beforeEach(async () => {
         [admin, alice] = await ethers.getSigners();
         const ZunamiFactory = await ethers.getContractFactory('Zunami');
-        zunami = await ZunamiFactory.deploy([
+        zunami = await ZunamiFactory.deploy();
+        await zunami.deployed();
+
+        await zunami.addTokens([
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
         ]);
-        await zunami.deployed();
 
         // DAI initialization
         dai = new ethers.Contract(addrs.stablecoins.dai, erc20ABI, admin);
@@ -125,12 +127,12 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.pause()).to.emit(zunami, 'Paused').withArgs(adminAddr);
 
         //All functions which would be crashed
-        await expect(zunami.delegateDeposit([1, 1, 1])).to.be.revertedWith('Pausable: paused');
+        await expect(zunami.delegateDeposit([1, 1, 1, 1, 1])).to.be.revertedWith('Pausable: paused');
         await expect(
-            zunami.delegateWithdrawal(1, [1, 1, 1], WithdrawalType.Base, 0)
+            zunami.delegateWithdrawal(1, [1, 1, 1, 1, 1], WithdrawalType.Base, 0)
         ).to.be.revertedWith('Pausable: paused');
-        await expect(zunami.deposit([1, 1, 1])).to.be.revertedWith('Pausable: paused');
-        await expect(zunami.withdraw(1, [1, 1, 1], 1, 1)).to.be.revertedWith('Pausable: paused');
+        await expect(zunami.deposit([1, 1, 1, 1, 1])).to.be.revertedWith('Pausable: paused');
+        await expect(zunami.withdraw(1, [1, 1, 1, 1, 1], 1, 1)).to.be.revertedWith('Pausable: paused');
 
         await expect(zunami.unpause()).to.emit(zunami, 'Unpaused').withArgs(adminAddr);
     });
@@ -140,7 +142,7 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.connect(alice).setAvailableWithdrawalTypes(3)).to.be.reverted;
 
         await expect(zunami.setAvailableWithdrawalTypes(100)).to.be.revertedWith(
-            'Zunami: wrong available withdrawal types'
+            'wrong types'
         );
 
         const typesBefore = await zunami.availableWithdrawalTypes();
@@ -170,7 +172,7 @@ describe('Zunami core functionality tests', () => {
         const poolCountBefore = await zunami.poolCount();
         const fakeStrategyAddr = '0x0000000000000000000000000000000000000001';
 
-        await expect(zunami.addPool(ZERO_ADDRESS)).to.be.revertedWith('Zunami: zero strategy addr');
+        await expect(zunami.addPool(ZERO_ADDRESS)).to.be.revertedWith('zero addr');
         await expect(zunami.addPool(fakeStrategyAddr)).to.emit(zunami, 'AddedPool');
 
         const poolCountAfter = await zunami.poolCount();
@@ -192,7 +194,7 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.addPool(fakeStrategyAddr3)).to.emit(zunami, 'AddedPool');
 
         await expect(zunami.setDefaultDepositPid(illegalPoolNumber)).to.be.revertedWith(
-            'Zunami: incorrect default deposit pool id'
+            'not enabled'
         );
         await expect(zunami.setDefaultDepositPid(poolNumber1))
             .to.emit(zunami, 'SetDefaultDepositPid')
@@ -201,7 +203,7 @@ describe('Zunami core functionality tests', () => {
         expect(defaultDepositPoolBefore).to.be.not.eq(defaultDepositPoolAfter);
 
         await expect(zunami.setDefaultWithdrawPid(illegalPoolNumber)).to.be.revertedWith(
-            'Zunami: incorrect default withdraw pool id'
+            'not enabled'
         );
         await expect(zunami.setDefaultWithdrawPid(poolNumber2))
             .to.emit(zunami, 'SetDefaultWithdrawPid')
@@ -214,7 +216,7 @@ describe('Zunami core functionality tests', () => {
         expect(await zunami.launched()).to.false;
 
         await expect(zunami.completeDeposits([ZERO_ADDRESS])).to.be.revertedWith(
-            'Zunami: pool not existed!'
+            'pools empty'
         );
 
         await zunami.launch();
@@ -224,19 +226,22 @@ describe('Zunami core functionality tests', () => {
 
         await expect(zunami.addPool(fakeStrategyAddr)).to.emit(zunami, 'AddedPool');
         await expect(zunami.completeDeposits([ZERO_ADDRESS])).to.be.revertedWith(
-            'Zunami: default deposit pool not started yet!'
+            'default deposit not started'
         );
-        await expect(zunami.completeWithdrawalsBase([ZERO_ADDRESS], [0, 0, 0])).to.be.revertedWith(
-            'Zunami: default deposit pool not started yet!'
+        await expect(zunami.completeWithdrawalsBase([ZERO_ADDRESS], [0, 0, 0, 0, 0])).to.be.revertedWith(
+            'default deposit not started'
+        );
+        await expect(zunami.completeWithdrawalsOneCoin([ZERO_ADDRESS], [0, 0, 0, 0, 0])).to.be.revertedWith(
+            'default deposit not started'
         );
         await expect(zunami.completeWithdrawal(ZERO_ADDRESS)).to.be.revertedWith(
-            'Zunami: default deposit pool not started yet!'
+            'default deposit not started'
         );
-        await expect(zunami.deposit([0, 0, 0])).to.be.revertedWith(
-            'Zunami: default deposit pool not started yet!'
+        await expect(zunami.deposit([0, 0, 0, 0, 0])).to.be.revertedWith(
+            'default deposit not started'
         );
-        await expect(zunami.withdraw(0, [0, 0, 0], 0, 0)).to.be.revertedWith(
-            'Zunami: default deposit pool not started yet!'
+        await expect(zunami.withdraw(0, [0, 0, 0, 0, 0], 0, 0)).to.be.revertedWith(
+            'default deposit not started'
         );
     });
 
@@ -291,9 +296,9 @@ describe('Zunami core functionality tests', () => {
         let balanceBefore: number = userAssets.reduce((prev, curr) => +prev + +curr);
         expect(balanceBefore).to.eq(0);
 
-        await expect(zunami.connect(alice).delegateDeposit([50, 100, 150]))
+        await expect(zunami.connect(alice).delegateDeposit([50, 100, 150, 0, 0]))
             .to.emit(zunami, 'CreatedPendingDeposit')
-            .withArgs(await alice.getAddress(), [50, 100, 150]);
+            .withArgs(await alice.getAddress(), [50, 100, 150, 0, 0]);
 
         pendingDai = parseInt(
             await zunami.connect(alice).pendingDepositsToken(alice.getAddress(), 0)
@@ -323,10 +328,10 @@ describe('Zunami core functionality tests', () => {
         expect(coins).to.eq(0);
 
         await expect(
-            zunami.connect(alice).delegateWithdrawal(55555, [50, 100, 150], WithdrawalType.Base, 0)
+            zunami.connect(alice).delegateWithdrawal(55555, [50, 100, 150, 0, 0], WithdrawalType.Base, 0)
         )
             .to.emit(zunami, 'CreatedPendingWithdrawal')
-            .withArgs(await alice.getAddress(), 55555, [50, 100, 150]);
+            .withArgs(await alice.getAddress(), 55555, [50, 100, 150, 0, 0]);
 
         userAssets = await zunami.connect(alice).pendingWithdrawals(alice.getAddress());
         lpShares = userAssets[0];
