@@ -23,7 +23,7 @@ import "./interfaces/IZunamiRebalancer.sol";
  *
  */
 
-contract Zunami is ERC20, Pausable, AccessControl {
+contract ZunamiNative is ERC20, Pausable, AccessControl {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
@@ -33,6 +33,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     uint256 public constant MIN_LOCK_TIME = 1 days;
     uint256 public constant FUNDS_DENOMINATOR = 10_000;
     uint8 public constant ALL_WITHDRAWAL_TYPES_MASK = uint8(3); // Binary 11 = 2^0 + 2^1;
+    address public ETH_MOCK_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     uint8 public constant POOL_ASSETS = 5;
 
@@ -137,10 +138,15 @@ contract Zunami is ERC20, Pausable, AccessControl {
         _setupRole(OPERATOR_ROLE, msg.sender);
 
         availableWithdrawalTypes = ALL_WITHDRAWAL_TYPES_MASK;
+
+        // add ETH mock token address
+        tokens[0] = ETH_MOCK_ADDRESS;
+        tokenCount = 1;
+        setTokenDecimals(0, 18);
     }
 
     function addTokens(address[] memory _tokens) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i; i < _tokens.length; i++) {
+        for (uint256 i = 0; i < _tokens.length; i++) {
             tokens[tokenCount] = _tokens[i];
             tokenCount += 1;
 
@@ -290,10 +296,14 @@ contract Zunami is ERC20, Pausable, AccessControl {
      * of the transaction for all users
      * @param amounts - array of deposit amounts by user
      */
-    function delegateDeposit(uint256[POOL_ASSETS] memory amounts) external whenNotPaused {
+    function delegateDeposit(uint256[POOL_ASSETS] memory amounts) external payable whenNotPaused {
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
+                if(i == 0) {
+                    require(msg.value == amounts[i], "Wrong native amount");
+                } else {
+                    IERC20Metadata(tokens[i]).safeTransferFrom(_msgSender(), address(this), amounts[i]);
+                }
                 _pendingDeposits[_msgSender()][i] += amounts[i];
             }
         }
@@ -308,6 +318,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
      */
     function deposit(uint256[POOL_ASSETS] memory amounts)
         external
+        payable
         whenNotPaused
         startedPool
         returns (uint256)
@@ -318,14 +329,18 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
-                IERC20Metadata(tokens[i]).safeTransferFrom(
-                    _msgSender(),
-                    address(strategy),
-                    amounts[i]
-                );
+                if(i == 0) {
+                    require(msg.value == amounts[i], "Wrong native amount");
+                } else {
+                    IERC20Metadata(tokens[i]).safeTransferFrom(
+                        _msgSender(),
+                        address(strategy),
+                        amounts[i]
+                    );
+                }
             }
         }
-        uint256 depositedValue = strategy.deposit(amounts);
+        uint256 depositedValue = strategy.deposit{value: amounts[0]}(amounts);
         require(depositedValue > 0, 'low deposit');
 
         return
@@ -381,10 +396,12 @@ contract Zunami is ERC20, Pausable, AccessControl {
             uint256 tokenAmountTotal = totalAmounts[y];
             if (tokenAmountTotal > 0) {
                 holdingsTotal += tokenAmountTotal * decimalsMultipliers[y];
-                IERC20Metadata(tokens[y]).safeTransfer(address(strategy), tokenAmountTotal);
+                if(y != 0) {
+                    IERC20Metadata(tokens[y]).safeTransfer(address(strategy), tokenAmountTotal);
+                }
             }
         }
-        uint256 depositedValue = strategy.deposit(totalAmounts);
+        uint256 depositedValue = strategy.deposit{value: totalAmounts[0]}(totalAmounts);
         require(depositedValue > 0, 'low deposit');
 
         uint256 holdingsCounted = 0;
@@ -540,58 +557,58 @@ contract Zunami is ERC20, Pausable, AccessControl {
         );
     }
 
-    function completeWithdrawal(address user) external onlyRole(OPERATOR_ROLE) startedPool {
-        require(address(user) != address(0), 'zero address');
-
-        IStrategy withdrawStrategy = _poolInfo[defaultWithdrawPid].strategy;
-
-        PendingWithdrawal memory withdrawal = _pendingWithdrawals[user];
-
-        if (balanceOf(user) < withdrawal.lpShares) {
-            emit FailedWithdrawal(
-                user,
-                withdrawal.tokenAmounts,
-                withdrawal.lpShares,
-                withdrawal.withdrawalType,
-                withdrawal.tokenIndex
-            );
-            delete _pendingWithdrawals[user];
-            return;
-        }
-
-        if (
-            !(
-                withdrawStrategy.withdraw(
-                    user,
-                    calcLpRatioSafe(withdrawal.lpShares, _poolInfo[defaultWithdrawPid].lpShares),
-                    withdrawal.tokenAmounts,
-                    withdrawal.withdrawalType,
-                    withdrawal.tokenIndex
-                )
-            )
-        ) {
-            emit FailedWithdrawal(
-                user,
-                withdrawal.tokenAmounts,
-                withdrawal.lpShares,
-                withdrawal.withdrawalType,
-                withdrawal.tokenIndex
-            );
-            delete _pendingWithdrawals[user];
-            return;
-        }
-
-        uint256 userDeposit = (totalDeposited * withdrawal.lpShares) / totalSupply();
-        processSuccessfulWithdrawal(
-            user,
-            userDeposit,
-            withdrawal.lpShares,
-            withdrawal.withdrawalType,
-            withdrawal.tokenIndex,
-            false
-        );
-        delete _pendingWithdrawals[user];
-    }
+//    function completeWithdrawal(address user) external onlyRole(OPERATOR_ROLE) startedPool {
+//        require(address(user) != address(0), 'zero address');
+//
+//        IStrategy withdrawStrategy = _poolInfo[defaultWithdrawPid].strategy;
+//
+//        PendingWithdrawal memory withdrawal = _pendingWithdrawals[user];
+//
+//        if (balanceOf(user) < withdrawal.lpShares) {
+//            emit FailedWithdrawal(
+//                user,
+//                withdrawal.tokenAmounts,
+//                withdrawal.lpShares,
+//                withdrawal.withdrawalType,
+//                withdrawal.tokenIndex
+//            );
+//            delete _pendingWithdrawals[user];
+//            return;
+//        }
+//
+//        if (
+//            !(
+//                withdrawStrategy.withdraw(
+//                    user,
+//                    calcLpRatioSafe(withdrawal.lpShares, _poolInfo[defaultWithdrawPid].lpShares),
+//                    withdrawal.tokenAmounts,
+//                    withdrawal.withdrawalType,
+//                    withdrawal.tokenIndex
+//                )
+//            )
+//        ) {
+//            emit FailedWithdrawal(
+//                user,
+//                withdrawal.tokenAmounts,
+//                withdrawal.lpShares,
+//                withdrawal.withdrawalType,
+//                withdrawal.tokenIndex
+//            );
+//            delete _pendingWithdrawals[user];
+//            return;
+//        }
+//
+//        uint256 userDeposit = (totalDeposited * withdrawal.lpShares) / totalSupply();
+//        processSuccessfulWithdrawal(
+//            user,
+//            userDeposit,
+//            withdrawal.lpShares,
+//            withdrawal.withdrawalType,
+//            withdrawal.tokenIndex,
+//            false
+//        );
+//        delete _pendingWithdrawals[user];
+//    }
 
     /**
      * @dev Zunami protocol owner complete all active pending withdrawals of users

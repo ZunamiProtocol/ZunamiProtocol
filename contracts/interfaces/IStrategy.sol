@@ -7,7 +7,7 @@ interface IStrategy {
         OneCoin
     }
 
-    function deposit(uint256[5] memory amounts) external returns (uint256);
+    function deposit(uint256[5] memory amounts) external payable returns (uint256);
 
     function withdraw(
         address withdrawer,
