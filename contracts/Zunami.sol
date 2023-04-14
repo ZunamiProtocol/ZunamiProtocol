@@ -113,6 +113,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     event ClaimedAllManagementFee(uint256 feeValue);
     event AutoCompoundAll(uint256 compoundedValue);
     event ToggledEnabledPoolStatus(address pool, bool newStatus);
+    event UpdatedToken(uint256 tid, address token, address tokenOld);
 
     modifier startedPool() {
         require(_poolInfo.length != 0, 'pools empty');
@@ -142,6 +143,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
     function addTokens(address[] memory _tokens) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i; i < _tokens.length; i++) {
             tokens[tokenCount] = _tokens[i];
+            emit UpdatedToken(tokenCount, _tokens[i], address(0));
             tokenCount += 1;
 
             uint256 decimals = IERC20Metadata(_tokens[i]).decimals();
@@ -151,6 +153,7 @@ contract Zunami is ERC20, Pausable, AccessControl {
 
     function replaceToken(uint256 _tokenIndex, address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_tokenIndex <= tokenCount, "wrong index");
+        emit UpdatedToken(_tokenIndex, _token, tokens[_tokenIndex]);
         tokens[_tokenIndex] = _token;
 
         uint256 decimals = IERC20Metadata(_token).decimals();
