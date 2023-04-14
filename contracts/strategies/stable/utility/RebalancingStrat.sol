@@ -9,10 +9,10 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../utils/Constants.sol';
+import '../../../utils/Constants.sol';
 
-import '../../interfaces/IZunami.sol';
-import '../../interfaces/IStrategy.sol';
+import '../../../interfaces/IZunami.sol';
+import '../../../interfaces/IStrategy.sol';
 
 contract RebalancingStrat is Ownable {
     using SafeERC20 for IERC20Metadata;

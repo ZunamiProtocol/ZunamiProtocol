@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../../../interfaces/ICurvePoolPricable.sol';
+import '../../../../interfaces/ICurvePoolPricable.sol';
 
 interface ICurvePool2 is ICurvePoolPricable {
     function coins(uint256 i) external view returns (address);

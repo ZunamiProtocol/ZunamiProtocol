@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
 import "../interfaces/IZunamiVault.sol";
-import "../strategies/interfaces/IStableConverter.sol";
+import "../interfaces/IStableConverter.sol";
 
 //import "hardhat/console.sol";
 

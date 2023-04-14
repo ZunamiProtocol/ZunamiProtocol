@@ -6,8 +6,8 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../utils/Constants.sol';
 import '../../interfaces/IUniswapRouter.sol';
-import '../interfaces/IRewardManager.sol';
-import "../interfaces/AggregatorV2V3Interface.sol";
+import '../../interfaces/IRewardManager.sol';
+import './AggregatorV2V3Interface.sol';
 
 contract SellingUniswapRewardManager is IRewardManager {
     using SafeERC20 for IERC20Metadata;

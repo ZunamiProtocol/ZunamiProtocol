@@ -5,10 +5,10 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../utils/Constants.sol';
-import '../interfaces/IRewardManager.sol';
-import '../interfaces/IStableConverter.sol';
-import '../interfaces/ICurveWethPool.sol';
-import '../interfaces/AggregatorV2V3Interface.sol';
+import '../../interfaces/IRewardManager.sol';
+import '../../interfaces/IStableConverter.sol';
+import './ICurve3CryptoPool.sol';
+import './AggregatorV2V3Interface.sol';
 import "../../interfaces/IElasticRigidVault.sol";
 
 //import "hardhat/console.sol";
@@ -26,7 +26,7 @@ contract SellingCurveRewardManager is IRewardManager {
 
     uint256 public constant defaultSlippage = 300; // 3%
 
-    ICurveWethPool public immutable tricrypto2;
+    ICurve3CryptoPool public immutable tricrypto2;
 
     mapping(address => address) public rewardEthCurvePools;
 
@@ -50,7 +50,7 @@ contract SellingCurveRewardManager is IRewardManager {
         require(feeCollectorAddr != address(0), "FeeCollector");
         feeCollector = feeCollectorAddr;
 
-        tricrypto2 = ICurveWethPool(Constants.CRV_TRICRYPTO2_ADDRESS);
+        tricrypto2 = ICurve3CryptoPool(Constants.CRV_TRICRYPTO2_ADDRESS);
 
         rewardEthCurvePools[Constants.CVX_ADDRESS] = 0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4; // https://curve.fi/#/ethereum/pools/cvxeth
         rewardEthCurvePools[Constants.CRV_ADDRESS] = 0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511; // https://curve.fi/#/ethereum/pools/crveth
@@ -80,7 +80,7 @@ contract SellingCurveRewardManager is IRewardManager {
 
         amount = extractRigidPart(reward, amount);
 
-        ICurveWethPool rewardEthPool = ICurveWethPool(rewardEthCurvePools[reward]);
+        ICurve3CryptoPool rewardEthPool = ICurve3CryptoPool(rewardEthCurvePools[reward]);
 
         IERC20Metadata(reward).safeIncreaseAllowance(address(rewardEthPool), amount);
 
@@ -125,7 +125,7 @@ contract SellingCurveRewardManager is IRewardManager {
     ) public view returns (uint256) {
         if (amount == 0) return 0;
 
-        ICurveWethPool rewardEthPool = ICurveWethPool(rewardEthCurvePools[reward]);
+        ICurve3CryptoPool rewardEthPool = ICurve3CryptoPool(rewardEthCurvePools[reward]);
 
         uint256 wethAmount = rewardEthPool.get_dy(
             CURVE_WETH_REWARD_POOL_REWARD_ID,
