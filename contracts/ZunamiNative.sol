@@ -80,7 +80,6 @@ contract ZunamiNative is ERC20, Pausable, AccessControl {
         uint256[POOL_ASSETS] tokenAmounts
     );
     event RemovedPendingDeposit(address indexed depositor);
-    //    event RemovedPendingWithdrawal(address indexed depositor);
 
     event Deposited(
         address indexed depositor,
@@ -189,25 +188,9 @@ contract ZunamiNative is ERC20, Pausable, AccessControl {
         return _pendingDeposits[user];
     }
 
-    //    function pendingDepositsToken(address user, uint256 tokenIndex)
-    //        external
-    //        view
-    //        returns (uint256)
-    //    {
-    //        return _pendingDeposits[user][tokenIndex];
-    //    }
-
     function pendingWithdrawals(address user) external view returns (PendingWithdrawal memory) {
         return _pendingWithdrawals[user];
     }
-
-    //    function togglePauseStatus() external onlyRole(DEFAULT_ADMIN_ROLE) {
-    //        if(paused()) {
-    //            _unpause();
-    //        } else {
-    //            _pause();
-    //        }
-    //    }
 
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
@@ -558,59 +541,6 @@ contract ZunamiNative is ERC20, Pausable, AccessControl {
         require(lpShareRatio > 0 && lpShareRatio <= LP_RATIO_MULTIPLIER, 'wrong lp ratio');
     }
 
-    //    function completeWithdrawal(address user) external onlyRole(OPERATOR_ROLE) startedPool {
-    //        require(address(user) != address(0), 'zero address');
-    //
-    //        IStrategy withdrawStrategy = _poolInfo[defaultWithdrawPid].strategy;
-    //
-    //        PendingWithdrawal memory withdrawal = _pendingWithdrawals[user];
-    //
-    //        if (balanceOf(user) < withdrawal.lpShares) {
-    //            emit FailedWithdrawal(
-    //                user,
-    //                withdrawal.tokenAmounts,
-    //                withdrawal.lpShares,
-    //                withdrawal.withdrawalType,
-    //                withdrawal.tokenIndex
-    //            );
-    //            delete _pendingWithdrawals[user];
-    //            return;
-    //        }
-    //
-    //        if (
-    //            !(
-    //                withdrawStrategy.withdraw(
-    //                    user,
-    //                    calcLpRatioSafe(withdrawal.lpShares, _poolInfo[defaultWithdrawPid].lpShares),
-    //                    withdrawal.tokenAmounts,
-    //                    withdrawal.withdrawalType,
-    //                    withdrawal.tokenIndex
-    //                )
-    //            )
-    //        ) {
-    //            emit FailedWithdrawal(
-    //                user,
-    //                withdrawal.tokenAmounts,
-    //                withdrawal.lpShares,
-    //                withdrawal.withdrawalType,
-    //                withdrawal.tokenIndex
-    //            );
-    //            delete _pendingWithdrawals[user];
-    //            return;
-    //        }
-    //
-    //        uint256 userDeposit = (totalDeposited * withdrawal.lpShares) / totalSupply();
-    //        processSuccessfulWithdrawal(
-    //            user,
-    //            userDeposit,
-    //            withdrawal.lpShares,
-    //            withdrawal.withdrawalType,
-    //            withdrawal.tokenIndex,
-    //            false
-    //        );
-    //        delete _pendingWithdrawals[user];
-    //    }
-
     /**
      * @dev Zunami protocol owner complete all active pending withdrawals of users
      * @param userList - users owns pending withdraw to complete
@@ -931,11 +861,6 @@ contract ZunamiNative is ERC20, Pausable, AccessControl {
         delete _pendingDeposits[_msgSender()];
         emit RemovedPendingDeposit(_msgSender());
     }
-
-    //    function removePendingWithdrawal() external {
-    //        delete _pendingWithdrawals[_msgSender()];
-    //        emit RemovedPendingWithdrawal(_msgSender());
-    //    }
 
     /**
      * @dev governance can withdraw all stuck funds in emergency case
