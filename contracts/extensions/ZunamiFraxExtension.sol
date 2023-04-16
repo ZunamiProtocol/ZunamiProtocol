@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/Constants.sol';
-import "../interfaces/IZunamiVault.sol";
-import "../interfaces/IStableConverter.sol";
+import '../interfaces/IZunamiVault.sol';
+import '../interfaces/IStableConverter.sol';
 
 //import "hardhat/console.sol";
 
@@ -27,10 +27,7 @@ contract ZunamiFraxExtension {
         zunami = IZunamiVault(zunamiAddress);
     }
 
-    function deposit(uint256 fraxAmount, uint256 minZlpAmount)
-    external
-    returns (uint256)
-    {
+    function deposit(uint256 fraxAmount, uint256 minZlpAmount) external returns (uint256) {
         // get frax
         IERC20Metadata frax = IERC20Metadata(Constants.FRAX_ADDRESS);
 
@@ -42,28 +39,30 @@ contract ZunamiFraxExtension {
         IERC20Metadata usdc = IERC20Metadata(Constants.USDC_ADDRESS);
         uint256 usdcBalance = usdc.balanceOf(address(this));
         usdc.safeIncreaseAllowance(address(zunami), usdcBalance);
-        zunami.deposit([0,usdcBalance,0,0,0]);
+        zunami.deposit([0, usdcBalance, 0, 0, 0]);
         // transfer ZLP to user
         uint256 zlpBalance = zunami.balanceOf(address(this));
-        if(minZlpAmount > 0) {
-            require(zlpBalance >= minZlpAmount, "Slippage");
+        if (minZlpAmount > 0) {
+            require(zlpBalance >= minZlpAmount, 'Slippage');
         }
         IERC20Metadata(address(zunami)).safeTransfer(msg.sender, zlpBalance);
         emit Deposited(msg.sender, fraxAmount, zlpBalance);
         return zlpBalance;
     }
 
-    function withdraw(
-        uint256 zlpAmount,
-        uint256 minFraxAmount
-    ) external {
+    function withdraw(uint256 zlpAmount, uint256 minFraxAmount) external {
         IERC20Metadata zlp = IERC20Metadata(address(zunami));
         // get zlp allowance
         zlp.safeTransferFrom(msg.sender, address(this), zlpAmount);
 
         //withdraw from zunami in USDC
         zlp.safeIncreaseAllowance(address(zunami), zlpAmount);
-        zunami.withdraw(zlpAmount, [uint256(0),0,0,0,0], IStrategy.WithdrawalType.OneCoin, ZUNAMI_USDC_TOKEN_ID);
+        zunami.withdraw(
+            zlpAmount,
+            [uint256(0), 0, 0, 0, 0],
+            IStrategy.WithdrawalType.OneCoin,
+            ZUNAMI_USDC_TOKEN_ID
+        );
 
         // convert USDC to Frax
         IERC20Metadata usdc = IERC20Metadata(Constants.USDC_ADDRESS);
@@ -74,14 +73,14 @@ contract ZunamiFraxExtension {
         // check min amount and send to user
         IERC20Metadata frax = IERC20Metadata(Constants.FRAX_ADDRESS);
         uint256 fraxBalance = frax.balanceOf(address(this));
-        if(minFraxAmount > 0) {
-            require(fraxBalance >= minFraxAmount, "Slippage");
+        if (minFraxAmount > 0) {
+            require(fraxBalance >= minFraxAmount, 'Slippage');
         }
         emit Withdrawn(msg.sender, zlpAmount, fraxBalance);
         frax.safeTransfer(msg.sender, fraxBalance);
     }
 
-    function calcWithdraw(uint256 zlpAmount) external view returns(uint256) {
+    function calcWithdraw(uint256 zlpAmount) external view returns (uint256) {
         uint256 defaultWithdrawPid = zunami.defaultWithdrawPid();
 
         IZunamiVault.PoolInfo memory pool = zunami.poolInfo(defaultWithdrawPid);
@@ -90,6 +89,7 @@ contract ZunamiFraxExtension {
 
         uint256 usdcAmount = pool.strategy.calcWithdrawOneCoin(lpShareRatio, ZUNAMI_USDC_TOKEN_ID);
 
-        return fraxUsdcConverter.valuate(Constants.USDC_ADDRESS, Constants.FRAX_ADDRESS, usdcAmount);
+        return
+            fraxUsdcConverter.valuate(Constants.USDC_ADDRESS, Constants.FRAX_ADDRESS, usdcAmount);
     }
 }

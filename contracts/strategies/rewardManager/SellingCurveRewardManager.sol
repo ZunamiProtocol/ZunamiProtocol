@@ -9,7 +9,7 @@ import '../../interfaces/IRewardManager.sol';
 import '../../interfaces/IStableConverter.sol';
 import './ICurve3CryptoPool.sol';
 import './AggregatorV2V3Interface.sol';
-import "../../interfaces/IElasticRigidVault.sol";
+import '../../interfaces/IElasticRigidVault.sol';
 
 //import "hardhat/console.sol";
 
@@ -38,16 +38,20 @@ contract SellingCurveRewardManager is IRewardManager {
     IElasticRigidVault public immutable uzd;
     address immutable feeCollector;
 
-    constructor(address stableConverterAddr, address uzdAddr, address feeCollectorAddr) {
+    constructor(
+        address stableConverterAddr,
+        address uzdAddr,
+        address feeCollectorAddr
+    ) {
         zlp = IERC20Metadata(0x2ffCC661011beC72e1A9524E12060983E74D14ce);
 
-        require(stableConverterAddr != address(0), "StableConverter");
+        require(stableConverterAddr != address(0), 'StableConverter');
         stableConverter = IStableConverter(stableConverterAddr);
 
-        require(uzdAddr != address(0), "Uzd");
+        require(uzdAddr != address(0), 'Uzd');
         uzd = IElasticRigidVault(uzdAddr);
 
-        require(feeCollectorAddr != address(0), "FeeCollector");
+        require(feeCollectorAddr != address(0), 'FeeCollector');
         feeCollector = feeCollectorAddr;
 
         tricrypto2 = ICurve3CryptoPool(Constants.CRV_TRICRYPTO2_ADDRESS);
@@ -159,12 +163,12 @@ contract SellingCurveRewardManager is IRewardManager {
         require(feeTokenAmount >= feeTokenAmountByOracleWithSlippage, 'Wrong slippage');
     }
 
-    function extractRigidPart(address reward, uint256 amount) internal returns(uint256){
+    function extractRigidPart(address reward, uint256 amount) internal returns (uint256) {
         uint256 zlpSupply = zlp.totalSupply();
         uint256 zlpLocked = uzd.lockedNominalRigid();
 
-        uint256 rewardLocked = amount * zlpLocked / zlpSupply;
-        if(rewardLocked > 0) {
+        uint256 rewardLocked = (amount * zlpLocked) / zlpSupply;
+        if (rewardLocked > 0) {
             IERC20Metadata(reward).safeTransfer(feeCollector, rewardLocked);
         }
 

@@ -12,7 +12,7 @@ import '../../../../interfaces/IUniswapRouter.sol';
 import './interfaces/IConvexMinter.sol';
 import './interfaces/IConvexBooster.sol';
 import './interfaces/IConvexRewards.sol';
-import "../../../../interfaces/IRewardManager.sol";
+import '../../../../interfaces/IRewardManager.sol';
 
 abstract contract CurveConvexStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -105,7 +105,11 @@ abstract contract CurveConvexStratBase is Ownable {
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts) internal view virtual returns (bool);
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts)
+        internal
+        view
+        virtual
+        returns (bool);
 
     function depositPool(uint256[POOL_ASSETS] memory amounts) internal virtual returns (uint256);
 
@@ -258,7 +262,7 @@ abstract contract CurveConvexStratBase is Ownable {
 
     function sellRewardsExtra() internal virtual {}
 
-    function autoCompound() public onlyZunami returns(uint256) {
+    function autoCompound() public onlyZunami returns (uint256) {
         cvxRewards.getReward();
 
         sellRewards();
@@ -420,7 +424,7 @@ abstract contract CurveConvexStratBase is Ownable {
 
     function fromArr5(uint256[5] memory arr) internal pure returns (uint256[] memory arrInf) {
         arrInf = new uint256[](5);
-        for(uint256 i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             arrInf[i] = arr[i];
         }
     }

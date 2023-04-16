@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IStrategy.sol";
+import './IStrategy.sol';
 
 interface IZunami {
     function totalDeposited() external returns (uint256);

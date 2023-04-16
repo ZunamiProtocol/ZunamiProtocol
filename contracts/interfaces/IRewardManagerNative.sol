@@ -8,8 +8,5 @@ interface IRewardManagerNative {
         bool wrapped
     ) external;
 
-    function valuate(
-        address reward,
-        uint256 amount
-    ) external view returns (uint256);
+    function valuate(address reward, uint256 amount) external view returns (uint256);
 }

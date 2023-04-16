@@ -174,7 +174,8 @@ library Constants {
     address internal constant CRV_TRICRYPTO2_ADDRESS = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46;
 
     address internal constant CRV_FRAX_alUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
-    address internal constant CRV_FRAX_alUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+    address internal constant CRV_FRAX_alUSD_LP_ADDRESS =
+        0xB30dA2376F63De30b42dC055C93fa474F31330A5;
 
     address internal constant ETH_frxETH_ADDRESS = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
     address internal constant ETH_frxETH_LP_ADDRESS = 0xf43211935C781D5ca1a41d2041F397B8A7366C7A;

@@ -2,11 +2,10 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
-import "../interfaces/IZunamiPoolController.sol";
-import "../interfaces/IZunamiRebalancer.sol";
+import '../interfaces/IZunamiPoolController.sol';
+import '../interfaces/IZunamiRebalancer.sol';
 
-contract ZunamiRebalancer is IZunamiRebalancer{
-
+contract ZunamiRebalancer is IZunamiRebalancer {
     struct PriceInfo {
         uint256 pid;
         uint256 price;

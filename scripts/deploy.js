@@ -65,7 +65,7 @@ async function main() {
     // await stableConverter.deployed();
     // const stableConverterAddress = stableConverter.address;
 
-    const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
+    const stableConverterAddress = '0x939d4051eD5447f3Dc542af93b7E343f19AEe469';
     console.log('Stable converter deployed to:', stableConverterAddress);
 
     // const uzdAddress = '0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c';

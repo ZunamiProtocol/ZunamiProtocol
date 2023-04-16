@@ -91,7 +91,7 @@ contract SellingUniswapRewardManager is IRewardManager {
 
         uint256 feeTokenAmountByOracle = (uint256(answer) * amount) / 1e20; // reward decimals 18 + oracle decimals 2 (8 - 6)
         uint256 feeTokenAmountByOracleWithSlippage = (feeTokenAmountByOracle *
-        (SLIPPAGE_DENOMINATOR - defaultSlippage)) / SLIPPAGE_DENOMINATOR;
+            (SLIPPAGE_DENOMINATOR - defaultSlippage)) / SLIPPAGE_DENOMINATOR;
 
         require(feeTokenAmount >= feeTokenAmountByOracleWithSlippage, 'Wrong slippage');
     }

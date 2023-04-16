@@ -8,7 +8,7 @@ import * as addrs from '../address.json';
 import * as globalConfig from '../../config.json';
 
 function getMinAmount(): BigNumber[] {
-    const zero = ethers.utils.parseUnits('0', 'ether')
+    const zero = ethers.utils.parseUnits('0', 'ether');
     const amount = '1000';
     const eth = ethers.utils.parseUnits(amount, 'ether');
     const wEth = ethers.utils.parseUnits(amount, 'ether');
@@ -55,8 +55,7 @@ describe('Single ETH FraxStaking strategy tests', () => {
         OneCoin,
     }
 
-    const configConvexETH = {
-    };
+    const configConvexETH = {};
 
     const configStakingConvexETH = {
         tokens: globalConfig.tokensETH,
@@ -64,10 +63,7 @@ describe('Single ETH FraxStaking strategy tests', () => {
         booster: globalConfig.stakingBooster,
     };
 
-
-    const configStakeDaoETH = {
-    };
-
+    const configStakeDaoETH = {};
 
     let admin: Signer;
     let alice: Signer;
@@ -84,34 +80,49 @@ describe('Single ETH FraxStaking strategy tests', () => {
 
         // wEth initialization
         const WETH9_ABI = [
-            {"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},
-            {"constant":false,"inputs":[{"name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+            {
+                constant: false,
+                inputs: [],
+                name: 'deposit',
+                outputs: [],
+                payable: true,
+                stateMutability: 'payable',
+                type: 'function',
+            },
+            {
+                constant: false,
+                inputs: [{ name: 'wad', type: 'uint256' }],
+                name: 'withdraw',
+                outputs: [],
+                payable: false,
+                stateMutability: 'nonpayable',
+                type: 'function',
+            },
         ];
         wEth = new ethers.Contract(addrs.stablecoins.wEth, erc20ABI.concat(WETH9_ABI), admin);
-        await wEth.deposit({value: ethers.utils.parseUnits('1000000', 'ether')});
+        await wEth.deposit({ value: ethers.utils.parseUnits('1000000', 'ether') });
 
         // frxEth initialization
         const FRXETH_ABI = [
             {
-                "inputs":[
+                inputs: [
                     {
-                        "internalType":"address",
-                        "name":"m_address",
-                        "type":"address"
+                        internalType: 'address',
+                        name: 'm_address',
+                        type: 'address',
                     },
                     {
-                        "internalType":"uint256",
-                        "name":"m_amount",
-                        "type":"uint256"
-                    }
+                        internalType: 'uint256',
+                        name: 'm_amount',
+                        type: 'uint256',
+                    },
                 ],
-                "name":"minter_mint",
-                "outputs":[
-                ],
-                "stateMutability":"nonpayable",
-                "type":"function"
-            }
-         ];
+                name: 'minter_mint',
+                outputs: [],
+                stateMutability: 'nonpayable',
+                type: 'function',
+            },
+        ];
         frxEth = new ethers.Contract(addrs.stablecoins.frxEth, erc20ABI.concat(FRXETH_ABI), admin);
 
         await network.provider.request({
@@ -121,13 +132,15 @@ describe('Single ETH FraxStaking strategy tests', () => {
         const frxEthAccountSigner: Signer = ethers.provider.getSigner(addrs.holders.frxEthMinter);
         await frxEth
             .connect(frxEthAccountSigner)
-            .minter_mint(admin.getAddress() ,ethers.utils.parseUnits('1000000', 'ether'));
+            .minter_mint(admin.getAddress(), ethers.utils.parseUnits('1000000', 'ether'));
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
             params: [addrs.holders.frxEthMinter],
         });
 
-        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerNative');
+        const RewardManagerFactory = await ethers.getContractFactory(
+            'SellingCurveRewardManagerNative'
+        );
         rewardManager = await RewardManagerFactory.deploy(feeCollector.getAddress());
         await rewardManager.deployed();
     });
@@ -137,11 +150,10 @@ describe('Single ETH FraxStaking strategy tests', () => {
         zunami = await ZunamiFactory.deploy();
         await zunami.deployed();
 
-        await zunami.addTokens([
-            addrs.stablecoins.mockEth,
-            addrs.stablecoins.wEth,
-            addrs.stablecoins.frxEth,
-        ], [1, 1, 1]);
+        await zunami.addTokens(
+            [addrs.stablecoins.mockEth, addrs.stablecoins.wEth, addrs.stablecoins.frxEth],
+            [1, 1, 1]
+        );
 
         // Init all strategies
         for (const strategyName of strategyNames) {
@@ -186,7 +198,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
                 const wEthBefore = await wEth.balanceOf(user.getAddress());
                 const frxEthBefore = await frxEth.balanceOf(user.getAddress());
 
-                await expect(zunami.connect(user).delegateDeposit(minAmounts, {value: minAmounts[0]}))
+                await expect(
+                    zunami.connect(user).delegateDeposit(minAmounts, { value: minAmounts[0] })
+                )
                     .to.emit(zunami, 'CreatedPendingDeposit')
                     .withArgs(await user.getAddress(), getMinAmount());
 
@@ -223,10 +237,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
                 const frxEthBefore = await frxEth.balanceOf(user.getAddress());
                 const zlpBefore = await zunami.balanceOf(user.getAddress());
 
-                await expect(zunami.connect(user).deposit(minAmounts,{value: minAmounts[0]})).to.emit(
-                    zunami,
-                    'Deposited'
-                );
+                await expect(
+                    zunami.connect(user).deposit(minAmounts, { value: minAmounts[0] })
+                ).to.emit(zunami, 'Deposited');
 
                 expect(await ethers.provider.getBalance(user.getAddress())).to.lt(ethBefore);
                 expect(await wEth.balanceOf(user.getAddress())).to.lt(wEthBefore);
@@ -244,10 +257,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
 
             const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
-                    zunami,
-                    'Deposited'
-                );
+                await expect(
+                    zunami.connect(user).deposit(minAmounts, { value: minAmounts[0] })
+                ).to.emit(zunami, 'Deposited');
 
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
@@ -266,7 +278,10 @@ describe('Single ETH FraxStaking strategy tests', () => {
             await toggleUnlockStakes();
 
             await expect(
-                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
+                zunami.completeWithdrawalsBase(
+                    [alice.getAddress(), bob.getAddress()],
+                    [0, 0, 0, 0, 0]
+                )
             ).to.emit(zunami, 'Withdrawn');
 
             await toggleUnlockStakes();
@@ -281,10 +296,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
 
             const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
-                    zunami,
-                    'Deposited'
-                );
+                await expect(
+                    zunami.connect(user).deposit(minAmounts, { value: minAmounts[0] })
+                ).to.emit(zunami, 'Deposited');
 
                 const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
@@ -303,7 +317,10 @@ describe('Single ETH FraxStaking strategy tests', () => {
             await toggleUnlockStakes();
 
             await expect(
-                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
+                zunami.completeWithdrawalsOneCoin(
+                    [alice.getAddress(), bob.getAddress()],
+                    [0, 0, 0, 0, 0]
+                )
             ).to.emit(zunami, 'Withdrawn');
 
             await toggleUnlockStakes();
@@ -318,10 +335,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
 
             const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
-                    zunami,
-                    'Deposited'
-                );
+                await expect(
+                    zunami.connect(user).deposit(minAmounts, { value: minAmounts[0] })
+                ).to.emit(zunami, 'Deposited');
 
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
@@ -331,7 +347,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
                 await toggleUnlockStakes();
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
+                    zunami
+                        .connect(user)
+                        .withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
@@ -349,10 +367,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
 
             const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
-                    zunami,
-                    'Deposited'
-                );
+                await expect(
+                    zunami.connect(user).deposit(minAmounts, { value: minAmounts[0] })
+                ).to.emit(zunami, 'Deposited');
 
                 let zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
@@ -362,7 +379,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
                 await toggleUnlockStakes();
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
+                    zunami
+                        .connect(user)
+                        .withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
                 ).to.emit(zunami, 'Withdrawn');
 
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
@@ -382,10 +401,9 @@ describe('Single ETH FraxStaking strategy tests', () => {
             await zunami.setDefaultDepositPid(i);
             await zunami.setDefaultWithdrawPid(i);
 
-            await expect(zunami.connect(alice).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
-                zunami,
-                'Deposited'
-            );
+            await expect(
+                zunami.connect(alice).deposit(minAmounts, { value: minAmounts[0] })
+            ).to.emit(zunami, 'Deposited');
         }
 
         await increaseChainTime(3600 * 24 * 1);

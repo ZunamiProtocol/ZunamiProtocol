@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../CurveConvexExtraStratBase.sol';
-import "../../../../../interfaces/IStableConverter.sol";
-import "../../../../interfaces/ICurvePool2.sol";
+import '../../../../../interfaces/IStableConverter.sol';
+import '../../../../interfaces/ICurvePool2.sol';
 
 abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
@@ -159,11 +159,10 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         return crvFraxTokenPool.calc_token_amount(amounts, isDeposit);
     }
 
-    function convertZunamiTokensToFraxUsdcs(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
-        internal
-        view
-        returns (uint256[2] memory amounts)
-    {
+    function convertZunamiTokensToFraxUsdcs(
+        uint256[POOL_ASSETS] memory tokenAmounts,
+        bool isDeposit
+    ) internal view returns (uint256[2] memory amounts) {
         amounts[FRAX_USDC_POOL_USDC_ID] =
             tokenAmounts[0] /
             1e12 +
@@ -251,10 +250,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 balance = _config.tokens[ZUNAMI_USDC_TOKEN_ID].balanceOf(address(this));
         if (balance == 0) return;
 
-        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(
-            address(stableConverter),
-            balance
-        );
+        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(stableConverter), balance);
         stableConverter.handle(
             address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]),
             address(token),

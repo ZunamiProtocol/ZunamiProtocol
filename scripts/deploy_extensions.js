@@ -14,9 +14,8 @@ async function main() {
     // await stableConverter.deployed();
     // const stableConverterAddr = stableConverter.address;
 
-    const stableConverterAddr = "0xE2152984056d410E96688e55B16C84CCa95831BD";
+    const stableConverterAddr = '0xE2152984056d410E96688e55B16C84CCa95831BD';
     console.log('FRAX-USDC stable converter deployed to:', stableConverterAddr);
-
 
     const ZunamiFraxExtension = await ethers.getContractFactory('ZunamiFraxExtension');
     const fraxExtension = await ZunamiFraxExtension.deploy(zunamiAddr, stableConverterAddr);

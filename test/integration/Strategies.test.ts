@@ -8,7 +8,7 @@ import * as addrs from '../address.json';
 import * as globalConfig from '../../config.json';
 
 function getMinAmount(): BigNumber[] {
-    const zero = ethers.utils.parseUnits('0', 'ether')
+    const zero = ethers.utils.parseUnits('0', 'ether');
     const amount = '1000';
     const dai = ethers.utils.parseUnits(amount, 'ether');
     const usdc = ethers.utils.parseUnits(amount, 'mwei');
@@ -132,7 +132,11 @@ describe('Single strategy tests', () => {
         await stubElasticRigidVault.deployed();
 
         const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(stableConverter.address, stubElasticRigidVault.address, feeCollector.getAddress());
+        rewardManager = await RewardManagerFactory.deploy(
+            stableConverter.address,
+            stubElasticRigidVault.address,
+            feeCollector.getAddress()
+        );
         await rewardManager.deployed();
     });
 
@@ -141,11 +145,10 @@ describe('Single strategy tests', () => {
         zunami = await ZunamiFactory.deploy();
         await zunami.deployed();
 
-        await zunami.addTokens([
-            addrs.stablecoins.dai,
-            addrs.stablecoins.usdc,
-            addrs.stablecoins.usdt,
-        ], [1, 12, 12]);
+        await zunami.addTokens(
+            [addrs.stablecoins.dai, addrs.stablecoins.usdc, addrs.stablecoins.usdt],
+            [1, 12, 12]
+        );
 
         // Init all strategies
         for (const strategyName of strategyNames) {
@@ -268,7 +271,10 @@ describe('Single strategy tests', () => {
             }
 
             await expect(
-                zunami.completeWithdrawalsBase([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
+                zunami.completeWithdrawalsBase(
+                    [alice.getAddress(), bob.getAddress()],
+                    [0, 0, 0, 0, 0]
+                )
             ).to.emit(zunami, 'Withdrawn');
         }
     });
@@ -298,7 +304,10 @@ describe('Single strategy tests', () => {
             }
 
             await expect(
-                zunami.completeWithdrawalsOneCoin([alice.getAddress(), bob.getAddress()], [0, 0, 0, 0, 0])
+                zunami.completeWithdrawalsOneCoin(
+                    [alice.getAddress(), bob.getAddress()],
+                    [0, 0, 0, 0, 0]
+                )
             ).to.emit(zunami, 'Withdrawn');
         }
     });
@@ -319,7 +328,9 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.gt(0);
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
+                    zunami
+                        .connect(user)
+                        .withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
                 ).to.emit(zunami, 'Withdrawn');
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
@@ -343,7 +354,9 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.gt(0);
 
                 await expect(
-                    zunami.connect(user).withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
+                    zunami
+                        .connect(user)
+                        .withdraw(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
                 ).to.emit(zunami, 'Withdrawn');
 
                 zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
@@ -396,13 +409,9 @@ describe('Single strategy tests', () => {
         await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
         await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
 
-        await expect(zunami.togglePoolStatus(veryBigNumber)).to.be.revertedWith(
-            'incorrect pid'
-        );
+        await expect(zunami.togglePoolStatus(veryBigNumber)).to.be.revertedWith('incorrect pid');
 
-        await expect(zunami.togglePoolStatus(poolSrc)).to.be.revertedWith(
-            'default pid'
-        );
+        await expect(zunami.togglePoolStatus(poolSrc)).to.be.revertedWith('default pid');
 
         await expect(zunami.togglePoolStatus(poolDst))
             .to.emit(zunami, 'ToggledEnabledPoolStatus')

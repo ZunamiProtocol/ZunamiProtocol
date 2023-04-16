@@ -278,7 +278,11 @@ describe(STRATEGY_NAME, function () {
             expect(await zunami.completeDeposits([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, rosa]) {
                 let zunami_balance = await zunami.balanceOf(user.address);
-                expect(await zunami.connect(user).delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0));
+                expect(
+                    await zunami
+                        .connect(user)
+                        .delegateWithdrawal(zunami_balance, [0, 0, 0], WithdrawalType.Base, 0)
+                );
             }
             expect(await zunami.completeWithdrawals([alice.address, bob.address, rosa.address]));
             for (const user of [alice, bob, carol, rosa]) {

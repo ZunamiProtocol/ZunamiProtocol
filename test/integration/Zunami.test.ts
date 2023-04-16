@@ -28,11 +28,10 @@ describe('Zunami core functionality tests', () => {
         zunami = await ZunamiFactory.deploy();
         await zunami.deployed();
 
-        await zunami.addTokens([
-            addrs.stablecoins.dai,
-            addrs.stablecoins.usdc,
-            addrs.stablecoins.usdt,
-        ], [1, 12, 12]);
+        await zunami.addTokens(
+            [addrs.stablecoins.dai, addrs.stablecoins.usdc, addrs.stablecoins.usdt],
+            [1, 12, 12]
+        );
 
         // DAI initialization
         dai = new ethers.Contract(addrs.stablecoins.dai, erc20ABI, admin);
@@ -127,12 +126,16 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.pause()).to.emit(zunami, 'Paused').withArgs(adminAddr);
 
         //All functions which would be crashed
-        await expect(zunami.delegateDeposit([1, 1, 1, 1, 1])).to.be.revertedWith('Pausable: paused');
+        await expect(zunami.delegateDeposit([1, 1, 1, 1, 1])).to.be.revertedWith(
+            'Pausable: paused'
+        );
         await expect(
             zunami.delegateWithdrawal(1, [1, 1, 1, 1, 1], WithdrawalType.Base, 0)
         ).to.be.revertedWith('Pausable: paused');
         await expect(zunami.deposit([1, 1, 1, 1, 1])).to.be.revertedWith('Pausable: paused');
-        await expect(zunami.withdraw(1, [1, 1, 1, 1, 1], 1, 1)).to.be.revertedWith('Pausable: paused');
+        await expect(zunami.withdraw(1, [1, 1, 1, 1, 1], 1, 1)).to.be.revertedWith(
+            'Pausable: paused'
+        );
 
         await expect(zunami.unpause()).to.emit(zunami, 'Unpaused').withArgs(adminAddr);
     });
@@ -141,9 +144,7 @@ describe('Zunami core functionality tests', () => {
         //Check access permisions
         await expect(zunami.connect(alice).setAvailableWithdrawalTypes(3)).to.be.reverted;
 
-        await expect(zunami.setAvailableWithdrawalTypes(100)).to.be.revertedWith(
-            'wrong types'
-        );
+        await expect(zunami.setAvailableWithdrawalTypes(100)).to.be.revertedWith('wrong types');
 
         const typesBefore = await zunami.availableWithdrawalTypes();
         await zunami.setAvailableWithdrawalTypes(2);
@@ -215,9 +216,7 @@ describe('Zunami core functionality tests', () => {
     it('should lock deposit and withdrawal operations by the lock flag', async () => {
         expect(await zunami.launched()).to.false;
 
-        await expect(zunami.completeDeposits([ZERO_ADDRESS])).to.be.revertedWith(
-            'pools empty'
-        );
+        await expect(zunami.completeDeposits([ZERO_ADDRESS])).to.be.revertedWith('pools empty');
 
         await zunami.launch();
         expect(await zunami.launched()).to.true;
@@ -228,12 +227,12 @@ describe('Zunami core functionality tests', () => {
         await expect(zunami.completeDeposits([ZERO_ADDRESS])).to.be.revertedWith(
             'default deposit not started'
         );
-        await expect(zunami.completeWithdrawalsBase([ZERO_ADDRESS], [0, 0, 0, 0, 0])).to.be.revertedWith(
-            'default deposit not started'
-        );
-        await expect(zunami.completeWithdrawalsOneCoin([ZERO_ADDRESS], [0, 0, 0, 0, 0])).to.be.revertedWith(
-            'default deposit not started'
-        );
+        await expect(
+            zunami.completeWithdrawalsBase([ZERO_ADDRESS], [0, 0, 0, 0, 0])
+        ).to.be.revertedWith('default deposit not started');
+        await expect(
+            zunami.completeWithdrawalsOneCoin([ZERO_ADDRESS], [0, 0, 0, 0, 0])
+        ).to.be.revertedWith('default deposit not started');
         await expect(zunami.completeWithdrawal(ZERO_ADDRESS)).to.be.revertedWith(
             'default deposit not started'
         );
@@ -328,7 +327,9 @@ describe('Zunami core functionality tests', () => {
         expect(coins).to.eq(0);
 
         await expect(
-            zunami.connect(alice).delegateWithdrawal(55555, [50, 100, 150, 0, 0], WithdrawalType.Base, 0)
+            zunami
+                .connect(alice)
+                .delegateWithdrawal(55555, [50, 100, 150, 0, 0], WithdrawalType.Base, 0)
         )
             .to.emit(zunami, 'CreatedPendingWithdrawal')
             .withArgs(await alice.getAddress(), 55555, [50, 100, 150, 0, 0]);

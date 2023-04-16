@@ -110,12 +110,12 @@ contract RebalancingStrat is Ownable {
         uint8 decimals = token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-        unchecked{
+        unchecked {
             return 10**(18 - decimals);
         }
     }
 
-    function autoCompound() public onlyZunami returns(uint256) {
+    function autoCompound() public onlyZunami returns (uint256) {
         return 0;
     }
 

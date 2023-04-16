@@ -10,9 +10,9 @@ import '../../../../../utils/Constants.sol';
 import '../../../../../interfaces/IZunami.sol';
 import '../../../../../interfaces/IRewardManager.sol';
 import '../../../../../interfaces/IStableConverter.sol';
-import "../../../../interfaces/ICurvePool2.sol";
-import "../../../../interfaces/IConvexStakingBooster.sol";
-import "../../../../interfaces/IStakingProxyConvex.sol";
+import '../../../../interfaces/ICurvePool2.sol';
+import '../../../../interfaces/IConvexStakingBooster.sol';
+import '../../../../interfaces/IStakingProxyConvex.sol';
 
 //import "hardhat/console.sol";
 
@@ -221,7 +221,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
         unchecked {
-            return 10 ** (18 - decimals);
+            return 10**(18 - decimals);
         }
     }
 
@@ -254,11 +254,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
             if (rewardBalance_ == 0) continue;
             rewardToken_ = _config.rewards[i];
             rewardToken_.safeTransfer(address(rewardManager_), rewardBalance_);
-            rewardManager_.handle(
-                address(rewardToken_),
-                rewardBalance_,
-                address(feeToken_)
-            );
+            rewardManager_.handle(address(rewardToken_), rewardBalance_, address(feeToken_));
         }
 
         uint256 feeTokenBalanceAfter = feeToken_.balanceOf(address(this));
@@ -266,7 +262,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
 
-    function autoCompound() public onlyZunami returns(uint256) {
+    function autoCompound() public onlyZunami returns (uint256) {
         if (address(stakingVault) == address(0)) return 0;
 
         try stakingVault.getReward(true) {} catch {
@@ -474,10 +470,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
 
         uint256[2] memory amounts;
         amounts[FRAX_USDC_POOL_USDC_ID] = usdcAmount;
-        usdcToken.safeIncreaseAllowance(
-            address(fraxUsdcPool),
-            usdcAmount
-        );
+        usdcToken.safeIncreaseAllowance(address(fraxUsdcPool), usdcAmount);
         uint256 crvFraxAmount = fraxUsdcPool.add_liquidity(amounts, 0);
 
         fraxUsdcPoolLp.safeIncreaseAllowance(address(crvFraxTokenPool), crvFraxAmount);
@@ -547,11 +540,10 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         return crvFraxTokenPool.calc_token_amount(amounts, isDeposit);
     }
 
-    function convertZunamiTokensToFraxUsdcs(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
-        internal
-        view
-        returns (uint256[2] memory amounts)
-    {
+    function convertZunamiTokensToFraxUsdcs(
+        uint256[POOL_ASSETS] memory tokenAmounts,
+        bool isDeposit
+    ) internal view returns (uint256[2] memory amounts) {
         amounts[FRAX_USDC_POOL_USDC_ID] =
             tokenAmounts[0] /
             1e12 +
@@ -638,15 +630,7 @@ abstract contract StakingFraxCurveConvexStratBase is Context, Ownable {
         if (balance == 0) return;
 
         IStableConverter stableConverter_ = stableConverter;
-        usdcToken_.safeTransfer(
-            address(stableConverter_),
-            balance
-        );
-        stableConverter_.handle(
-            address(usdcToken_),
-            address(_token),
-            balance,
-            0
-        );
+        usdcToken_.safeTransfer(address(stableConverter_), balance);
+        stableConverter_.handle(address(usdcToken_), address(_token), balance, 0);
     }
 }

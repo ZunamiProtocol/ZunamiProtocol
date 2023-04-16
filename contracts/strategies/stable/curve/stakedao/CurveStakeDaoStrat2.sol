@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../../interfaces/ICurvePool.sol';
 import './CurveStakeDaoExtraStratBase.sol';
-import "../../../interfaces/ICurvePool2.sol";
+import '../../../interfaces/ICurvePool2.sol';
 
 contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     using SafeERC20 for IERC20Metadata;
@@ -50,7 +50,11 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[POOL_ASSETS] memory amounts) internal override returns (uint256 poolLPs) {
+    function depositPool(uint256[POOL_ASSETS] memory amounts)
+        internal
+        override
+        returns (uint256 poolLPs)
+    {
         for (uint256 i = 0; i < 3; i++) {
             _config.tokens[i].safeIncreaseAllowance(address(pool3), amounts[i]);
         }
@@ -88,7 +92,10 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         returns (uint256 sharesAmount)
     {
         uint256[2] memory tokenAmounts2;
-        tokenAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(toArr3from5(tokenAmounts), isDeposit);
+        tokenAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(
+            toArr3from5(tokenAmounts),
+            isDeposit
+        );
         return pool.calc_token_amount(tokenAmounts2, isDeposit);
     }
 
@@ -108,7 +115,10 @@ contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
         )
     {
         uint256[2] memory minAmounts2;
-        minAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(toArr3from5(tokenAmounts), false);
+        minAmounts2[CURVE_3POOL_LP_TOKEN_ID] = pool3.calc_token_amount(
+            toArr3from5(tokenAmounts),
+            false
+        );
 
         removingCrvLps =
             (vault.liquidityGauge().balanceOf(address(this)) * userRatioOfCrvLps) /

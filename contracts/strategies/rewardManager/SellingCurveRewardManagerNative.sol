@@ -9,8 +9,8 @@ import '../../interfaces/IRewardManagerNative.sol';
 import '../../interfaces/IStableConverter.sol';
 import './ICurve3CryptoPool.sol';
 import './AggregatorV2V3Interface.sol';
-import "../../interfaces/IElasticRigidVault.sol";
-import "../../interfaces/IWETH.sol";
+import '../../interfaces/IElasticRigidVault.sol';
+import '../../interfaces/IWETH.sol';
 
 //import "hardhat/console.sol";
 
@@ -34,7 +34,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
     address immutable feeCollector;
 
     constructor(address feeCollectorAddr) {
-        require(feeCollectorAddr != address(0), "FeeCollector");
+        require(feeCollectorAddr != address(0), 'FeeCollector');
         feeCollector = feeCollectorAddr;
 
         rewardEthCurvePools[Constants.CVX_ADDRESS] = 0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4; // https://curve.fi/#/ethereum/pools/cvxeth
@@ -55,7 +55,6 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
         rewardUsdChainlinkOracles[
             Constants.SPELL_ADDRESS
         ] = 0x8c110B94C5f1d347fAcF5E1E938AB2db60E3c9a8; // https://data.chain.link/ethereum/mainnet/crypto-usd/spell-usd
-
     }
 
     function handle(
@@ -81,28 +80,26 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
 
         checkSlippage(reward, amount, wethAmount);
 
-        if(wrapped) {
+        if (wrapped) {
             weth.safeTransfer(address(msg.sender), wethAmount);
         } else {
             unwrapETH(wethAmount);
-            (bool sent,) = address(msg.sender).call{value: wethAmount}("");
-            require(sent, "Failed to send Ether");
+            (bool sent, ) = address(msg.sender).call{ value: wethAmount }('');
+            require(sent, 'Failed to send Ether');
         }
     }
 
-    function valuate(
-        address reward,
-        uint256 amount
-    ) public view returns (uint256) {
+    function valuate(address reward, uint256 amount) public view returns (uint256) {
         if (amount == 0) return 0;
 
         ICurve3CryptoPool rewardEthPool = ICurve3CryptoPool(rewardEthCurvePools[reward]);
 
-        return rewardEthPool.get_dy(
-            CURVE_WETH_REWARD_POOL_REWARD_ID,
-            CURVE_WETH_REWARD_POOL_WETH_ID,
-            amount
-        );
+        return
+            rewardEthPool.get_dy(
+                CURVE_WETH_REWARD_POOL_REWARD_ID,
+                CURVE_WETH_REWARD_POOL_WETH_ID,
+                amount
+            );
     }
 
     function checkSlippage(
@@ -112,13 +109,15 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
     ) internal view {
         address rewardEthOracle = rewardEthChainlinkOracles[reward];
         uint256 wethAmountByOracle;
-        if(rewardEthOracle != address(0)) {
+        if (rewardEthOracle != address(0)) {
             AggregatorV2V3Interface oracle = AggregatorV2V3Interface(rewardEthOracle);
             (, int256 answer, , , ) = oracle.latestRoundData();
 
             wethAmountByOracle = (uint256(answer) * amount) / 1e18;
         } else {
-            AggregatorV2V3Interface rewardOracle = AggregatorV2V3Interface(rewardUsdChainlinkOracles[reward]);
+            AggregatorV2V3Interface rewardOracle = AggregatorV2V3Interface(
+                rewardUsdChainlinkOracles[reward]
+            );
             (, int256 rewardAnswer, , , ) = rewardOracle.latestRoundData();
 
             AggregatorV2V3Interface ethOracle = AggregatorV2V3Interface(ethUsdChainlinkOracle);
@@ -128,7 +127,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
         }
 
         uint256 wethAmountByOracleWithSlippage = (wethAmountByOracle *
-        (SLIPPAGE_DENOMINATOR - defaultSlippage)) / SLIPPAGE_DENOMINATOR;
+            (SLIPPAGE_DENOMINATOR - defaultSlippage)) / SLIPPAGE_DENOMINATOR;
         require(wethAmount >= wethAmountByOracleWithSlippage, 'Wrong slippage');
     }
 

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import "./IStrategy.sol";
-import "./IZunamiPoolInfo.sol";
+import './IStrategy.sol';
+import './IZunamiPoolInfo.sol';
 
 interface IZunamiVault is IERC20, IZunamiPoolInfo {
     function defaultDepositPid() external view returns (uint256);
@@ -20,7 +20,7 @@ interface IZunamiVault is IERC20, IZunamiPoolInfo {
     function deposit(uint256[5] memory amounts) external returns (uint256);
 
     function calcWithdrawOneCoin(uint256 lpShares, uint128 tokenIndex)
-    external
-    view
-    returns (uint256 tokenAmount);
+        external
+        view
+        returns (uint256 tokenAmount);
 }

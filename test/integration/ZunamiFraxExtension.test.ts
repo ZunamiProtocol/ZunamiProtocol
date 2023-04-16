@@ -1,10 +1,10 @@
 import { ethers, network } from 'hardhat';
-import {BigNumber, Contract, Signer} from 'ethers';
+import { BigNumber, Contract, Signer } from 'ethers';
 import { expect } from 'chai';
 
 import { abi as erc20ABI } from '../../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json';
 import * as addrs from '../address.json';
-import * as globalConfig from "../../config.json";
+import * as globalConfig from '../../config.json';
 
 const configStakingConvex = {
     tokens: globalConfig.tokens,
@@ -25,11 +25,10 @@ describe('Zunami Frax extension tests', () => {
         zunami = await ZunamiFactory.deploy();
         await zunami.deployed();
 
-        await zunami.addTokens([
-            addrs.stablecoins.dai,
-            addrs.stablecoins.usdc,
-            addrs.stablecoins.usdt,
-        ], [1, 12, 12]);
+        await zunami.addTokens(
+            [addrs.stablecoins.dai, addrs.stablecoins.usdc, addrs.stablecoins.usdt],
+            [1, 12, 12]
+        );
 
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
         const stableConverter = await StableConverterFactory.deploy();
@@ -40,11 +39,15 @@ describe('Zunami Frax extension tests', () => {
         await stubElasticRigidVault.deployed();
 
         const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
-        const rewardManager = await RewardManagerFactory.deploy(stableConverter.address, stubElasticRigidVault.address, feeCollector.getAddress());
+        const rewardManager = await RewardManagerFactory.deploy(
+            stableConverter.address,
+            stubElasticRigidVault.address,
+            feeCollector.getAddress()
+        );
         await rewardManager.deployed();
 
         // Init all strategies
-        const factory = await ethers.getContractFactory("MIMCurveStakeDao");
+        const factory = await ethers.getContractFactory('MIMCurveStakeDao');
         const strategy = await factory.deploy(configStakingConvex);
         await strategy.deployed();
 
@@ -75,12 +78,17 @@ describe('Zunami Frax extension tests', () => {
 
         await frax.transfer(alice.getAddress(), ethers.utils.parseUnits('100000', 'ether'));
 
-        const FraxUsdcStableConverterFactory = await ethers.getContractFactory('FraxUsdcStableConverter');
+        const FraxUsdcStableConverterFactory = await ethers.getContractFactory(
+            'FraxUsdcStableConverter'
+        );
         const fraxUsdcStableConverter = await FraxUsdcStableConverterFactory.deploy();
         await fraxUsdcStableConverter.deployed();
 
         const ZunamiFraxExtensionFactory = await ethers.getContractFactory('ZunamiFraxExtension');
-        zunamiFraxExtension = await ZunamiFraxExtensionFactory.deploy(zunami.address, fraxUsdcStableConverter.address);
+        zunamiFraxExtension = await ZunamiFraxExtensionFactory.deploy(
+            zunami.address,
+            fraxUsdcStableConverter.address
+        );
         await zunamiFraxExtension.deployed();
     });
 
@@ -109,6 +117,8 @@ describe('Zunami Frax extension tests', () => {
         zlpAmount = BigNumber.from(await zunami.balanceOf(alice.getAddress()));
         expect(zlpAmount).to.eq(0);
         expect(await frax.balanceOf(alice.getAddress())).to.gt(fraxAfter);
-        expect((await frax.balanceOf(alice.getAddress())).sub(fraxAfter)).to.eq(fraxAmountPotential);
+        expect((await frax.balanceOf(alice.getAddress())).sub(fraxAfter)).to.eq(
+            fraxAmountPotential
+        );
     });
 });

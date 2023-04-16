@@ -41,7 +41,11 @@ contract CurveConvexStrat is Context, CurveConvexStratBase {
         return (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[POOL_ASSETS] memory amounts) internal override returns (uint256 poolLPs) {
+    function depositPool(uint256[POOL_ASSETS] memory amounts)
+        internal
+        override
+        returns (uint256 poolLPs)
+    {
         for (uint256 i = 0; i < 3; i++) {
             _config.tokens[i].safeIncreaseAllowance(address(pool), amounts[i]);
         }

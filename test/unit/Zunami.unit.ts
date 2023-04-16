@@ -4,7 +4,7 @@ import { MockContract } from 'ethereum-waffle';
 import chai from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import BigNumber from 'bignumber.js';
-import {duration} from "../utils";
+import { duration } from '../utils';
 
 const MIN_LOCK_TIME = duration.seconds(86405);
 
@@ -521,7 +521,9 @@ describe('Zunami', () => {
                 decify(lpSharesThird, 6).toFixed(),
                 decify(lpSharesThird, 6).toFixed(),
             ];
-            await zunami.connect(user).delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
+            await zunami
+                .connect(user)
+                .delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
         }
 
         for (let j = 0; j < users.length; j++) {
@@ -570,7 +572,9 @@ describe('Zunami', () => {
                 decify(lpSharesOther, 6).toFixed(),
                 decify(lpSharesOther, 6).toFixed(),
             ];
-            await zunami.connect(user).delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
+            await zunami
+                .connect(user)
+                .delegateWithdrawal(lpAmount, minTokenBalances, WithdrawalType.Base, 0);
         }
 
         for (let j = 0; j < users.length; j++) {
@@ -641,11 +645,13 @@ describe('Zunami', () => {
             const pid = await zunami.poolCount();
             await zunami.setDefaultDepositPid(pid - 1);
             await setTotalHoldings(strategy, 0);
-            await strategy.mock.deposit.withArgs(tokenBalances).returns(tokenify(holdings).toFixed());
+            await strategy.mock.deposit
+                .withArgs(tokenBalances)
+                .returns(tokenify(holdings).toFixed());
             await zunami.deposit(tokenBalances);
             await setTotalHoldings(strategy, tokenify(holdings).toFixed());
             return strategy;
-        }
+        };
 
         const poolCount = 20;
         const pids = Array.from(new Array(poolCount).keys());
@@ -664,19 +670,24 @@ describe('Zunami', () => {
         const lpPrice = await zunami.lpPrice();
 
         const calcTokenPrice = async (strategy: Contract, pid: number) =>
-          await strategy.totalHoldings() / (await zunami.poolInfo(pid)).lpShares;
+            (await strategy.totalHoldings()) / (await zunami.poolInfo(pid)).lpShares;
 
-        let lpPrices = await Promise.all(strategies.map( (strat, index) => calcTokenPrice(strat, index)));
+        let lpPrices = await Promise.all(
+            strategies.map((strat, index) => calcTokenPrice(strat, index))
+        );
         console.log(lpPrices);
 
         await zunami.rebalance();
 
         expect(await zunami.lpPrice()).to.be.equal(lpPrice);
 
-        lpPrices = await Promise.all(strategies.map( (strat, index) => calcTokenPrice(strat, index)));
+        lpPrices = await Promise.all(
+            strategies.map((strat, index) => calcTokenPrice(strat, index))
+        );
         console.log(lpPrices);
 
-        const truncate = (value: any, digits: number) => Math.trunc(value * (10 ** digits)) / (10 ** digits);
+        const truncate = (value: any, digits: number) =>
+            Math.trunc(value * 10 ** digits) / 10 ** digits;
         for (let i = 0; i < lpPrices.length - 1; i++) {
             expect(truncate(lpPrices[i], 14)).to.be.equal(truncate(lpPrices[i + 1], 14));
         }

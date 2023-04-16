@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import './Constants.sol';
-import "../interfaces/IStableConverter.sol";
-import "../strategies/interfaces/ICurvePool2.sol";
+import '../interfaces/IStableConverter.sol';
+import '../strategies/interfaces/ICurvePool2.sol';
 
 contract FraxUsdcStableConverter is IStableConverter {
     using SafeERC20 for IERC20Metadata;
@@ -51,10 +51,7 @@ contract FraxUsdcStableConverter is IStableConverter {
             )
         );
         IERC20Metadata to_ = IERC20Metadata(to);
-        to_.safeTransfer(
-            address(msg.sender),
-            to_.balanceOf(address(this))
-        );
+        to_.safeTransfer(address(msg.sender), to_.balanceOf(address(this)));
     }
 
     function valuate(
@@ -63,7 +60,8 @@ contract FraxUsdcStableConverter is IStableConverter {
         uint256 amount
     ) public view returns (uint256) {
         if (amount == 0) return 0;
-        return fraxUsdcPool.get_dy(fraxUsdcPoolStableIndex[from], fraxUsdcPoolStableIndex[to], amount);
+        return
+            fraxUsdcPool.get_dy(fraxUsdcPoolStableIndex[from], fraxUsdcPoolStableIndex[to], amount);
     }
 
     function applySlippage(

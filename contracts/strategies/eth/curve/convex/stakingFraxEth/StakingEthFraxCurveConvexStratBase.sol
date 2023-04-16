@@ -7,12 +7,12 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../../../utils/Constants.sol';
-import "../../../../../interfaces/IZunami.sol";
-import "../../../../../interfaces/IRewardManagerNative.sol";
-import "../../../../interfaces/ICurvePool2Native.sol";
-import "../../../../interfaces/IStakingProxyConvex.sol";
-import "../../../../interfaces/IConvexStakingBooster.sol";
-import "../../../../../interfaces/IWETH.sol";
+import '../../../../../interfaces/IZunami.sol';
+import '../../../../../interfaces/IRewardManagerNative.sol';
+import '../../../../interfaces/ICurvePool2Native.sol';
+import '../../../../interfaces/IStakingProxyConvex.sol';
+import '../../../../interfaces/IConvexStakingBooster.sol';
+import '../../../../../interfaces/IWETH.sol';
 
 //import "hardhat/console.sol";
 
@@ -131,7 +131,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     }
 
     function getThisBalanceBy(IERC20Metadata token_) internal view returns (uint256) {
-        if(address(token_) == ETH_MOCK_ADDRESS) {
+        if (address(token_) == ETH_MOCK_ADDRESS) {
             return address(this).balance;
         } else {
             return token_.balanceOf(address(this));
@@ -145,13 +145,13 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         for (uint256 i = 0; i < STRATEGY_ASSETS; i++) {
             IERC20Metadata token_ = _config.tokens[i];
             transferAmount =
-            getThisBalanceBy(token_) -
-            prevBalances[i] -
-            ((i == feeTokenId_) ? managementFees_ : 0);
+                getThisBalanceBy(token_) -
+                prevBalances[i] -
+                ((i == feeTokenId_) ? managementFees_ : 0);
             if (transferAmount > 0) {
-                if(i == ZUNAMI_ETH_TOKEN_ID) {
-                    (bool sent,) = withdrawer.call{value: transferAmount}("");
-                    require(sent, "Failed to send Ether");
+                if (i == ZUNAMI_ETH_TOKEN_ID) {
+                    (bool sent, ) = withdrawer.call{ value: transferAmount }('');
+                    require(sent, 'Failed to send Ether');
                 } else {
                     token_.safeTransfer(withdrawer, transferAmount);
                 }
@@ -169,9 +169,9 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
             uint256 managementFee = (i == feeTokenId_) ? managementFees_ : 0;
             transferAmount = getThisBalanceBy(token_) - managementFee;
             if (transferAmount > 0) {
-                if(i == ZUNAMI_ETH_TOKEN_ID) {
-                    (bool sent,) = _msgSender().call{value: transferAmount}("");
-                    require(sent, "Failed to send Ether");
+                if (i == ZUNAMI_ETH_TOKEN_ID) {
+                    (bool sent, ) = _msgSender().call{ value: transferAmount }('');
+                    require(sent, 'Failed to send Ether');
                 } else {
                     token_.safeTransfer(_msgSender(), transferAmount);
                 }
@@ -208,8 +208,9 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
 
         uint256[] memory prevBalances = new uint256[](STRATEGY_ASSETS);
         for (uint256 i = 0; i < STRATEGY_ASSETS; i++) {
-            prevBalances[i] = getThisBalanceBy(_config.tokens[i]) -
-            ((i == feeTokenId) ? managementFees : 0);
+            prevBalances[i] =
+                getThisBalanceBy(_config.tokens[i]) -
+                ((i == feeTokenId) ? managementFees : 0);
         }
 
         // withdraw all crv lps
@@ -229,9 +230,9 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         uint8 decimals = _token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-    unchecked {
-        return 10 ** (18 - decimals);
-    }
+        unchecked {
+            return 10**(18 - decimals);
+        }
     }
 
     /**
@@ -263,11 +264,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
             if (rewardBalance_ == 0) continue;
             rewardToken_ = _config.rewards[i];
             rewardToken_.safeTransfer(address(rewardManager_), rewardBalance_);
-            rewardManager_.handle(
-                address(rewardToken_),
-                rewardBalance_,
-                true
-            );
+            rewardManager_.handle(address(rewardToken_), rewardBalance_, true);
         }
 
         uint256 feeTokenBalanceAfter = feeToken_.balanceOf(address(this));
@@ -275,7 +272,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
 
-    function autoCompound() public onlyZunami returns(uint256) {
+    function autoCompound() public onlyZunami returns (uint256) {
         if (address(stakingVault) == address(0)) return 0;
 
         try stakingVault.getReward(true) {} catch {
@@ -286,7 +283,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
 
         uint256 feeTokenId_ = feeTokenId;
         uint256 feeTokenBalance = _config.tokens[feeTokenId_].balanceOf(address(this)) -
-        managementFees;
+            managementFees;
 
         uint256[POOL_ASSETS] memory amounts;
         amounts[feeTokenId_] = feeTokenBalance;
@@ -307,21 +304,18 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         uint256 feeTokenId_ = feeTokenId;
         if (address(stakingVault) != address(0)) {
             crvLpHoldings =
-            (stakingVault.stakingAddress().lockedLiquidityOf(address(stakingVault)) *
-            getCurvePoolPrice()) /
-            CURVE_PRICE_DENOMINATOR;
+                (stakingVault.stakingAddress().lockedLiquidityOf(address(stakingVault)) *
+                    getCurvePoolPrice()) /
+                CURVE_PRICE_DENOMINATOR;
 
             (address[] memory tokenAddresses, uint256[] memory totalEarned) = stakingVault.earned();
 
             IRewardManagerNative rewardManager_ = rewardManager;
             for (uint256 i = 0; i < tokenAddresses.length; i++) {
                 uint256 amountIn = totalEarned[i] +
-                IERC20Metadata(tokenAddresses[i]).balanceOf(address(this));
+                    IERC20Metadata(tokenAddresses[i]).balanceOf(address(this));
                 if (amountIn == 0) continue;
-                rewardEarningInFeeToken += rewardManager_.valuate(
-                    tokenAddresses[i],
-                    amountIn
-                );
+                rewardEarningInFeeToken += rewardManager_.valuate(tokenAddresses[i], amountIn);
             }
         }
 
@@ -331,10 +325,10 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         }
 
         return
-        tokensHoldings +
-        crvLpHoldings +
-        rewardEarningInFeeToken *
-        decimalsMultipliers[feeTokenId_];
+            tokensHoldings +
+            crvLpHoldings +
+            rewardEarningInFeeToken *
+            decimalsMultipliers[feeTokenId_];
     }
 
     /**
@@ -346,8 +340,8 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         uint256 managementFees_ = managementFees;
         uint256 feeTokenBalance = feeToken_.balanceOf(address(this));
         uint256 transferBalance = managementFees_ > feeTokenBalance
-        ? feeTokenBalance
-        : managementFees_;
+            ? feeTokenBalance
+            : managementFees_;
         if (transferBalance > 0) {
             feeToken_.safeTransfer(feeDistributor, transferBalance);
         }
@@ -398,9 +392,9 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
         uint256 tokenBalance = getThisBalanceBy(_token);
         if (tokenBalance > 0) {
-            if(address(_token) == ETH_MOCK_ADDRESS) {
-                (bool sent,) = _msgSender().call{value: tokenBalance}("");
-                require(sent, "Failed to send Ether");
+            if (address(_token) == ETH_MOCK_ADDRESS) {
+                (bool sent, ) = _msgSender().call{ value: tokenBalance }('');
+                require(sent, 'Failed to send Ether');
             } else {
                 _token.safeTransfer(_msgSender(), tokenBalance);
             }
@@ -441,9 +435,9 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     }
 
     function checkDepositSuccessful(uint256[POOL_ASSETS] memory tokenAmounts)
-    internal
-    view
-    returns (bool isValidDepositAmount)
+        internal
+        view
+        returns (bool isValidDepositAmount)
     {
         uint256 amountsTotal;
         for (uint256 i = 0; i < STRATEGY_ASSETS; i++) {
@@ -461,8 +455,8 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     }
 
     function depositPool(uint256[POOL_ASSETS] memory tokenAmounts)
-    internal
-    returns (uint256 crvFraxTokenLpAmount)
+        internal
+        returns (uint256 crvFraxTokenLpAmount)
     {
         if (tokenAmounts[ZUNAMI_wETH_TOKEN_ID] > 0) {
             unwrapETH(tokenAmounts[ZUNAMI_wETH_TOKEN_ID]);
@@ -477,7 +471,10 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
             address(fraxEthPool),
             amounts[ETH_frxETH_POOL_frxETH_ID]
         );
-        crvFraxTokenLpAmount = fraxEthPool.add_liquidity{value: amounts[ETH_frxETH_POOL_ETH_ID]}(amounts, 0);
+        crvFraxTokenLpAmount = fraxEthPool.add_liquidity{ value: amounts[ETH_frxETH_POOL_ETH_ID] }(
+            amounts,
+            0
+        );
 
         stakeCurveLp(crvFraxTokenLpAmount);
     }
@@ -505,9 +502,9 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
-    external
-    view
-    returns (uint256)
+        external
+        view
+        returns (uint256)
     {
         IStakingProxyConvex stakingVault_ = stakingVault;
         uint256 removingCrvLps = (stakingVault_.stakingAddress().lockedLiquidityOf(
@@ -515,14 +512,14 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         ) * userRatioOfCrvLps) / 1e18;
 
         return
-        fraxEthPool.calc_withdraw_one_coin(
-            removingCrvLps,
-            convertZunamiTokenIdToPoolOne(tokenIndex)
-        );
+            fraxEthPool.calc_withdraw_one_coin(
+                removingCrvLps,
+                convertZunamiTokenIdToPoolOne(tokenIndex)
+            );
     }
 
-    function convertZunamiTokenIdToPoolOne(uint256 zunamiTokenId) internal pure returns(int128) {
-        if(zunamiTokenId == ZUNAMI_ETH_TOKEN_ID || zunamiTokenId == ZUNAMI_wETH_TOKEN_ID) {
+    function convertZunamiTokenIdToPoolOne(uint256 zunamiTokenId) internal pure returns (int128) {
+        if (zunamiTokenId == ZUNAMI_ETH_TOKEN_ID || zunamiTokenId == ZUNAMI_wETH_TOKEN_ID) {
             return iETH_frxETH_POOL_ETH_ID;
         } else {
             return iETH_frxETH_POOL_ETH_ID;
@@ -530,20 +527,22 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     }
 
     function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
-    external
-    view
-    returns (uint256)
+        external
+        view
+        returns (uint256)
     {
         uint256[2] memory amounts = convertZunamiTokensToPoolOnes(tokenAmounts);
         return fraxEthPool.calc_token_amount(amounts, isDeposit);
     }
 
     function convertZunamiTokensToPoolOnes(uint256[POOL_ASSETS] memory tokenAmounts)
-    internal
-    pure
-    returns (uint256[2] memory amounts)
+        internal
+        pure
+        returns (uint256[2] memory amounts)
     {
-        amounts[ETH_frxETH_POOL_ETH_ID] = tokenAmounts[ZUNAMI_ETH_TOKEN_ID] + tokenAmounts[ZUNAMI_wETH_TOKEN_ID];
+        amounts[ETH_frxETH_POOL_ETH_ID] =
+            tokenAmounts[ZUNAMI_ETH_TOKEN_ID] +
+            tokenAmounts[ZUNAMI_wETH_TOKEN_ID];
         amounts[ETH_frxETH_POOL_frxETH_ID] = tokenAmounts[ZUNAMI_frxETH_TOKEN_ID];
     }
 
@@ -553,19 +552,19 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         uint256[POOL_ASSETS] memory tokenAmounts,
         uint128
     )
-    internal
-    view
-    returns (
-        bool success,
-        uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic
-    )
+        internal
+        view
+        returns (
+            bool success,
+            uint256 removingCrvLps,
+            uint256[] memory tokenAmountsDynamic
+        )
     {
         IStakingProxyConvex stakingVault_ = stakingVault;
         removingCrvLps =
-        (stakingVault_.stakingAddress().lockedLiquidityOf(address(stakingVault_)) *
-        userRatioOfCrvLps) /
-        1e18;
+            (stakingVault_.stakingAddress().lockedLiquidityOf(address(stakingVault_)) *
+                userRatioOfCrvLps) /
+            1e18;
 
         uint256[2] memory minAmounts = convertZunamiTokensToPoolOnes(tokenAmounts);
         success = removingCrvLps >= fraxEthPool.calc_token_amount(minAmounts, false);
@@ -580,21 +579,25 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     ) internal {
-        if(withdrawalType == WithdrawalType.Base) {
-            fraxEthPool.remove_liquidity(removingCrvLps, [uint256(0),0]);
+        if (withdrawalType == WithdrawalType.Base) {
+            fraxEthPool.remove_liquidity(removingCrvLps, [uint256(0), 0]);
         } else {
             int128 poolTokenIndex = convertZunamiTokenIdToPoolOne(tokenIndex);
             uint256[2] memory minAmounts = convertZunamiTokensToPoolOnes(tokenAmounts);
-            fraxEthPool.remove_liquidity_one_coin(removingCrvLps, poolTokenIndex, minAmounts[uint256(int256(poolTokenIndex))]);
+            fraxEthPool.remove_liquidity_one_coin(
+                removingCrvLps,
+                poolTokenIndex,
+                minAmounts[uint256(int256(poolTokenIndex))]
+            );
         }
     }
 
     function withdrawAllSpecific() internal {
-        fraxEthPool.remove_liquidity(fraxEthPoolLp.balanceOf(address(this)), [uint256(0),0]);
+        fraxEthPool.remove_liquidity(fraxEthPoolLp.balanceOf(address(this)), [uint256(0), 0]);
     }
 
     function wrapETH(uint256 amount) internal {
-        IWETH(payable(address(_config.tokens[ZUNAMI_wETH_TOKEN_ID]))).deposit{value: amount}();
+        IWETH(payable(address(_config.tokens[ZUNAMI_wETH_TOKEN_ID]))).deposit{ value: amount }();
     }
 
     function unwrapETH(uint256 amount) internal {

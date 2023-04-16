@@ -101,7 +101,11 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts) internal view virtual returns (bool);
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts)
+        internal
+        view
+        virtual
+        returns (bool);
 
     function depositPool(uint256[POOL_ASSETS] memory amounts) internal virtual returns (uint256);
 
@@ -216,7 +220,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint8 decimals = token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-        unchecked{
+        unchecked {
             return 10**(18 - decimals);
         }
     }
@@ -248,11 +252,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
             if (rewardBalances[i] == 0) continue;
             rewardToken_ = _config.rewards[i];
             rewardToken_.transfer(address(rewardManager_), rewardBalances[i]);
-            rewardManager_.handle(
-                address(rewardToken_),
-                rewardBalances[i],
-                address(feeToken_)
-            );
+            rewardManager_.handle(address(rewardToken_), rewardBalances[i], address(feeToken_));
         }
 
         sellRewardsExtra();
@@ -264,7 +264,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
     function sellRewardsExtra() internal virtual {}
 
-    function autoCompound() public onlyZunami returns(uint256) {
+    function autoCompound() public onlyZunami returns (uint256) {
         vault.liquidityGauge().claim_rewards();
 
         sellRewards();
@@ -287,7 +287,6 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual returns (uint256) {
-
         uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) *
             getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
 
