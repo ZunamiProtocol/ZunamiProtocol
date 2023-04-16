@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import './Constants.sol';
 import "../interfaces/IStableConverter.sol";
-import "../strategies/stable/curve/interfaces/ICurvePool2.sol";
+import "../strategies/interfaces/ICurvePool2.sol";
 
 contract FraxUsdcStableConverter is IStableConverter {
     using SafeERC20 for IERC20Metadata;

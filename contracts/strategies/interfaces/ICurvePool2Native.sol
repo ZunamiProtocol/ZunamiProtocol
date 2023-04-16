@@ -1,13 +1,14 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../../../../interfaces/ICurvePoolPricable.sol';
+import '../../interfaces/ICurvePoolPricable.sol';
 
-interface ICurvePool2 is ICurvePoolPricable {
+interface ICurvePool2Native is ICurvePoolPricable {
     function coins(uint256 i) external view returns (address);
 
     function add_liquidity(uint256[2] memory amounts, uint256 min_mint_amount)
         external
+        payable
         returns (uint256);
 
     function remove_liquidity(uint256 burn_amount, uint256[2] memory min_amounts)
@@ -29,14 +30,7 @@ interface ICurvePool2 is ICurvePoolPricable {
         int128 j,
         uint256 input,
         uint256 min_output
-    ) external returns (uint256);
-
-    function exchange_underlying(
-        int128 i,
-        int128 j,
-        uint256 input,
-        uint256 min_output
-    ) external;
+    ) external payable returns (uint256);
 
     function calc_token_amount(uint256[2] memory amounts, bool is_deposit)
         external

@@ -32,7 +32,7 @@ describe('Zunami core functionality tests', () => {
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
-        ]);
+        ], [1, 12, 12]);
 
         // DAI initialization
         dai = new ethers.Contract(addrs.stablecoins.dai, erc20ABI, admin);

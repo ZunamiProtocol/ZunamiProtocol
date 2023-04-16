@@ -10,15 +10,15 @@ import * as globalConfig from '../../config.json';
 function getMinAmount(): BigNumber[] {
     const zero = ethers.utils.parseUnits('0', 'ether')
     const amount = '1000';
-    const dai = ethers.utils.parseUnits(amount, 'ether');
-    const usdc = ethers.utils.parseUnits(amount, 'mwei');
-    const usdt = ethers.utils.parseUnits(amount, 'mwei');
-    return [dai, usdc, usdt, zero, zero];
+    const eth = ethers.utils.parseUnits(amount, 'ether');
+    const wEth = ethers.utils.parseUnits(amount, 'ether');
+    const frxEth = ethers.utils.parseUnits(amount, 'ether');
+    return [eth, wEth, frxEth, zero, zero];
 }
 
 async function toggleUnlockStakes() {
     const stakingOwner = '0xB1748C79709f4Ba2Dd82834B8c82D4a505003f27';
-    const stakingAddress = '0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6';
+    const stakingAddress = '0xa537d64881b84faffb9Ae43c951EEbF368b71cdA';
     const stakingABI = [
         {
             inputs: [],
@@ -48,156 +48,125 @@ async function increaseChainTime(time: number) {
     await network.provider.send('evm_mine');
 }
 
-describe('Single strategy tests', () => {
-    const strategyNames = ['XAIStakingFraxCurveConvex']; //, 'MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
+describe('Single ETH FraxStaking strategy tests', () => {
+    const strategyNames = ['frxEthStakingFraxCurveConvex'];
     enum WithdrawalType {
         Base,
         OneCoin,
     }
 
-    const configConvex = {
-        tokens: globalConfig.tokens,
-        crv: globalConfig.crv,
-        cvx: globalConfig.cvx,
-        booster: globalConfig.booster,
+    const configConvexETH = {
     };
 
-    const configStakingConvex = {
-        tokens: globalConfig.tokens,
+    const configStakingConvexETH = {
+        tokens: globalConfig.tokensETH,
         rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
         booster: globalConfig.stakingBooster,
     };
 
-    const configStakeDao = {
-        tokens: globalConfig.tokens,
-        rewards: [globalConfig.crv, globalConfig.sdt],
+
+    const configStakeDaoETH = {
     };
+
 
     let admin: Signer;
     let alice: Signer;
     let bob: Signer;
     let feeCollector: Signer;
     let zunami: Contract;
-    let dai: Contract;
-    let usdc: Contract;
-    let usdt: Contract;
+    let wEth: Contract;
+    let frxEth: Contract;
     let strategies = Array<Contract>();
     let rewardManager: Contract;
-    let stableConverter: Contract;
 
     before(async () => {
         [admin, alice, bob, feeCollector] = await ethers.getSigners();
 
-        // DAI initialization
-        dai = new ethers.Contract(addrs.stablecoins.dai, erc20ABI, admin);
-        admin.sendTransaction({
-            to: addrs.holders.daiHolder,
-            value: ethers.utils.parseEther('10'),
-        });
+        // wEth initialization
+        const WETH9_ABI = [
+            {"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},
+            {"constant":false,"inputs":[{"name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+        ];
+        wEth = new ethers.Contract(addrs.stablecoins.wEth, erc20ABI.concat(WETH9_ABI), admin);
+        await wEth.deposit({value: ethers.utils.parseUnits('1000000', 'ether')});
+
+        // frxEth initialization
+        const FRXETH_ABI = [
+            {
+                "inputs":[
+                    {
+                        "internalType":"address",
+                        "name":"m_address",
+                        "type":"address"
+                    },
+                    {
+                        "internalType":"uint256",
+                        "name":"m_amount",
+                        "type":"uint256"
+                    }
+                ],
+                "name":"minter_mint",
+                "outputs":[
+                ],
+                "stateMutability":"nonpayable",
+                "type":"function"
+            }
+         ];
+        frxEth = new ethers.Contract(addrs.stablecoins.frxEth, erc20ABI.concat(FRXETH_ABI), admin);
+
         await network.provider.request({
             method: 'hardhat_impersonateAccount',
-            params: [addrs.holders.daiHolder],
+            params: [addrs.holders.frxEthMinter],
         });
-        const daiAccountSigner: Signer = ethers.provider.getSigner(addrs.holders.daiHolder);
-        await dai
-            .connect(daiAccountSigner)
-            .transfer(admin.getAddress(), ethers.utils.parseUnits('1000000', 'ether'));
+        const frxEthAccountSigner: Signer = ethers.provider.getSigner(addrs.holders.frxEthMinter);
+        await frxEth
+            .connect(frxEthAccountSigner)
+            .minter_mint(admin.getAddress() ,ethers.utils.parseUnits('1000000', 'ether'));
         await network.provider.request({
             method: 'hardhat_stopImpersonatingAccount',
-            params: [addrs.holders.daiHolder],
+            params: [addrs.holders.frxEthMinter],
         });
 
-        // USDC initialization
-        usdc = new ethers.Contract(addrs.stablecoins.usdc, erc20ABI, admin);
-        admin.sendTransaction({
-            to: addrs.holders.usdcHolder,
-            value: ethers.utils.parseEther('10'),
-        });
-        await network.provider.request({
-            method: 'hardhat_impersonateAccount',
-            params: [addrs.holders.usdcHolder],
-        });
-        const usdcAccountSigner: Signer = ethers.provider.getSigner(addrs.holders.usdcHolder);
-        await usdc
-            .connect(usdcAccountSigner)
-            .transfer(admin.getAddress(), ethers.utils.parseUnits('1000000', 'mwei'));
-        await network.provider.request({
-            method: 'hardhat_stopImpersonatingAccount',
-            params: [addrs.holders.usdcHolder],
-        });
-
-        // USDT initialization
-        usdt = new ethers.Contract(addrs.stablecoins.usdt, erc20ABI, admin);
-        admin.sendTransaction({
-            to: addrs.holders.usdtHolder,
-            value: ethers.utils.parseEther('10'),
-        });
-        await network.provider.request({
-            method: 'hardhat_impersonateAccount',
-            params: [addrs.holders.usdtHolder],
-        });
-        const usdtAccountSigner: Signer = ethers.provider.getSigner(addrs.holders.usdtHolder);
-        await usdt
-            .connect(usdtAccountSigner)
-            .transfer(admin.getAddress(), ethers.utils.parseUnits('1000000', 'mwei'));
-        await network.provider.request({
-            method: 'hardhat_stopImpersonatingAccount',
-            params: [addrs.holders.usdtHolder],
-        });
-
-        const StableConverterFactory = await ethers.getContractFactory('StableConverter');
-        stableConverter = await StableConverterFactory.deploy();
-        await stableConverter.deployed();
-
-        const StubElasticRigidVault = await ethers.getContractFactory('StubElasticRigidVault');
-        const stubElasticRigidVault = await StubElasticRigidVault.deploy();
-        await stubElasticRigidVault.deployed();
-
-        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(stableConverter.address, stubElasticRigidVault.address, feeCollector.getAddress());
+        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerNative');
+        rewardManager = await RewardManagerFactory.deploy(feeCollector.getAddress());
         await rewardManager.deployed();
     });
 
     beforeEach(async () => {
-        const ZunamiFactory = await ethers.getContractFactory('Zunami');
+        const ZunamiFactory = await ethers.getContractFactory('ZunamiNative');
         zunami = await ZunamiFactory.deploy();
         await zunami.deployed();
 
         await zunami.addTokens([
-            addrs.stablecoins.dai,
-            addrs.stablecoins.usdc,
-            addrs.stablecoins.usdt,
-        ], [1, 12, 12]);
+            addrs.stablecoins.mockEth,
+            addrs.stablecoins.wEth,
+            addrs.stablecoins.frxEth,
+        ], [1, 1, 1]);
 
         // Init all strategies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
             const config = strategyName.includes('StakeDao')
-                ? configStakeDao
+                ? configStakeDaoETH
                 : strategyName.includes('Staking')
-                ? configStakingConvex
-                : configConvex;
+                ? configStakingConvexETH
+                : configConvexETH;
             const strategy = await factory.deploy(config);
             await strategy.deployed();
 
             strategy.setZunami(zunami.address);
 
             strategy.setRewardManager(rewardManager.address);
-            if (strategyName.includes('Frax')) {
-                strategy.setStableConverter(stableConverter.address);
-            }
 
             strategies.push(strategy);
         }
 
         for (const user of [admin, alice, bob]) {
-            await dai.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
-            await usdc.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
-            await usdt.connect(user).approve(zunami.address, parseUnits('1000000', 'mwei'));
+            await wEth.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
+            await frxEth.connect(user).approve(zunami.address, parseUnits('1000000', 'ether'));
 
-            await dai.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'ether'));
-            await usdc.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'mwei'));
-            await usdt.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'mwei'));
+            await wEth.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'ether'));
+            await frxEth.transfer(user.getAddress(), ethers.utils.parseUnits('1000', 'ether'));
         }
     });
 
@@ -211,18 +180,19 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(poolId);
             await zunami.setDefaultWithdrawPid(poolId);
 
+            const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                const daiBefore = await dai.balanceOf(user.getAddress());
-                const usdcBefore = await usdc.balanceOf(user.getAddress());
-                const usdtBefore = await usdt.balanceOf(user.getAddress());
+                const ethBefore = await ethers.provider.getBalance(user.getAddress());
+                const wEthBefore = await wEth.balanceOf(user.getAddress());
+                const frxEthBefore = await frxEth.balanceOf(user.getAddress());
 
-                await expect(zunami.connect(user).delegateDeposit(getMinAmount()))
+                await expect(zunami.connect(user).delegateDeposit(minAmounts, {value: minAmounts[0]}))
                     .to.emit(zunami, 'CreatedPendingDeposit')
                     .withArgs(await user.getAddress(), getMinAmount());
 
-                expect(daiBefore).to.gt(await dai.balanceOf(user.getAddress()));
-                expect(usdcBefore).to.gt(await usdc.balanceOf(user.getAddress()));
-                expect(usdtBefore).to.gt(await usdt.balanceOf(user.getAddress()));
+                expect(ethBefore).to.gt(await ethers.provider.getBalance(user.getAddress()));
+                expect(wEthBefore).to.gt(await wEth.balanceOf(user.getAddress()));
+                expect(frxEthBefore).to.gt(await frxEth.balanceOf(user.getAddress()));
             }
         }
 
@@ -246,20 +216,21 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(poolId);
             await zunami.setDefaultWithdrawPid(poolId);
 
+            const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                const daiBefore = await dai.balanceOf(user.getAddress());
-                const usdcBefore = await usdc.balanceOf(user.getAddress());
-                const usdtBefore = await usdt.balanceOf(user.getAddress());
+                const ethBefore = await ethers.provider.getBalance(user.getAddress());
+                const wEthBefore = await wEth.balanceOf(user.getAddress());
+                const frxEthBefore = await frxEth.balanceOf(user.getAddress());
                 const zlpBefore = await zunami.balanceOf(user.getAddress());
 
-                await expect(zunami.connect(user).deposit(getMinAmount())).to.emit(
+                await expect(zunami.connect(user).deposit(minAmounts,{value: minAmounts[0]})).to.emit(
                     zunami,
                     'Deposited'
                 );
 
-                expect(await dai.balanceOf(user.getAddress())).to.lt(daiBefore);
-                expect(await usdc.balanceOf(user.getAddress())).to.lt(usdcBefore);
-                expect(await usdt.balanceOf(user.getAddress())).to.lt(usdtBefore);
+                expect(await ethers.provider.getBalance(user.getAddress())).to.lt(ethBefore);
+                expect(await wEth.balanceOf(user.getAddress())).to.lt(wEthBefore);
+                expect(await frxEth.balanceOf(user.getAddress())).to.lt(frxEthBefore);
                 expect(await zunami.balanceOf(user.getAddress())).to.gt(zlpBefore);
             }
         }
@@ -271,8 +242,9 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(poolId);
             await zunami.setDefaultWithdrawPid(poolId);
 
+            const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(getMinAmount())).to.emit(
+                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
                     zunami,
                     'Deposited'
                 );
@@ -307,8 +279,9 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(poolId);
             await zunami.setDefaultWithdrawPid(poolId);
 
+            const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(getMinAmount())).to.emit(
+                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
                     zunami,
                     'Deposited'
                 );
@@ -343,8 +316,9 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(poolId);
             await zunami.setDefaultWithdrawPid(poolId);
 
+            const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(getMinAmount())).to.emit(
+                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
                     zunami,
                     'Deposited'
                 );
@@ -373,8 +347,9 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(poolId);
             await zunami.setDefaultWithdrawPid(poolId);
 
+            const minAmounts = getMinAmount();
             for (const user of [alice, bob]) {
-                await expect(zunami.connect(user).deposit(getMinAmount())).to.emit(
+                await expect(zunami.connect(user).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
                     zunami,
                     'Deposited'
                 );
@@ -399,6 +374,7 @@ describe('Single strategy tests', () => {
     });
 
     it('should sell all tokens and rewards after autocompaund', async () => {
+        const minAmounts = getMinAmount();
         for (let i = 0; i < strategies.length; i++) {
             const strategy = strategies[i];
             await zunami.addPool(strategy.address);
@@ -406,7 +382,7 @@ describe('Single strategy tests', () => {
             await zunami.setDefaultDepositPid(i);
             await zunami.setDefaultWithdrawPid(i);
 
-            await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(
+            await expect(zunami.connect(alice).deposit(minAmounts, {value: minAmounts[0]})).to.emit(
                 zunami,
                 'Deposited'
             );

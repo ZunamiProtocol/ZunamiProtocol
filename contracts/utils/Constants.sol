@@ -33,6 +33,8 @@ library Constants {
     uint256 internal constant CVX_FRAX_LUSD_PID = 102;
     uint256 internal constant CVX_FRAX_ALUSD_PID = 106;
 
+    uint256 internal constant CVX_ETH_frxETH_PID = 36;
+
     uint256 internal constant TRADE_DEADLINE = 2000;
 
     address internal constant CVX_ADDRESS = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
@@ -173,4 +175,7 @@ library Constants {
 
     address internal constant CRV_FRAX_alUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
     address internal constant CRV_FRAX_alUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+
+    address internal constant ETH_frxETH_ADDRESS = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
+    address internal constant ETH_frxETH_LP_ADDRESS = 0xf43211935C781D5ca1a41d2041F397B8A7366C7A;
 }

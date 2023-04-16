@@ -29,7 +29,7 @@ describe('Zunami Frax extension tests', () => {
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
-        ]);
+        ], [1, 12, 12]);
 
         const StableConverterFactory = await ethers.getContractFactory('StableConverter');
         const stableConverter = await StableConverterFactory.deploy();

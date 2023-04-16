@@ -145,7 +145,7 @@ describe('Single strategy tests', () => {
             addrs.stablecoins.dai,
             addrs.stablecoins.usdc,
             addrs.stablecoins.usdt,
-        ]);
+        ], [1, 12, 12]);
 
         // Init all strategies
         for (const strategyName of strategyNames) {
