@@ -182,4 +182,8 @@ library Constants {
     address internal constant CRV_FRAX_eUSD_ADDRESS = 0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F;
     address internal constant CRV_FRAX_eUSD_LP_ADDRESS = 0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F;
 
+    address internal constant SDT_UZD_VAULT_ADDRESS = 0xbc61f6973cE564eFFB16Cd79B5BC3916eaD592E2;
+    address internal constant UZD_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
+    address internal constant CRV_FRAX_UZD_ADDRESS = 0x68934F60758243eafAf4D2cFeD27BF8010bede3a;
+    address internal constant CRV_FRAX_UZD_LP_ADDRESS = 0x68934F60758243eafAf4D2cFeD27BF8010bede3a;
 }

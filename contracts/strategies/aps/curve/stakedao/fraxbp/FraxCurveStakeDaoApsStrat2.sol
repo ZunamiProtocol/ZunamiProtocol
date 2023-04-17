@@ -1,0 +1,183 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+
+import '../../../../interfaces/IStableConverter.sol';
+import "../../../../curve/interfaces/ICurvePool2.sol";
+import "../CurveStakeDaoExtraApsStratBase.sol";
+
+abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBase {
+    using SafeERC20 for IERC20Metadata;
+
+    uint256 ZUNAMI_APS_TOKEN_ID = 0;
+
+    uint256 constant CRVFRAX_TOKEN_POOL_TOKEN_ID = 0;
+    int128 constant CRVFRAX_TOKEN_POOL_TOKEN_ID_INT = 0;
+    uint256 constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID = 1;
+    int128 constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT = 1;
+
+    // fraxUsdcPool = FRAX + USDC => crvFrax
+    ICurvePool2 public fraxUsdcPool;
+    IERC20Metadata public fraxUsdcPoolLp; // crvFrax
+    // crvFraxTokenPool = crvFrax + Token
+    ICurvePool2 public crvFraxTokenPool;
+    IERC20Metadata public crvFraxTokenPoolLp;
+
+    IStableConverter public stableConverter;
+
+    event SetStableConverter(address stableConverter);
+
+    constructor(
+        Config memory config,
+        address fraxUsdcPoolAddr,
+        address fraxUsdcPoolLpAddr,
+        address crvFraxTokenPoolAddr,
+        address crvFraxTokenPoolLpAddr,
+        address vaultAddr,
+        address tokenAddr,
+        address extraRewardTokenAddr
+    )
+        CurveStakeDaoExtraApsStratBase(
+            config,
+            vaultAddr,
+            crvFraxTokenPoolLpAddr,
+            tokenAddr,
+            extraRewardTokenAddr
+        )
+    {
+        fraxUsdcPool = ICurvePool2(fraxUsdcPoolAddr);
+        fraxUsdcPoolLp = IERC20Metadata(fraxUsdcPoolLpAddr);
+
+        crvFraxTokenPool = ICurvePool2(crvFraxTokenPoolAddr);
+        crvFraxTokenPoolLp = IERC20Metadata(crvFraxTokenPoolLpAddr);
+
+        feeTokenId = ZUNAMI_APS_TOKEN_ID;
+    }
+
+    function setStableConverter(address stableConverterAddr) external onlyOwner {
+        stableConverter = IStableConverter(stableConverterAddr);
+        emit SetStableConverter(stableConverterAddr);
+    }
+
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory tokenAmounts)
+        internal
+        view
+        override
+        returns (bool isValidDepositAmount)
+    {
+        uint256 amountsTotal;
+        for (uint256 i = 0; i < tokenAmounts.length; i++) {
+            amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
+        }
+
+        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
+
+        uint256[2] memory amounts;
+        amounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = amountsTotal;
+
+        uint256 lpPrice = crvFraxTokenPool.get_virtual_price();
+        uint256 depositedLp = crvFraxTokenPool.calc_token_amount(amounts, true);
+
+        isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
+    }
+
+    function depositPool(uint256[POOL_ASSETS] memory tokenAmounts)
+        internal
+        override
+        returns (uint256 poolLpAmount)
+    {
+        uint256 tokenAmount = tokenAmounts[ZUNAMI_APS_TOKEN_ID];
+        token.safeIncreaseAllowance(address(crvFraxTokenPool), tokenAmount);
+
+        uint256[2] memory amounts;
+        amounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
+        poolLpAmount = crvFraxTokenPool.add_liquidity(amounts, 0);
+
+        crvFraxTokenPoolLp.safeIncreaseAllowance(address(vault), poolLpAmount);
+        vault.deposit(address(this), poolLpAmount, true);
+    }
+
+    function getCurvePoolPrice() internal view override returns (uint256) {
+        return crvFraxTokenPool.get_virtual_price();
+    }
+
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128 tokenIndex)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        uint256 removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) *
+        userRatioOfCrvLps) / 1e18;
+
+        return crvFraxTokenPool.calc_withdraw_one_coin(removingCrvLps, CRVFRAX_TOKEN_POOL_TOKEN_ID_INT);
+    }
+
+    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        uint256[2] memory tokenAmounts2;
+        tokenAmounts2[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmounts[ZUNAMI_APS_TOKEN_ID];
+        return crvFraxTokenPool.calc_token_amount(tokenAmounts2, isDeposit);
+    }
+
+    function calcCrvLps(
+        WithdrawalType,
+        uint256 userRatioOfCrvLps, // multiplied by 1e18
+        uint256[POOL_ASSETS] memory tokenAmounts,
+        uint128
+    )
+        internal
+        view
+        override
+        returns (
+            bool success,
+            uint256 removingCrvLps,
+            uint256[] memory tokenAmountsDynamic
+        )
+    {
+        removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) *
+        userRatioOfCrvLps) / 1e18;
+
+        uint256[2] memory minAmounts;
+        minAmounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmounts[ZUNAMI_APS_TOKEN_ID];
+        success = removingCrvLps >= crvFraxTokenPool.calc_token_amount(minAmounts, false);
+
+        tokenAmountsDynamic = new uint256[](2);
+    }
+
+    function removeCrvLps(
+        uint256 removingCrvLps,
+        uint256[] memory,
+        WithdrawalType withdrawalType,
+        uint256[POOL_ASSETS] memory tokenAmounts,
+        uint128 tokenIndex
+    ) internal override {
+        removeCrvLpsInternal(removingCrvLps, tokenAmounts[ZUNAMI_APS_TOKEN_ID]);
+    }
+
+    function removeCrvLpsInternal(uint256 removingCrvLps, uint256 minTokenAmount) internal {
+        crvFraxTokenPool.remove_liquidity_one_coin(
+            removingCrvLps,
+            CRVFRAX_TOKEN_POOL_TOKEN_ID_INT,
+            minTokenAmount
+        );
+    }
+
+    function withdrawAllSpecific() internal override {
+        removeCrvLpsInternal(crvFraxTokenPoolLp.balanceOf(address(this)), 0);
+    }
+
+    function sellToken() public {
+        uint256 sellBal = token.balanceOf(address(this));
+        if (sellBal > 0) {
+            token.safeIncreaseAllowance(address(crvFraxTokenPool), sellBal);
+            crvFraxTokenPool.exchange_underlying(0, 1, sellBal, 0);
+        }
+    }
+}

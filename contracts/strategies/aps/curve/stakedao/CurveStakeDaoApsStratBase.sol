@@ -6,17 +6,19 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../../utils/Constants.sol';
-import '../../../interfaces/IUniswapRouter.sol';
-import '../../../interfaces/IZunami.sol';
+import '../../../../utils/Constants.sol';
+import '../../../../interfaces/IUniswapRouter.sol';
+import '../../../../interfaces/IZunami.sol';
 
-import './interfaces/IStakeDaoVault.sol';
-import '../../interfaces/IRewardManager.sol';
+import '../../../interfaces/IRewardManager.sol';
+import "../../../curve/stakedao/interfaces/IStakeDaoVault.sol";
 
 //import "hardhat/console.sol";
 
-abstract contract CurveStakeDaoStratBase is Ownable {
+abstract contract CurveStakeDaoApsStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
+
+    uint8 public constant POOL_ASSETS = 1;
 
     enum WithdrawalType {
         Base,
@@ -24,7 +26,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     }
 
     struct Config {
-        IERC20Metadata[3] tokens;
+        IERC20Metadata[POOL_ASSETS] tokens;
         IERC20Metadata[] rewards;
     }
 
@@ -36,20 +38,18 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
-    uint256 public constant ZUNAMI_DAI_TOKEN_ID = 0;
-    uint256 public constant ZUNAMI_USDC_TOKEN_ID = 1;
-    uint256 public constant ZUNAMI_USDT_TOKEN_ID = 2;
+    uint256 public constant ZUNAMI_APS_UZD_TOKEN_ID = 0;
 
     uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
 
     uint256 public managementFees = 0;
-    uint256 public feeTokenId = ZUNAMI_USDT_TOKEN_ID;
+    uint256 public feeTokenId = ZUNAMI_APS_UZD_TOKEN_ID;
 
     IStakeDaoVault public immutable vault;
     IERC20Metadata public immutable poolLP;
 
-    uint256[4] public decimalsMultipliers;
+    uint256[2] public decimalsMultipliers;
 
     event SetRewardManager(address rewardManager);
     event MinDepositAmountUpdated(uint256 oldAmount, uint256 newAmount);
@@ -70,7 +70,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     ) {
         _config = config_;
 
-        for (uint256 i; i < 3; i++) {
+        for (uint256 i; i < POOL_ASSETS; i++) {
             decimalsMultipliers[i] = calcTokenDecimalsMultiplier(_config.tokens[i]);
         }
 
@@ -89,7 +89,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
      * @return Returns deposited amount in USD.
      * @param amounts - amounts in stablecoins that user deposit
      */
-    function deposit(uint256[3] memory amounts) external returns (uint256) {
+    function deposit(uint256[POOL_ASSETS] memory amounts) external returns (uint256) {
         if (!checkDepositSuccessful(amounts)) {
             return 0;
         }
@@ -99,9 +99,9 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal view virtual returns (bool);
+    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts) internal view virtual returns (bool);
 
-    function depositPool(uint256[3] memory amounts) internal virtual returns (uint256);
+    function depositPool(uint256[POOL_ASSETS] memory amounts) internal virtual returns (uint256);
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
@@ -110,7 +110,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         IERC20Metadata token_;
         uint256 feeTokenId_ = feeTokenId;
         uint256 managementFees_ = managementFees;
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             token_ = _config.tokens[i];
             transferAmount =
                 token_.balanceOf(address(this)) -
@@ -124,7 +124,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
 
     function transferZunamiAllTokens() internal {
         uint256 transferAmount;
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             uint256 managementFee = (i == feeTokenId) ? managementFees : 0;
             transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFee;
             if (transferAmount > 0) {
@@ -139,7 +139,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         virtual
         returns (uint256 tokenAmount);
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
         external
         view
         virtual
@@ -156,7 +156,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function withdraw(
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
@@ -173,7 +173,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         }
 
         uint256[] memory prevBalances = new uint256[](3);
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             prevBalances[i] =
                 _config.tokens[i].balanceOf(address(this)) -
                 ((i == feeTokenId) ? managementFees : 0);
@@ -191,7 +191,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
     function calcCrvLps(
         WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     )
         internal
@@ -206,7 +206,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint256 removingCrvLps,
         uint256[] memory tokenAmountsDynamic,
         WithdrawalType withdrawalType,
-        uint256[3] memory tokenAmounts,
+        uint256[POOL_ASSETS] memory tokenAmounts,
         uint128 tokenIndex
     ) internal virtual;
 
@@ -271,7 +271,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         uint256 feeTokenBalance = _config.tokens[feeTokenId_].balanceOf(address(this)) -
             managementFees;
 
-        uint256[3] memory amounts;
+        uint256[POOL_ASSETS] memory amounts;
         amounts[feeTokenId_] = feeTokenBalance;
 
         if (feeTokenBalance > 0) depositPool(amounts);
@@ -306,7 +306,7 @@ abstract contract CurveStakeDaoStratBase is Ownable {
         }
 
         uint256 tokensHoldings = 0;
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
             tokensHoldings += _config.tokens[i].balanceOf(address(this)) * decimalsMultipliers[i];
         }
 

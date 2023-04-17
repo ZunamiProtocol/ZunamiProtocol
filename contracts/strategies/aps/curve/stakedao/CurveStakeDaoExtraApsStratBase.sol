@@ -6,9 +6,9 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import './CurveStakeDaoStratBase.sol';
+import "./CurveStakeDaoApsStratBase.sol";
 
-abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase {
+abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
     uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 3;
@@ -22,7 +22,7 @@ abstract contract CurveStakeDaoExtraStratBase is Context, CurveStakeDaoStratBase
         address poolLpAddr,
         address tokenAddr,
         address extraRewardTokenAddr
-    ) CurveStakeDaoStratBase(config, vaultAddr, poolLpAddr) {
+    ) CurveStakeDaoApsStratBase(config, vaultAddr, poolLpAddr) {
         extraRewardToken = IERC20Metadata(extraRewardTokenAddr);
 
         token = IERC20Metadata(tokenAddr);

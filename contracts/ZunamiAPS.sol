@@ -27,7 +27,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
 
-    uint8 public constant POOL_ASSETS = 3;
+    uint8 public constant POOL_ASSETS = 1;
 
     struct PendingWithdrawal {
         uint256 lpShares;
