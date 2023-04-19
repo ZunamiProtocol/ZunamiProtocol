@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/access/AccessControl.sol';
-import './interfaces/IStrategy.sol';
+import './interfaces/IStrategyAPS.sol';
 
 /**
  *
@@ -35,7 +35,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
     }
 
     struct PoolInfo {
-        IStrategy strategy;
+        IStrategyAPS strategy;
         uint256 startTime;
         uint256 lpShares;
     }
@@ -73,7 +73,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
     event Deposited(address indexed depositor, uint256[POOL_ASSETS] amounts, uint256 lpShares, uint256 pid);
     event Withdrawn(
         address indexed withdrawer,
-        IStrategy.WithdrawalType withdrawalType,
+        IStrategyAPS.WithdrawalType withdrawalType,
         uint256[POOL_ASSETS] tokenAmounts,
         uint256 lpShares,
         uint128 tokenIndex
@@ -196,7 +196,10 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
 
     function autoCompoundAll() external {
         for (uint256 i = 0; i < _poolInfo.length; i++) {
-            _poolInfo[i].strategy.autoCompound();
+            PoolInfo memory poolInfo_ = _poolInfo[i];
+            if (poolInfo_.lpShares > 0) {
+                poolInfo_.strategy.autoCompound();
+            }
         }
         emit AutoCompoundAll();
     }
@@ -209,7 +212,10 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
         uint256 length = _poolInfo.length;
         uint256 totalHold = 0;
         for (uint256 pid = 0; pid < length; pid++) {
-            totalHold += _poolInfo[pid].strategy.totalHoldings();
+            PoolInfo memory poolInfo_ = _poolInfo[pid];
+            if (poolInfo_.lpShares > 0) {
+                totalHold += poolInfo_.strategy.totalHoldings();
+            }
         }
         return totalHold;
     }
@@ -278,7 +284,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
         onlyRole(OPERATOR_ROLE)
         startedPool
     {
-        IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
+        IStrategyAPS strategy = _poolInfo[defaultDepositPid].strategy;
         uint256 currentTotalHoldings = totalHoldings();
 
         uint256 newHoldings = 0;
@@ -339,7 +345,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
-        IStrategy withdrawStrategy = _poolInfo[defaultWithdrawPid].strategy;
+        IStrategyAPS withdrawStrategy = _poolInfo[defaultWithdrawPid].strategy;
 
         address user;
         PendingWithdrawal memory withdrawal;
@@ -361,7 +367,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
                             _poolInfo[defaultWithdrawPid].lpShares
                         ),
                         withdrawal.tokenAmounts,
-                        IStrategy.WithdrawalType.Base,
+                        IStrategyAPS.WithdrawalType.Base,
                         0
                     )
                 )
@@ -378,7 +384,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
 
             emit Withdrawn(
                 user,
-                IStrategy.WithdrawalType.Base,
+                IStrategyAPS.WithdrawalType.Base,
                 withdrawal.tokenAmounts,
                 withdrawal.lpShares,
                 0
@@ -406,7 +412,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
     {
         require(userList.length > 0, 'Zunami: there are no pending withdrawals requests');
 
-        IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
+        IStrategyAPS strategy = _poolInfo[defaultWithdrawPid].strategy;
 
         uint256 lpSharesTotal;
         uint256[POOL_ASSETS] memory minAmountsTotal;
@@ -426,8 +432,6 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
 
             lpSharesTotal += withdrawal.lpShares;
             minAmountsTotal[0] += withdrawal.tokenAmounts[0];
-            minAmountsTotal[1] += withdrawal.tokenAmounts[1];
-            minAmountsTotal[2] += withdrawal.tokenAmounts[2];
         }
 
         require(
@@ -445,7 +449,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
                 address(this),
                 calcLpRatioSafe(lpSharesTotal, _poolInfo[defaultWithdrawPid].lpShares),
                 minAmountsTotal,
-                IStrategy.WithdrawalType.Base,
+                IStrategyAPS.WithdrawalType.Base,
                 0
             )
         ) {
@@ -483,7 +487,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
 
             emit Withdrawn(
                 user,
-                IStrategy.WithdrawalType.Base,
+                IStrategyAPS.WithdrawalType.Base,
                 withdrawal.tokenAmounts,
                 withdrawal.lpShares,
                 0
@@ -504,7 +508,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
         startedPool
         returns (uint256)
     {
-        IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
+        IStrategyAPS strategy = _poolInfo[defaultDepositPid].strategy;
         uint256 holdings = totalHoldings();
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
@@ -541,14 +545,14 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
     function withdraw(
         uint256 lpShares,
         uint256[POOL_ASSETS] memory tokenAmounts,
-        IStrategy.WithdrawalType withdrawalType,
+        IStrategyAPS.WithdrawalType withdrawalType,
         uint128 tokenIndex
     ) external whenNotPaused startedPool {
         require(
             checkBit(availableWithdrawalTypes, uint8(withdrawalType)),
             'Zunami: withdrawal type not available'
         );
-        IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
+        IStrategyAPS strategy = _poolInfo[defaultWithdrawPid].strategy;
         address userAddr = _msgSender();
 
         require(balanceOf(userAddr) >= lpShares, 'Zunami: not enough LP balance');
@@ -604,7 +608,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
 
         uint256 startTime = block.timestamp + (launched ? MIN_LOCK_TIME : 0);
         _poolInfo.push(
-            PoolInfo({ strategy: IStrategy(_strategyAddr), startTime: startTime, lpShares: 0 })
+            PoolInfo({ strategy: IStrategyAPS(_strategyAddr), startTime: startTime, lpShares: 0 })
         );
         emit AddedPool(_poolInfo.length - 1, _strategyAddr, startTime);
     }
@@ -701,7 +705,7 @@ contract ZunamiAPS is ERC20, Pausable, AccessControl {
                 address(this),
                 calcLpRatioSafe(currentLpAmount, _poolInfo[pid].lpShares),
                 minAmounts,
-                IStrategy.WithdrawalType.Base,
+                IStrategyAPS.WithdrawalType.Base,
                 0
             );
             _poolInfo[pid].lpShares = _poolInfo[pid].lpShares - currentLpAmount;
