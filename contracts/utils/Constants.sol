@@ -186,4 +186,7 @@ library Constants {
     address internal constant UZD_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
     address internal constant CRV_FRAX_UZD_ADDRESS = 0x68934F60758243eafAf4D2cFeD27BF8010bede3a;
     address internal constant CRV_FRAX_UZD_LP_ADDRESS = 0x68934F60758243eafAf4D2cFeD27BF8010bede3a;
+
+    address internal constant ZUNAMI_POOL_ADDRESS = 0x2ffCC661011beC72e1A9524E12060983E74D14ce;
+    address internal constant ZUNAMI_STABLE_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
 }

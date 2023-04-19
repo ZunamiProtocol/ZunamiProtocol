@@ -7,6 +7,8 @@ contract UzdFraxCurveStakeDao is FraxCurveStakeDaoApsStratBase {
     constructor(Config memory config)
     FraxCurveStakeDaoApsStratBase(
             config,
+            Constants.ZUNAMI_POOL_ADDRESS,
+            Constants.ZUNAMI_STABLE_ADDRESS,
             Constants.FRAX_USDC_ADDRESS,
             Constants.FRAX_USDC_LP_ADDRESS,
             Constants.CRV_FRAX_UZD_ADDRESS,
