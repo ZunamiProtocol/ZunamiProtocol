@@ -44,7 +44,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     address public feeDistributor;
 
     uint256 public managementFees = 0;
-    uint256 public feeTokenId = ZUNAMI_APS_UZD_TOKEN_ID;
 
     IStakeDaoVault public immutable vault;
     IERC20Metadata public immutable poolLP;
@@ -94,28 +93,25 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
             return 0;
         }
 
-        uint256 poolLPs = depositPool(amounts);
+        uint256 poolLPs = depositPool(amounts[ZUNAMI_APS_UZD_TOKEN_ID], 0);
 
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
     function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts) internal view virtual returns (bool);
 
-    function depositPool(uint256[POOL_ASSETS] memory amounts) internal virtual returns (uint256);
+    function depositPool(uint256 tokenAmount, uint256 usdcAmount) internal virtual returns (uint256);
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
     function transferAllTokensOut(address withdrawer, uint256[] memory prevBalances) internal {
         uint256 transferAmount;
         IERC20Metadata token_;
-        uint256 feeTokenId_ = feeTokenId;
-        uint256 managementFees_ = managementFees;
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             token_ = _config.tokens[i];
             transferAmount =
                 token_.balanceOf(address(this)) -
-                prevBalances[i] -
-                ((i == feeTokenId_) ? managementFees_ : 0);
+                prevBalances[i];
             if (transferAmount > 0) {
                 token_.safeTransfer(withdrawer, transferAmount);
             }
@@ -125,8 +121,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     function transferZunamiAllTokens() internal {
         uint256 transferAmount;
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            uint256 managementFee = (i == feeTokenId) ? managementFees : 0;
-            transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFee;
+            transferAmount = _config.tokens[i].balanceOf(address(this));
             if (transferAmount > 0) {
                 _config.tokens[i].safeTransfer(_msgSender(), transferAmount);
             }
@@ -175,8 +170,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
         uint256[] memory prevBalances = new uint256[](3);
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             prevBalances[i] =
-                _config.tokens[i].balanceOf(address(this)) -
-                ((i == feeTokenId) ? managementFees : 0);
+                _config.tokens[i].balanceOf(address(this));
         }
 
         vault.withdraw(removingCrvLps);
@@ -237,7 +231,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
             return;
         }
 
-        IERC20Metadata feeToken_ = _config.tokens[feeTokenId];
+        IERC20Metadata feeToken_ = IERC20Metadata(Constants.USDC_ADDRESS);
         uint256 feeTokenBalanceBefore = feeToken_.balanceOf(address(this));
 
         IRewardManager rewardManager_ = rewardManager;
@@ -249,7 +243,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
             rewardManager_.handle(
                 address(rewardToken_),
                 rewardBalances[i],
-                address(feeToken_)
+                Constants.USDC_ADDRESS
             );
         }
 
@@ -267,14 +261,10 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
 
         sellRewards();
 
-        uint256 feeTokenId_ = feeTokenId;
-        uint256 feeTokenBalance = _config.tokens[feeTokenId_].balanceOf(address(this)) -
+        uint256 feeTokenBalance = IERC20Metadata(Constants.USDC_ADDRESS).balanceOf(address(this)) -
             managementFees;
 
-        uint256[POOL_ASSETS] memory amounts;
-        amounts[feeTokenId_] = feeTokenBalance;
-
-        if (feeTokenBalance > 0) depositPool(amounts);
+        if (feeTokenBalance > 0) depositPool(0, feeTokenBalance);
     }
 
     /**
@@ -287,7 +277,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
         uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) *
             getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
 
-        uint256 feeTokenId_ = feeTokenId;
         uint256 rewardEarningInFeeToken;
         IERC20Metadata rewardToken_;
         IRewardManager rewardManager_ = rewardManager;
@@ -301,7 +290,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
             rewardEarningInFeeToken += rewardManager_.valuate(
                 address(rewardToken_),
                 amountIn,
-                address(_config.tokens[feeTokenId_])
+                Constants.USDC_ADDRESS
             );
         }
 
@@ -313,8 +302,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
         return
             tokensHoldings +
             crvLpHoldings +
-            rewardEarningInFeeToken *
-            decimalsMultipliers[feeTokenId_];
+            rewardEarningInFeeToken * 12; // USDC token multiplier 18 - 6
     }
 
     /**
@@ -322,7 +310,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public returns (uint256) {
-        IERC20Metadata feeToken_ = _config.tokens[feeTokenId];
+        IERC20Metadata feeToken_ = IERC20Metadata(Constants.USDC_ADDRESS);
         uint256 managementFees_ = managementFees;
         uint256 feeTokenBalance = feeToken_.balanceOf(address(this));
         uint256 transferBalance = managementFees_ > feeTokenBalance
@@ -365,10 +353,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     function setRewardManager(address rewardManagerAddr) external onlyOwner {
         rewardManager = IRewardManager(rewardManagerAddr);
         emit SetRewardManager(rewardManagerAddr);
-    }
-
-    function setFeeTokenId(uint256 feeTokenIdParam) external onlyOwner {
-        feeTokenId = feeTokenIdParam;
     }
 
     /**

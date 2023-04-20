@@ -11,7 +11,7 @@ import "./CurveStakeDaoApsStratBase.sol";
 abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
-    uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 3;
+    uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 1;
 
     IERC20Metadata public immutable token;
     IERC20Metadata public immutable extraRewardToken;
@@ -35,7 +35,6 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
      * @return Returns total USD holdings in strategy
      */
     function totalHoldings() public view virtual override returns (uint256) {
-        uint256 feeTokenId_ = feeTokenId;
         uint256 extraEarningsFeeToken = 0;
         if (address(extraRewardToken) != address(0)) {
             uint256 extraTokenEarned = vault.liquidityGauge().claimable_reward(
@@ -46,14 +45,13 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
             extraEarningsFeeToken = rewardManager.valuate(
                 address(extraRewardToken),
                 amountIn,
-                address(_config.tokens[feeTokenId_])
+                Constants.USDC_ADDRESS
             );
         }
 
         return
             super.totalHoldings() +
-            extraEarningsFeeToken *
-            decimalsMultipliers[feeTokenId_] +
+            extraEarningsFeeToken * 12 + // USDC token multiplier 18 - 6
             token.balanceOf(address(this)) *
             decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
     }
@@ -72,7 +70,7 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
         rewardManager.handle(
             address(extraRewardToken),
             extraBalance,
-            address(_config.tokens[feeTokenId])
+            Constants.USDC_ADDRESS
         );
     }
 
