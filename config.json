@@ -67,5 +67,13 @@
       "sgRouter": "0x45A01E4e04F14f7A4a6702c74187c5F6222033cd",
       "usdtPoolId": 2
     }
+  },
+  "views": {
+    "snapshotHelper": {
+      "uzdFraxbp3crv": "0x68934F60758243eafAf4D2cFeD27BF8010bede3a",
+      "uzdFraxbp3CrvGauge": "0xBdCA4F610e7101Cc172E2135ba025737B99AbD30",
+      "convexUzdFraxbp3Crv": "0x820Fad75512c8C3E57Ad021d016846CEEB5F7105",
+      "sdUzdFraxbp3crvVaultGauge": "0x62C6f1f58c0cc5915c9d414a470F06E137c3DbdB"
+    }
   }
 }

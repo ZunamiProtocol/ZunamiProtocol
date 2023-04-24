@@ -95,3 +95,6 @@ Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
 
 FRAX-USDC stable converter deployed to: 0xE2152984056d410E96688e55B16C84CCa95831BD
 Frax Zunami Extension deployed to: 0x3D8aBC464D5313a576e78706aC97F79fe1EB0b61
+
+SnapshotHelper deployed to: 0x0AD930970b60d24bd30F612D287f188A7626B147
+Pool gauge count: 4
