@@ -284,13 +284,16 @@ describe('Single strategy tests', () => {
         await ethers.provider.send('evm_increaseTime', [3600 * 24 * 7]);
         await zunamiAPS.autoCompoundAll();
 
-        let token;
+        let tokens;
         let balance;
         for (let strategy of strategies) {
-            token = new ethers.Contract(await strategy.token(), erc20ABI, admin);
-            balance = await token.balanceOf(strategy.address);
-
-            expect(balance).to.eq(0);
+            tokens = [await strategy.token(), ...(await strategy.config()).rewards]
+                .map((token) => new ethers.Contract(token, erc20ABI, admin));
+            for(let token of tokens) {
+                balance = await token.balanceOf(strategy.address);
+                expect(balance).to.eq(0);
+            }
         }
     });
+
 });
