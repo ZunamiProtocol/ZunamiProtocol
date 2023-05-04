@@ -12,7 +12,6 @@ import "../../../../../interfaces/IZunamiStableVault.sol";
 abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
-    uint256 constant ZUNAMI_APS_TOKEN_ID = 0;
     uint128 constant ZUNAMI_USDC_TOKEN_ID = 1;
 
     uint256 constant FRAX_USDC_POOL_USDC_ID = 1;
@@ -62,21 +61,16 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         crvFraxTokenPoolLp = IERC20Metadata(crvFraxTokenPoolLpAddr);
     }
 
-    function checkDepositSuccessful(uint256[POOL_ASSETS] memory tokenAmounts)
+    function checkDepositSuccessful(uint256 tokenAmount)
         internal
         view
         override
         returns (bool isValidDepositAmount)
     {
-        uint256 amountsTotal;
-        for (uint256 i = 0; i < tokenAmounts.length; i++) {
-            amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
-        }
-
-        uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
+        uint256 amountsMin = (tokenAmount * minDepositAmount) / DEPOSIT_DENOMINATOR;
 
         uint256[2] memory amounts;
-        amounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = amountsTotal;
+        amounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
 
         uint256 lpPrice = crvFraxTokenPool.get_virtual_price();
         uint256 depositedLp = crvFraxTokenPool.calc_token_amount(amounts, true);
@@ -120,7 +114,7 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         return crvFraxTokenPool.get_virtual_price();
     }
 
-    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps, uint128)
+    function calcWithdrawOneCoin(uint256 userRatioOfCrvLps)
         external
         view
         override
@@ -132,22 +126,20 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         return crvFraxTokenPool.calc_withdraw_one_coin(removingCrvLps, CRVFRAX_TOKEN_POOL_TOKEN_ID_INT);
     }
 
-    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256 tokenAmount, bool isDeposit)
         external
         view
         override
         returns (uint256)
     {
         uint256[2] memory tokenAmounts2;
-        tokenAmounts2[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmounts[ZUNAMI_APS_TOKEN_ID];
+        tokenAmounts2[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
         return crvFraxTokenPool.calc_token_amount(tokenAmounts2, isDeposit);
     }
 
     function calcCrvLps(
-        WithdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[POOL_ASSETS] memory tokenAmounts,
-        uint128
+        uint256 tokenAmount
     )
         internal
         view
@@ -162,7 +154,7 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         userRatioOfCrvLps) / 1e18;
 
         uint256[2] memory minAmounts;
-        minAmounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmounts[ZUNAMI_APS_TOKEN_ID];
+        minAmounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
         success = removingCrvLps >= crvFraxTokenPool.calc_token_amount(minAmounts, false);
 
         tokenAmountsDynamic = new uint256[](2);
@@ -171,11 +163,9 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
     function removeCrvLps(
         uint256 removingCrvLps,
         uint256[] memory,
-        WithdrawalType,
-        uint256[POOL_ASSETS] memory tokenAmounts,
-        uint128
+        uint256 tokenAmount
     ) internal override {
-        removeCrvLpsInternal(removingCrvLps, tokenAmounts[ZUNAMI_APS_TOKEN_ID]);
+        removeCrvLpsInternal(removingCrvLps, tokenAmount);
     }
 
     function removeCrvLpsInternal(uint256 removingCrvLps, uint256 minTokenAmount) internal {

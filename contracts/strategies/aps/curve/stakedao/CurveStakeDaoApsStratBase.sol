@@ -18,15 +18,8 @@ import "../../../curve/stakedao/interfaces/IStakeDaoVault.sol";
 abstract contract CurveStakeDaoApsStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
 
-    uint8 public constant POOL_ASSETS = 1;
-
-    enum WithdrawalType {
-        Base,
-        OneCoin
-    }
-
     struct Config {
-        IERC20Metadata[POOL_ASSETS] tokens;
+        IERC20Metadata token;
         IERC20Metadata[] rewards;
     }
 
@@ -38,7 +31,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
-    uint256 public constant ZUNAMI_APS_UZD_TOKEN_ID = 0;
 
     uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
@@ -47,8 +39,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
 
     IStakeDaoVault public immutable vault;
     IERC20Metadata public immutable poolLP;
-
-    uint256[2] public decimalsMultipliers;
 
     event SetRewardManager(address rewardManager);
     event MinDepositAmountUpdated(uint256 oldAmount, uint256 newAmount);
@@ -69,10 +59,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     ) {
         _config = config_;
 
-        for (uint256 i; i < POOL_ASSETS; i++) {
-            decimalsMultipliers[i] = calcTokenDecimalsMultiplier(_config.tokens[i]);
-        }
-
         vault = IStakeDaoVault(vaultAddr);
         poolLP = IERC20Metadata(poolLPAddr);
         feeDistributor = _msgSender();
@@ -86,55 +72,46 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
      * @dev Returns deposited amount in USD.
      * If deposit failed return zero
      * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
+     * @param amount - amounts in stablecoin that user deposit
      */
-    function deposit(uint256[POOL_ASSETS] memory amounts) external returns (uint256) {
-        if (!checkDepositSuccessful(amounts)) {
+    function deposit(uint256 amount) external returns (uint256) {
+        if (!checkDepositSuccessful(amount)) {
             return 0;
         }
 
-        uint256 poolLPs = depositPool(amounts[ZUNAMI_APS_UZD_TOKEN_ID], 0);
+        uint256 poolLPs = depositPool(amount, 0);
 
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[POOL_ASSETS] memory amounts) internal view virtual returns (bool);
+    function checkDepositSuccessful(uint256 amount) internal view virtual returns (bool);
 
     function depositPool(uint256 tokenAmount, uint256 usdcAmount) internal virtual returns (uint256);
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
-    function transferAllTokensOut(address withdrawer, uint256[] memory prevBalances) internal {
+    function transferAllTokensOut(address withdrawer, uint256 prevBalance) internal {
         uint256 transferAmount;
-        IERC20Metadata token_;
-        for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            token_ = _config.tokens[i];
-            transferAmount =
-                token_.balanceOf(address(this)) -
-                prevBalances[i];
-            if (transferAmount > 0) {
-                token_.safeTransfer(withdrawer, transferAmount);
-            }
+        transferAmount = _config.token.balanceOf(address(this)) - prevBalance;
+        if (transferAmount > 0) {
+            _config.token.safeTransfer(withdrawer, transferAmount);
         }
     }
 
     function transferZunamiAllTokens() internal {
-        uint256 transferAmount;
-        for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            transferAmount = _config.tokens[i].balanceOf(address(this));
-            if (transferAmount > 0) {
-                _config.tokens[i].safeTransfer(_msgSender(), transferAmount);
-            }
+        uint256 transferAmount = _config.token.balanceOf(address(this));
+        if (transferAmount > 0) {
+            _config.token.safeTransfer(_msgSender(), transferAmount);
         }
     }
 
-    function calcWithdrawOneCoin(uint256 sharesAmount, uint128 tokenIndex)
+    function calcWithdrawOneCoin(uint256 sharesAmount)
         external
         view
         virtual
         returns (uint256 tokenAmount);
 
-    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256 tokenAmount, bool isDeposit)
         external
         view
         virtual
@@ -146,47 +123,37 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
      * @return Returns true if withdraw success and false if fail.
      * @param withdrawer - address of user that deposit funds
      * @param userRatioOfCrvLps - user's Ratio of ZLP for withdraw
-     * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
+     * @param tokenAmount - amount stablecoin that user want minimum receive
      */
     function withdraw(
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[POOL_ASSETS] memory tokenAmounts,
-        WithdrawalType withdrawalType,
-        uint128 tokenIndex
+        uint256 tokenAmount
     ) external virtual onlyZunami returns (bool) {
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, 'Wrong lp Ratio');
         (bool success, uint256 removingCrvLps, uint256[] memory tokenAmountsDynamic) = calcCrvLps(
-            withdrawalType,
             userRatioOfCrvLps,
-            tokenAmounts,
-            tokenIndex
+            tokenAmount
         );
 
         if (!success) {
             return false;
         }
 
-        uint256[] memory prevBalances = new uint256[](3);
-        for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            prevBalances[i] =
-                _config.tokens[i].balanceOf(address(this));
-        }
+        uint256 prevBalance = _config.token.balanceOf(address(this));
 
         vault.withdraw(removingCrvLps);
 
-        removeCrvLps(removingCrvLps, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
+        removeCrvLps(removingCrvLps, tokenAmountsDynamic, tokenAmount);
 
-        transferAllTokensOut(withdrawer, prevBalances);
+        transferAllTokensOut(withdrawer, prevBalance);
 
         return true;
     }
 
     function calcCrvLps(
-        WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[POOL_ASSETS] memory tokenAmounts,
-        uint128 tokenIndex
+        uint256 tokenAmount
     )
         internal
         virtual
@@ -199,9 +166,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     function removeCrvLps(
         uint256 removingCrvLps,
         uint256[] memory tokenAmountsDynamic,
-        WithdrawalType withdrawalType,
-        uint256[POOL_ASSETS] memory tokenAmounts,
-        uint128 tokenIndex
+        uint256 tokenAmount
     ) internal virtual;
 
     function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
@@ -274,7 +239,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
      */
     function totalHoldings() public view virtual returns (uint256) {
 
-        uint256 crvLpHoldings = (vault.liquidityGauge().balanceOf(address(this)) *
+        uint256 crvLpHolding = (vault.liquidityGauge().balanceOf(address(this)) *
             getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
 
         uint256 rewardEarningInFeeToken;
@@ -294,14 +259,11 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
             );
         }
 
-        uint256 tokensHoldings = 0;
-        for (uint256 i = 0; i < POOL_ASSETS; i++) {
-            tokensHoldings += _config.tokens[i].balanceOf(address(this)) * decimalsMultipliers[i];
-        }
+        uint256 tokensHolding = _config.token.balanceOf(address(this));
 
         return
-            tokensHoldings +
-            crvLpHoldings +
+            tokensHolding +
+            crvLpHolding +
             rewardEarningInFeeToken * 12; // USDC token multiplier 18 - 6
     }
 

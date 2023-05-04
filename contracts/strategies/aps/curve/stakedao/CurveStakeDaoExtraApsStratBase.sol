@@ -16,6 +16,8 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
     IERC20Metadata public immutable token;
     IERC20Metadata public immutable extraRewardToken;
 
+    uint256  decimalsMultiplier;
+
     constructor(
         Config memory config,
         address vaultAddr,
@@ -26,7 +28,7 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
         extraRewardToken = IERC20Metadata(extraRewardTokenAddr);
 
         token = IERC20Metadata(tokenAddr);
-        decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID] = calcTokenDecimalsMultiplier(token);
+        decimalsMultiplier = calcTokenDecimalsMultiplier(token);
     }
 
     /**
@@ -53,7 +55,7 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
             super.totalHoldings() +
             extraEarningsFeeToken * 12 + // USDC token multiplier 18 - 6
             token.balanceOf(address(this)) *
-            decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
+            decimalsMultiplier;
     }
 
     function sellRewardsExtra() internal virtual override {

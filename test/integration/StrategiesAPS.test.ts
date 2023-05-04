@@ -9,36 +9,17 @@ import { abi as uzdABI } from '../../deployment/abi/UZD.json';
 import * as addrs from '../address.json';
 import * as globalConfig from '../../config.json';
 
-function getMinAmount(): BigNumber[] {
-    const amount = '1000';
-    const uzd = ethers.utils.parseUnits(amount, 'ether');
-    return [uzd];
+function getMinAmount(): BigNumber {
+    return ethers.utils.parseUnits('1000', 'ether');
 }
 
 describe('Single strategy tests', () => {
     const strategyNames = [
         'UzdFraxCurveStakeDao'
     ];
-    enum WithdrawalType {
-        Base,
-        OneCoin,
-    }
-
-    const configConvex = {
-        tokens: globalConfig.tokens_aps,
-        crv: globalConfig.crv,
-        cvx: globalConfig.cvx,
-        booster: globalConfig.booster,
-    };
-
-    const configStakingConvex = {
-        tokens: globalConfig.tokens_aps,
-        rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
-        booster: globalConfig.stakingBooster,
-    };
 
     const configStakeDao = {
-        tokens: globalConfig.tokens_aps,
+        token: globalConfig.token_aps,
         rewards: [globalConfig.crv, globalConfig.sdt],
     };
 
@@ -105,22 +86,14 @@ describe('Single strategy tests', () => {
 
     beforeEach(async () => {
         const ZunamiApsFactory = await ethers.getContractFactory('ZunamiAPS');
-        zunamiAPS = await ZunamiApsFactory.deploy([
-            addrs.stablecoins.uzd
-        ]);
+        zunamiAPS = await ZunamiApsFactory.deploy(addrs.stablecoins.uzd);
         await zunamiAPS.deployed();
 
         // Init all strategies
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
 
-            const config = strategyName.includes('StakeDao')
-                ? configStakeDao
-                : strategyName.includes('Staking')
-                ? configStakingConvex
-                : configConvex;
-
-            const strategy = await factory.deploy(config);
+            const strategy = await factory.deploy(configStakeDao);
             await strategy.deployed();
 
             strategy.setZunami(zunamiAPS.address);
@@ -208,9 +181,9 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, [0]))
+                await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, 0))
                     .to.emit(zunamiAPS, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0]);
+                    .withArgs(await user.getAddress(), zlpAmount, 0);
             }
 
             await expect(
@@ -234,9 +207,9 @@ describe('Single strategy tests', () => {
                 const zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.gt(0);
 
-                await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, [0]))
+                await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, 0))
                     .to.emit(zunamiAPS, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0]);
+                    .withArgs(await user.getAddress(), zlpAmount, 0);
             }
 
             await expect(
@@ -261,7 +234,7 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.gt(0);
 
                 await expect(
-                    zunamiAPS.connect(user).withdraw(zlpAmount, [0], WithdrawalType.Base, 0)
+                    zunamiAPS.connect(user).withdraw(zlpAmount, 0)
                 ).to.emit(zunamiAPS, 'Withdrawn');
                 zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
                 expect(zlpAmount).to.eq(0);
@@ -285,7 +258,7 @@ describe('Single strategy tests', () => {
                 expect(zlpAmount).to.gt(0);
 
                 await expect(
-                    zunamiAPS.connect(user).withdraw(zlpAmount, [0], WithdrawalType.OneCoin, 0)
+                    zunamiAPS.connect(user).withdraw(zlpAmount, 0)
                 ).to.emit(zunamiAPS, 'Withdrawn');
 
                 zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
