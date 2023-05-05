@@ -104,6 +104,13 @@ async function main() {
     //     stableConverterAddress,
     //     configStakingConvex
     // );
+    // await deployAndLinkStrategy(
+    //     'clevUSDStakingFraxCurveConvex',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     stableConverterAddress,
+    //     configStakingConvex
+    // );
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

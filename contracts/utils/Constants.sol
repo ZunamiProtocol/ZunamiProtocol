@@ -32,6 +32,7 @@ library Constants {
     uint256 internal constant CVX_DOLA_PID = 62;
     uint256 internal constant CVX_FRAX_LUSD_PID = 102;
     uint256 internal constant CVX_FRAX_ALUSD_PID = 106;
+    uint256 internal constant CVX_FRAX_clevUSD_PID = 41;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
@@ -173,4 +174,7 @@ library Constants {
 
     address internal constant CRV_FRAX_alUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
     address internal constant CRV_FRAX_alUSD_LP_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
+
+    address internal constant CRV_FRAX_clevUSD_ADDRESS = 0x84C333e94AEA4a51a21F6cf0C7F528C50Dc7592C;
+    address internal constant CRV_FRAX_clevUSD_LP_ADDRESS = 0x84C333e94AEA4a51a21F6cf0C7F528C50Dc7592C;
 }

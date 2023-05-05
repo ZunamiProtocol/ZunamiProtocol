@@ -31,9 +31,9 @@ const config: HardhatUserConfig = {
         hardhat: {
             forking: {
                 url: `${process.env.ETH_NODE_API_KEY}`,
-                blockNumber: 16883000,
-                // blockNumber: 16200000, - Staking strategy
-                // blockNumber: 15183276, - Strategies
+                // blockNumber: 16883000,
+                blockNumber: 16800000, // Staking strategy
+                // blockNumber: 15183276, // Strategies
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each
@@ -80,7 +80,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             gas: 'auto',
             gasMultiplier: 1.2,
-            gasPrice: 13000000000,
+            gasPrice: 80000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
             loggingEnabled: true,
         },

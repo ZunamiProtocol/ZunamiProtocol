@@ -24,3 +24,5 @@ npx hardhat verify --network mainnet --constructor-args ./deployment/convex_stak
 npx hardhat verify --network mainnet 0xE2152984056d410E96688e55B16C84CCa95831BD
 
 npx hardhat verify --network mainnet 0x3D8aBC464D5313a576e78706aC97F79fe1EB0b61 0x2ffCC661011beC72e1A9524E12060983E74D14ce 0xE2152984056d410E96688e55B16C84CCa95831BD
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_staking_strategy_arguments.js --contract contracts/strategies/curve/convex/stakingFraxbp/clevUSDStakingFraxCurveConvex.sol:clevUSDStakingFraxCurveConvex 0x06A62C6e449BA3026E238E1350c7e25a3d409544

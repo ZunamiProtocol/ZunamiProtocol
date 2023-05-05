@@ -17,7 +17,10 @@ function getMinAmount(): BigNumber[] {
 
 async function toggleUnlockStakes() {
     const stakingOwner = '0xB1748C79709f4Ba2Dd82834B8c82D4a505003f27';
-    const stakingAddress = '0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6';
+    const stakingAddresses = [
+        '0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6',
+        '0x5745506d56b0088f800085b1227b3f1f7d419c89'
+    ];
     const stakingABI = [
         {
             inputs: [],
@@ -33,9 +36,11 @@ async function toggleUnlockStakes() {
     });
     const stakingOwnerSigner: Signer = ethers.provider.getSigner(stakingOwner);
 
-    const staking = new ethers.Contract(stakingAddress, stakingABI, stakingOwnerSigner);
+    for (const stakingAddress of stakingAddresses) {
+        const staking = new ethers.Contract(stakingAddress, stakingABI, stakingOwnerSigner);
+        await staking.connect(stakingOwnerSigner).unlockStakes();
+    }
 
-    await staking.connect(stakingOwnerSigner).unlockStakes();
     await network.provider.request({
         method: 'hardhat_stopImpersonatingAccount',
         params: [stakingOwner],
@@ -48,7 +53,11 @@ async function increaseChainTime(time: number) {
 }
 
 describe('Single strategy tests', () => {
-    const strategyNames = ['XAIStakingFraxCurveConvex']; //, 'MIMCurveStakeDao', 'LUSDCurveConvex', 'LUSDFraxCurveConvex', 'ALUSDFraxCurveConvex'];
+    const strategyNames = [
+        'XAIStakingFraxCurveConvex',
+        'alUSDStakingFraxCurveConvex',
+        'clevUSDStakingFraxCurveConvex'
+    ];
     enum WithdrawalType {
         Base,
         OneCoin,
@@ -405,13 +414,16 @@ describe('Single strategy tests', () => {
 
         await zunami.autoCompoundAll();
 
-        let token;
+        let tokens;
         let balance;
         for (let strategy of strategies) {
-            token = new ethers.Contract(await strategy.token(), erc20ABI, admin);
-            balance = await token.balanceOf(strategy.address);
-
-            expect(balance).to.eq(0);
+            const config = await strategy.config();
+            tokens = [await strategy.token(), ...config.rewards]
+                .map((token) => new ethers.Contract(token, erc20ABI, admin));
+            for(let token of tokens) {
+                balance = await token.balanceOf(strategy.address);
+                expect(balance).to.eq(0);
+            }
         }
     });
 });
