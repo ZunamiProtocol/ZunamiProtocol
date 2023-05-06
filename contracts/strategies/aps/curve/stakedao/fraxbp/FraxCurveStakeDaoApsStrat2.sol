@@ -9,6 +9,8 @@ import "../CurveStakeDaoExtraApsStratBase.sol";
 import "../../../../../interfaces/IZunamiVault.sol";
 import "../../../../../interfaces/IZunamiStableVault.sol";
 
+//import "hardhat/console.sol";
+
 abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
@@ -107,6 +109,7 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         poolLpAmount = crvFraxTokenPool.add_liquidity(tokenPoolAmounts, 0);
 
         crvFraxTokenPoolLp.safeIncreaseAllowance(address(vault), poolLpAmount);
+
         vault.deposit(address(this), poolLpAmount, true);
     }
 
@@ -184,6 +187,8 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         uint256 removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) *
             ratioOfCrvLps) / 1e18;
 
+        vault.withdraw(removingCrvLps);
+
         uint256 crvFraxAmount = crvFraxTokenPool.remove_liquidity_one_coin(
             removingCrvLps,
             CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT,
@@ -196,9 +201,13 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
             minInflatedAmount
         );
 
+        IERC20Metadata(Constants.USDC_ADDRESS).safeIncreaseAllowance(address(zunamiPool), usdcAmount);
         uint256 zlpAmount = zunamiPool.deposit([0,usdcAmount,0]);
 
-        uint256 uzdAmount = zunamiStable.deposit(zlpAmount, address(this));
+        IERC20Metadata(address(zunamiPool)).safeIncreaseAllowance(address(zunamiStable), zlpAmount);
+        zunamiStable.deposit(zlpAmount, address(this));
+
+        uint256 uzdAmount = IERC20Metadata(address(zunamiStable)).balanceOf(address(this));
 
         depositPool(uzdAmount, 0);
     }
@@ -207,14 +216,20 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         uint256 removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) *
             ratioOfCrvLps) / 1e18;
 
+        vault.withdraw(removingCrvLps);
+
         uint256 tokenAmount = crvFraxTokenPool.remove_liquidity_one_coin(
             removingCrvLps,
             CRVFRAX_TOKEN_POOL_TOKEN_ID_INT,
             0
         );
 
-        uint256 zlpAmount = zunamiStable.withdraw(tokenAmount, address(this), address(this));
+        IERC20Metadata(address(zunamiStable)).safeIncreaseAllowance(address(zunamiStable), tokenAmount);
+        zunamiStable.withdraw(tokenAmount, address(this), address(this));
 
+        uint256 zlpAmount = IERC20Metadata(address(zunamiPool)).balanceOf(address(this));
+
+        IERC20Metadata(address(zunamiPool)).safeIncreaseAllowance(address(zunamiPool), zlpAmount);
         zunamiPool.withdraw(
             zlpAmount,
             [0, minDeflateAmount, 0],

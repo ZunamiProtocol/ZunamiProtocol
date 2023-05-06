@@ -13,8 +13,12 @@ function getMinAmount(): BigNumber {
     return ethers.utils.parseUnits('1000', 'ether');
 }
 
+const stakeDaoVaultAbi = [{"inputs":[],"name":"liquidityGauge","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
+const crvPool2Abi = [{"stateMutability":"view","type":"function","name":"coins","inputs":[{"name":"arg0","type":"uint256"}],"outputs":[{"name":"","type":"address"}]}];
+
 describe('Single strategy tests', () => {
     const strategyNames = [
+        'VaultAPSStrat',
         'UzdFraxCurveStakeDao'
     ];
 
@@ -93,20 +97,26 @@ describe('Single strategy tests', () => {
         for (const strategyName of strategyNames) {
             const factory = await ethers.getContractFactory(strategyName);
 
-            const strategy = await factory.deploy(configStakeDao);
-            await strategy.deployed();
+            let strategy;
+            if(strategyName.includes("Vault")) {
+                strategy = await factory.deploy(uzd.address);
+                await strategy.deployed();
+            } else {
+                strategy = await factory.deploy(configStakeDao);
+                await strategy.deployed();
+
+                strategy.setRewardManager(rewardManager.address);
+            }
 
             strategy.setZunami(zunamiAPS.address);
-
-            strategy.setRewardManager(rewardManager.address);
 
             strategies.push(strategy);
         }
 
-        for (const user of [admin, alice, bob]) {
-            await uzd.connect(user).approve(zunamiAPS.address, parseUnits('1000000', 'ether'));
+        for (const user of [alice, bob]) {
+            await uzd.connect(user).approve(zunamiAPS.address, parseUnits('500000', 'ether'));
 
-            await uzd.transfer(user.getAddress(), ethers.utils.parseUnits('10000', 'ether'));
+            await uzd.transfer(user.getAddress(), ethers.utils.parseUnits('500000', 'ether'));
         }
     });
 
@@ -294,6 +304,113 @@ describe('Single strategy tests', () => {
                 expect(balance).to.eq(0);
             }
         }
+
+        //TODO: check commission
     });
 
+    describe("inflate/deflate", function () {
+        it("should revert if called by a non-owner", async function () {
+            const poolId = 1;
+            await expect(strategies[poolId].connect(alice).inflate(100, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(strategies[poolId].connect(alice).deflate(100, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it.only("should execute successfully", async function () {
+            const poolId = 1;
+
+            const REBALANCER_ROLE = "0xccc64574297998b6c3edf6078cc5e01268465ff116954e3af02ff3a70a730f46";
+            const uzdAdmin = new ethers.Contract(addrs.uzd, [
+                {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"grantRole","outputs":[],"stateMutability":"nonpayable","type":"function"}
+            ], admin);
+
+            const zunamiAdminAddr = "0xb056B9A45f09b006eC7a69770A65339586231a34";
+            await admin.sendTransaction({
+                to: zunamiAdminAddr,
+                value: ethers.utils.parseEther('1'),
+            });
+            await network.provider.request({
+                method: 'hardhat_impersonateAccount',
+                params: [zunamiAdminAddr],
+            });
+            const zunamiAdminSigner: Signer = ethers.provider.getSigner(zunamiAdminAddr);
+            await uzdAdmin
+                .connect(zunamiAdminSigner)
+                .grantRole(REBALANCER_ROLE, strategies[poolId].address);
+            await network.provider.request({
+                method: 'hardhat_stopImpersonatingAccount',
+                params: [zunamiAdminAddr],
+            });
+
+            for (let poolId = 0; poolId < strategies.length; poolId++) {
+                await zunamiAPS.addPool(strategies[poolId].address);
+            }
+
+            await zunamiAPS.setDefaultDepositPid(poolId);
+            await zunamiAPS.setDefaultWithdrawPid(poolId);
+
+            const vaultAddr = await strategies[poolId].vault();
+            const vaultLp = new ethers.Contract(vaultAddr, stakeDaoVaultAbi, admin);
+            const liquidityGaugeAddr = await vaultLp.liquidityGauge();
+            const liquidityGauge = new ethers.Contract(liquidityGaugeAddr, erc20ABI, admin);
+
+            const poolAddr = await strategies[poolId].crvFraxTokenPool();
+            const pool = new ethers.Contract(poolAddr, crvPool2Abi, admin);
+
+            const tokenUzdAddr = await pool.coins(0);
+            const tokenUzd = new ethers.Contract(tokenUzdAddr, erc20ABI, admin);
+            const tokenFraxBPAddr = await pool.coins(1);
+            const tokenFraxBP = new ethers.Contract(tokenFraxBPAddr, erc20ABI, admin);
+
+            const big1e18 = BigNumber.from((1e18).toString());
+            const approximation = BigNumber.from(2200).mul(big1e18); // slippage less 3000 USD
+
+            const poolUzdBalanceInit = await tokenUzd.balanceOf(poolAddr);
+            const poolFraxBpBalanceInit = await tokenFraxBP.balanceOf(poolAddr);
+
+            await uzd.connect(bob).transfer(alice.getAddress(), ethers.utils.parseUnits('500000', 'ether'));
+            const uzdAmount = ethers.utils.parseUnits('1000000', 'ether');
+            await uzd.connect(alice).approve(zunamiAPS.address, uzdAmount);
+            await zunamiAPS.connect(alice).deposit(uzdAmount);
+
+            const poolUzdBalanceBefore = await tokenUzd.balanceOf(poolAddr);
+            const poolFraxBpBalanceBefore = await tokenFraxBP.balanceOf(poolAddr);
+
+            expect(poolUzdBalanceBefore.sub(poolUzdBalanceInit)).to.eq(uzdAmount);
+
+            const gaugeBalanceBefore = await liquidityGauge.balanceOf(strategies[poolId].address);
+
+            expect(gaugeBalanceBefore).to.gt(0);
+
+            const inflationAmount = uzdAmount.mul(20).div(100);
+
+            const percentage = 20;
+            const percentageBig = BigNumber.from((percentage / 100 * 1e18).toString());
+
+            await strategies[poolId].connect(admin).inflate(percentageBig, BigNumber.from(200000 * 0.99).mul(1e6));
+
+            const poolUzdBalanceInflate = await tokenUzd.balanceOf(poolAddr);
+            const poolFraxBpBalanceInflate = await tokenFraxBP.balanceOf(poolAddr);
+
+            expect(poolUzdBalanceInflate.sub(poolUzdBalanceBefore)).to.gt(inflationAmount.sub(approximation));
+            expect(poolFraxBpBalanceBefore.sub(poolFraxBpBalanceInflate)).to.gt(inflationAmount.sub(approximation));
+
+            const gaugeBalanceAfterInflate = await liquidityGauge.balanceOf(strategies[poolId].address);
+
+            expect(gaugeBalanceAfterInflate).to.gt(0);
+            expect(gaugeBalanceBefore.sub(gaugeBalanceAfterInflate)).to.lt(approximation);
+
+            await strategies[poolId].connect(admin).deflate(percentageBig,  BigNumber.from(200000 * 0.99).mul(1e6));
+
+            const poolUzdBalanceDeflate = await tokenUzd.balanceOf(poolAddr);
+            const poolFraxBpBalanceDeflate = await tokenFraxBP.balanceOf(poolAddr);
+
+            expect(poolUzdBalanceInflate.sub(poolUzdBalanceDeflate)).to.gt(inflationAmount.sub(approximation));
+            expect(poolFraxBpBalanceDeflate.sub(poolFraxBpBalanceInflate)).to.gt(inflationAmount.sub(approximation));
+
+            const gaugeBalanceAfterDeflate = await liquidityGauge.balanceOf(strategies[poolId].address);
+
+            expect(gaugeBalanceAfterDeflate).to.gt(0);
+            expect(gaugeBalanceAfterDeflate.sub(gaugeBalanceAfterInflate)).to.lt(approximation);
+        });
+    });
 });
