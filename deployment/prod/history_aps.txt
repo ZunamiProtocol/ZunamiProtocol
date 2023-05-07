@@ -1,0 +1,10 @@
+Start deploy
+ZunamiAPS deployed to: 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd
+Reward manager deployed to: 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
+
+0 VaultAPSStrat strategy deployed to: 0xdC1AEb773Bd7dEd31170C1Ffe54Dd3639459bE07
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in VaultAPSStrat strategy
+
+1 UzdFraxCurveStakeDao strategy deployed to: 0xf36bdf167722FD90d021c42c642eAA48EE37f62a
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveStakeDao strategy
+Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b

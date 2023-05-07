@@ -16,11 +16,13 @@ async function deployAndLinkStrategy(name, zunamiAPS, rewardManager, config) {
     // await zunamiAPS.addPool(strategy.address);
     // console.log(`Added ${name} pool to Zunami`);
 
-    await strategy.setZunami(zunamiAPS.address);
+    let tx = await strategy.setZunami(zunamiAPS.address);
+    await tx.wait();
     console.log(`Set zunami address ${zunamiAPS.address} in ${name} strategy`);
 
     if (rewardManager) {
-        await strategy.setRewardManager(rewardManager);
+        tx = await strategy.setRewardManager(rewardManager);
+        await tx.wait();
         console.log(`Set reward manager ${rewardManager}`);
     }
 }
@@ -28,19 +30,18 @@ async function deployAndLinkStrategy(name, zunamiAPS, rewardManager, config) {
 async function main() {
     console.log('Start deploy');
     const ZunamiAPS = await ethers.getContractFactory('ZunamiAPS');
-    const zunamiAPS = await ZunamiAPS.deploy(globalConfig.token_aps);
-    // const zunamiAPS = await ZunamiAPS.attach(''); // prod
+    // const zunamiAPS = await ZunamiAPS.deploy(globalConfig.token_aps);
+    const zunamiAPS = await ZunamiAPS.attach('0xCaB49182aAdCd843b037bBF885AD56A3162698Bd'); // prod
     // const zunamiAPS = await ZunamiAPS.attach(''); // test
 
     await zunamiAPS.deployed();
     console.log('ZunamiAPS deployed to:', zunamiAPS.address);
 
     const rewardManagerAddress = '0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b';
-
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
-
-    await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
+    //await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_aps);
+    //await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
 }
 
 main()
