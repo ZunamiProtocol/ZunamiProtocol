@@ -37,7 +37,16 @@ async function main() {
     await zunamiAPS.deployed();
     console.log('ZunamiAPS deployed to:', zunamiAPS.address);
 
-    const rewardManagerAddress = '0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b';
+
+    // const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
+    // console.log('Stable converter deployed to:', stableConverterAddress);
+    //
+    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+    // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress);
+    // await rewardManager.deployed();
+    //
+    // const rewardManagerAddress = rewardManager.address;
+    const rewardManagerAddress = '0xA94999dB7dAb9cA4478b36142D026d5f2db3B356';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     //await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_aps);

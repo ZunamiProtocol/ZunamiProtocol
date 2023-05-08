@@ -8,3 +8,7 @@ Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in VaultAPSStrat s
 1 UzdFraxCurveStakeDao strategy deployed to: 0xf36bdf167722FD90d021c42c642eAA48EE37f62a
 Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveStakeDao strategy
 Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
+
+Reward manager deployed to: 0xA94999dB7dAb9cA4478b36142D026d5f2db3B356
+1 UzdFraxCurveStakeDao
+Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b

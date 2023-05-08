@@ -71,7 +71,7 @@ async function main() {
     // const uzdAddress = '0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c';
     // const feeCollector = '0xb056B9A45f09b006eC7a69770A65339586231a34';
 
-    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+    // const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManager');
     // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress, uzdAddress, feeCollector);
     // await rewardManager.deployed();
     //
