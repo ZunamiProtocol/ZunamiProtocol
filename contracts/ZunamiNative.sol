@@ -31,7 +31,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl {
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant MAX_FEE = 300; // 30%
     uint256 public constant MIN_LOCK_TIME = 1 days;
-    uint256 public constant FUNDS_DENOMINATOR = 10_000;
+    uint256 public constant FUNDS_DENOMINATOR = 10000000000;
     uint8 public constant ALL_WITHDRAWAL_TYPES_MASK = uint8(3); // Binary 11 = 2^0 + 2^1;
     address public constant ETH_MOCK_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     uint256 public constant ETH_MOCK_TOKEN_ID = 0;
@@ -832,16 +832,16 @@ contract ZunamiNative is ERC20, Pausable, AccessControl {
         require(_poolInfo[_receiverStrategy].strategy.deposit(tokensRemainder) > 0, 'low amount');
     }
 
-    function _moveFunds(uint256 pid, uint256 withdrawAmount) private returns (uint256) {
+    function _moveFunds(uint256 pid, uint256 withdrawPercent) private returns (uint256) {
         uint256 currentLpAmount;
 
-        if (withdrawAmount == FUNDS_DENOMINATOR) {
+        if (withdrawPercent == FUNDS_DENOMINATOR) {
             _poolInfo[pid].strategy.withdrawAll();
 
             currentLpAmount = _poolInfo[pid].lpShares;
             _poolInfo[pid].lpShares = 0;
         } else {
-            currentLpAmount = (_poolInfo[pid].lpShares * withdrawAmount) / FUNDS_DENOMINATOR;
+            currentLpAmount = (_poolInfo[pid].lpShares * withdrawPercent) / FUNDS_DENOMINATOR;
             uint256[POOL_ASSETS] memory minAmounts;
 
             _poolInfo[pid].strategy.withdraw(
