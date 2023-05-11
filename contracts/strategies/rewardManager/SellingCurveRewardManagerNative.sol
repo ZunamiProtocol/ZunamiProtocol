@@ -24,6 +24,8 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
 
     uint256 public constant defaultSlippage = 300; // 3%
 
+    uint256 public constant STALE_DELAY = 86400;
+
     mapping(address => address) public rewardEthCurvePools;
 
     address public constant ethUsdChainlinkOracle = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
@@ -31,12 +33,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
     mapping(address => address) public rewardEthChainlinkOracles;
     mapping(address => address) public rewardUsdChainlinkOracles;
 
-    address immutable feeCollector;
-
-    constructor(address feeCollectorAddr) {
-        require(feeCollectorAddr != address(0), 'FeeCollector');
-        feeCollector = feeCollectorAddr;
-
+    constructor() {
         rewardEthCurvePools[Constants.CVX_ADDRESS] = 0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4; // https://curve.fi/#/ethereum/pools/cvxeth
         rewardEthCurvePools[Constants.CRV_ADDRESS] = 0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511; // https://curve.fi/#/ethereum/pools/crveth
         rewardEthCurvePools[Constants.FXS_ADDRESS] = 0x941Eb6F616114e4Ecaa85377945EA306002612FE; // https://curve.fi/#/ethereum/pools/fxseth
@@ -61,7 +58,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
         address reward,
         uint256 amount,
         bool wrapped
-    ) public {
+    ) external {
         if (amount == 0) return;
 
         ICurve3CryptoPool rewardEthPool = ICurve3CryptoPool(rewardEthCurvePools[reward]);
@@ -111,17 +108,20 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
         uint256 wethAmountByOracle;
         if (rewardEthOracle != address(0)) {
             AggregatorV2V3Interface oracle = AggregatorV2V3Interface(rewardEthOracle);
-            (, int256 answer, , , ) = oracle.latestRoundData();
+            (, int256 answer, , uint256 updatedAt, ) = oracle.latestRoundData();
+            require(block.timestamp - updatedAt >  STALE_DELAY, 'Oracle stale');
 
             wethAmountByOracle = (uint256(answer) * amount) / 1e18;
         } else {
             AggregatorV2V3Interface rewardOracle = AggregatorV2V3Interface(
                 rewardUsdChainlinkOracles[reward]
             );
-            (, int256 rewardAnswer, , , ) = rewardOracle.latestRoundData();
+            (, int256 rewardAnswer, , uint256 updatedAt, ) = rewardOracle.latestRoundData();
+            require(block.timestamp - updatedAt >  STALE_DELAY, 'Oracle usd stale');
 
             AggregatorV2V3Interface ethOracle = AggregatorV2V3Interface(ethUsdChainlinkOracle);
-            (, int256 ethAnswer, , , ) = ethOracle.latestRoundData();
+            (, int256 ethAnswer, , uint256 ethUpdatedAt, ) = ethOracle.latestRoundData();
+            require(block.timestamp - ethUpdatedAt >  STALE_DELAY, 'Oracle eth stale');
 
             wethAmountByOracle = (uint256(rewardAnswer) * amount) / uint256(ethAnswer);
         }

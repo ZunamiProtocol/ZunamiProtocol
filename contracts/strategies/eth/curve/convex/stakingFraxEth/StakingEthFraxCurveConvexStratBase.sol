@@ -49,7 +49,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
     int128 private constant iETH_frxETH_POOL_ETH_ID = 0;
     int128 private constant iETH_frxETH_POOL_frxETH_ID = 1;
 
-    address public ETH_MOCK_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address public constant ETH_MOCK_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
@@ -272,7 +272,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
 
-    function autoCompound() public onlyZunami returns (uint256) {
+    function autoCompound() external onlyZunami returns (uint256) {
         if (address(stakingVault) == address(0)) return 0;
 
         try stakingVault.getReward(true) {} catch {
@@ -298,7 +298,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
      * return amount is lpBalance x lpPrice + cvx x cvxPrice + _config.crv * crvPrice.
      * @return Returns total USD holdings in strategy
      */
-    function totalHoldings() public view virtual returns (uint256) {
+    function totalHoldings() external view virtual returns (uint256) {
         uint256 crvLpHoldings;
         uint256 rewardEarningInFeeToken;
         uint256 feeTokenId_ = feeTokenId;
@@ -335,7 +335,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
      * @dev dev claim managementFees from strategy.
      * when tx completed managementFees = 0
      */
-    function claimManagementFees() public returns (uint256) {
+    function claimManagementFees() external returns (uint256) {
         IERC20Metadata feeToken_ = _config.tokens[feeTokenId];
         uint256 managementFees_ = managementFees;
         uint256 feeTokenBalance = feeToken_.balanceOf(address(this));
@@ -355,7 +355,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
      * If user send deposit tx and get deposit amount lower than minDepositAmount than deposit tx failed
      * @param _minDepositAmount - amount which must be the minimum (%) after the deposit, min amount 1, max amount 10000
      */
-    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+    function updateMinDepositAmount(uint256 _minDepositAmount) external onlyOwner {
         require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
         emit MinDepositAmountUpdated(minDepositAmount, _minDepositAmount);
         minDepositAmount = _minDepositAmount;
@@ -446,7 +446,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
 
         uint256 amountsMin = (amountsTotal * minDepositAmount) / DEPOSIT_DENOMINATOR;
 
-        uint256 lpPrice = fraxEthPool.get_virtual_price();
+        uint256 lpPrice = getCurvePoolPrice();
 
         uint256[2] memory poolAmounts = convertZunamiTokensToPoolOnes(tokenAmounts);
         uint256 depositedLp = fraxEthPool.calc_token_amount(poolAmounts, true);
@@ -522,7 +522,7 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
         if (zunamiTokenId == ZUNAMI_ETH_TOKEN_ID || zunamiTokenId == ZUNAMI_wETH_TOKEN_ID) {
             return iETH_frxETH_POOL_ETH_ID;
         } else {
-            return iETH_frxETH_POOL_ETH_ID;
+            return iETH_frxETH_POOL_frxETH_ID;
         }
     }
 
@@ -594,10 +594,6 @@ abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
 
     function withdrawAllSpecific() internal {
         fraxEthPool.remove_liquidity(fraxEthPoolLp.balanceOf(address(this)), [uint256(0), 0]);
-    }
-
-    function wrapETH(uint256 amount) internal {
-        IWETH(payable(address(_config.tokens[ZUNAMI_wETH_TOKEN_ID]))).deposit{ value: amount }();
     }
 
     function unwrapETH(uint256 amount) internal {

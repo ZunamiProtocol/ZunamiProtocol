@@ -151,8 +151,8 @@ describe('Single ETH FraxStaking strategy tests', () => {
         await zunami.deployed();
 
         await zunami.addTokens(
-            [addrs.stablecoins.mockEth, addrs.stablecoins.wEth, addrs.stablecoins.frxEth],
-            [1, 1, 1]
+            [addrs.stablecoins.wEth, addrs.stablecoins.frxEth],
+            [1, 1]
         );
 
         // Init all strategies
@@ -405,17 +405,19 @@ describe('Single ETH FraxStaking strategy tests', () => {
                 zunami.connect(alice).deposit(minAmounts, { value: minAmounts[0] })
             ).to.emit(zunami, 'Deposited');
         }
+        let tokens;
+        let balance;
 
         await increaseChainTime(3600 * 24 * 1);
         await zunami.autoCompoundAll();
 
-        let token;
-        let balance;
         for (let strategy of strategies) {
-            token = new ethers.Contract(await strategy.token(), erc20ABI, admin);
-            balance = await token.balanceOf(strategy.address);
-
-            expect(balance).to.eq(0);
+            tokens = [await strategy.token(), ...(await strategy.config()).rewards]
+                .map((token) => new ethers.Contract(token, erc20ABI, admin));
+            for(let token of tokens) {
+                balance = await token.balanceOf(strategy.address);
+                expect(balance).to.eq(0);
+            }
         }
     });
 });
