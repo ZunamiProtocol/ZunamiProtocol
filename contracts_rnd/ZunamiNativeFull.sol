@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/access/AccessControl.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import './interfaces/IStrategy.sol';
 import './interfaces/IZunamiRebalancer.sol';
+import "./libs/ERC20NativeExtension.sol";
 
 /**
  *
@@ -25,7 +25,7 @@ import './interfaces/IZunamiRebalancer.sol';
  */
 
 contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
-    using SafeERC20 for IERC20Metadata;
+    using ERC20NativeExtension for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
     bytes32 public constant PAUSER_ROLE = keccak256('PAUSER_ROLE');
@@ -35,7 +35,6 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
     uint256 public constant MIN_LOCK_TIME = 1 days;
     uint256 public constant FUNDS_DENOMINATOR = 10000000000;
     uint8 public constant ALL_WITHDRAWAL_TYPES_MASK = uint8(3); // Binary 11 = 2^0 + 2^1;
-    address public constant ETH_MOCK_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     uint256 public constant ETH_MOCK_TOKEN_ID = 0;
 
     uint8 public constant POOL_ASSETS = 5;
@@ -43,6 +42,8 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
     struct PendingWithdrawal {
         uint256 lpShares;
         uint256[POOL_ASSETS] tokenAmounts;
+        IStrategy.WithdrawalType withdrawalType;
+        uint128 tokenIndex;
     }
 
     struct PoolInfo {
@@ -113,7 +114,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
     event SetRebalancer(address rebalancerAddr);
     event ClaimedAllManagementFee(uint256 feeValue);
     event AutoCompoundAll(uint256 compoundedValue);
-    event ChangedPoolEnabledStatus(address pool, bool newStatus);
+    event ToggledEnabledPoolStatus(address pool, bool newStatus);
     event UpdatedToken(
         uint256 tid,
         address token,
@@ -146,7 +147,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
 
         availableWithdrawalTypes = ALL_WITHDRAWAL_TYPES_MASK;
 
-        tokens[0] = ETH_MOCK_ADDRESS;
+        tokens[0] = ERC20NativeExtension.ETH_MOCK_ADDRESS;
         decimalsMultipliers[0] = 1;
         tokenCount = 1;
     }
@@ -299,7 +300,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
     function delegateDeposit(uint256[POOL_ASSETS] memory amounts) external payable whenNotPaused startedPool nonReentrant {
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
-                safeTransferFromNative(IERC20Metadata(tokens[i]), _msgSender(), address(this), amounts[i]);
+                IERC20Metadata(tokens[i]).safeTransferFromNative(_msgSender(), address(this), amounts[i]);
                 _pendingDeposits[_msgSender()][i] += amounts[i];
             }
         }
@@ -326,7 +327,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
 
         for (uint256 i = 0; i < amounts.length; i++) {
             if (amounts[i] > 0) {
-                safeTransferFromNative(IERC20Metadata(tokens[i]), _msgSender(), address(strategy), amounts[i]);
+                IERC20Metadata(tokens[i]).safeTransferFromNative(_msgSender(), address(strategy), amounts[i]);
             }
         }
         uint256 depositedValue = strategy.deposit{ value: amounts[ETH_MOCK_TOKEN_ID] }(amounts);
@@ -392,7 +393,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
             if (tokenAmountTotal > 0) {
                 holdingsTotal += tokenAmountTotal * decimalsMultipliers[y];
                 if (y != 0) {
-                    safeTransferNative(IERC20Metadata(tokens[y]), address(strategy), tokenAmountTotal);
+                    IERC20Metadata(tokens[y]).safeTransferNative(address(strategy), tokenAmountTotal);
                 }
             }
         }
@@ -424,7 +425,9 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
      */
     function delegateWithdrawal(
         uint256 lpShares,
-        uint256[POOL_ASSETS] memory tokenAmounts
+        uint256[POOL_ASSETS] memory tokenAmounts,
+        IStrategy.WithdrawalType withdrawalType,
+        uint128 tokenIndex
     ) external whenNotPaused startedPool nonReentrant {
         require(lpShares > 0, 'zero lp');
 
@@ -433,6 +436,8 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
 
         withdrawal.lpShares = lpShares;
         withdrawal.tokenAmounts = tokenAmounts;
+        withdrawal.withdrawalType = withdrawalType;
+        withdrawal.tokenIndex = tokenIndex;
 
         _pendingWithdrawals[userAddr] = withdrawal;
 
@@ -502,7 +507,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             address token = tokens[i];
             if (token == address(0)) break;
-            diffBalances[i] = balanceOfNative(IERC20Metadata(token)) - prevBalances[i];
+            diffBalances[i] = IERC20Metadata(token).balanceOfNative() - prevBalances[i];
         }
 
         for (uint256 i = 0; i < userList.length; i++) {
@@ -515,8 +520,8 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
                 user,
                 userDeposit,
                 withdrawal.lpShares,
-                IStrategy.WithdrawalType.Base,
-                0,
+                withdrawal.withdrawalType,
+                withdrawal.tokenIndex,
                 true
             );
 
@@ -526,7 +531,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
                 transferAmount = (diffBalances[j] * withdrawal.lpShares) / lpSharesTotals[j];
 
                 if (transferAmount == 0) continue;
-                safeTransferNative(IERC20Metadata(tokens[j]), user, transferAmount);
+                IERC20Metadata(tokens[j]).safeTransferNative(user, transferAmount);
             }
 
             delete _pendingWithdrawals[user];
@@ -546,7 +551,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
      * @dev Zunami protocol owner complete all active pending withdrawals of users
      * @param userList - users owns pending withdraw to complete
      */
-    function completeWithdrawals(
+    function completeWithdrawalsBase(
         address[] memory userList,
         uint256[POOL_ASSETS] memory minAmountsTotal
     ) external onlyRole(OPERATOR_ROLE) {
@@ -562,18 +567,8 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         for (i = 0; i < userList.length; i++) {
             user = userList[i];
 
-            withdrawal = _pendingWithdrawals[user];
-            if (balanceOf(user) < withdrawal.lpShares) {
-                emit FailedWithdrawal(
-                    user,
-                    withdrawal.tokenAmounts,
-                    withdrawal.lpShares,
-                    IStrategy.WithdrawalType.Base,
-                    0
-                );
-                delete _pendingWithdrawals[user];
-                continue;
-            }
+            withdrawal = getWithdrawalSafe(user, IStrategy.WithdrawalType.Base);
+            if (withdrawal.lpShares == 0) continue;
 
             lpSharesTotal += withdrawal.lpShares;
         }
@@ -598,6 +593,26 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         processSuccessfulOptimizedWithdrawal(userList, fillArrayN(lpSharesTotal), prevBalances);
     }
 
+    function getWithdrawalSafe(address user, IStrategy.WithdrawalType neededType)
+        internal
+        returns (PendingWithdrawal memory withdrawal)
+    {
+        withdrawal = _pendingWithdrawals[user];
+        require(withdrawal.withdrawalType == neededType, 'wrong type');
+
+        if (balanceOf(user) < withdrawal.lpShares) {
+            emit FailedWithdrawal(
+                user,
+                withdrawal.tokenAmounts,
+                withdrawal.lpShares,
+                withdrawal.withdrawalType,
+                withdrawal.tokenIndex
+            );
+            delete _pendingWithdrawals[user];
+            return PendingWithdrawal(0, fillArrayN(0), IStrategy.WithdrawalType.Base, 0);
+        }
+    }
+
     function calcPrevTokenBalances()
         internal
         view
@@ -606,7 +621,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             address token = tokens[i];
             if (token == address(0)) break;
-            prevBalances[i] = balanceOfNative(IERC20Metadata(token));
+            prevBalances[i] = IERC20Metadata(token).balanceOfNative();
         }
     }
 
@@ -619,11 +634,52 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
                 user,
                 withdrawal.tokenAmounts,
                 withdrawal.lpShares,
-                IStrategy.WithdrawalType.Base,
-                0
+                withdrawal.withdrawalType,
+                withdrawal.tokenIndex
             );
             delete _pendingWithdrawals[user];
         }
+    }
+
+    function completeWithdrawalsOneCoin(
+        address[] memory userList,
+        uint256[POOL_ASSETS] memory minAmountsTotal
+    ) external onlyRole(OPERATOR_ROLE) {
+        require(userList.length > 0, 'zero requests');
+
+        IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
+
+        uint256[POOL_ASSETS] memory lpSharesTotals;
+
+        address user;
+        PendingWithdrawal memory withdrawal;
+        for (uint256 i = 0; i < userList.length; i++) {
+            user = userList[i];
+            withdrawal = getWithdrawalSafe(user, IStrategy.WithdrawalType.OneCoin);
+            if (withdrawal.lpShares == 0) continue;
+
+            lpSharesTotals[withdrawal.tokenIndex] += withdrawal.lpShares;
+        }
+
+        uint256[POOL_ASSETS] memory prevBalances = calcPrevTokenBalances();
+
+        for (uint256 i = 0; i < POOL_ASSETS; i++) {
+            if (lpSharesTotals[i] == 0) continue;
+            if (
+                !strategy.withdraw(
+                    address(this),
+                    calcLpRatioSafe(lpSharesTotals[i], _poolInfo[defaultWithdrawPid].lpShares),
+                    minAmountsTotal,
+                    IStrategy.WithdrawalType.OneCoin,
+                    uint128(i)
+                )
+            ) {
+                removeAllFailedWithdrawals(userList);
+                return;
+            }
+        }
+
+        processSuccessfulOptimizedWithdrawal(userList, lpSharesTotals, prevBalances);
     }
 
     function calcWithdrawOneCoin(uint256 lpShares, uint128 tokenIndex)
@@ -742,7 +798,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             address token = tokens[y];
             if (token == address(0)) break;
-            tokenBalance[y] = balanceOfNative(IERC20Metadata(token));
+            tokenBalance[y] = IERC20Metadata(token).balanceOfNative();
         }
 
         uint256 pid;
@@ -756,10 +812,9 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         for (uint256 y = 0; y < POOL_ASSETS; y++) {
             address token = tokens[y];
             if (token == address(0)) break;
-            tokensRemainder[y] = balanceOfNative(IERC20Metadata(token)) - tokenBalance[y];
+            tokensRemainder[y] = IERC20Metadata(token).balanceOfNative() - tokenBalance[y];
             if (tokensRemainder[y] > 0) {
-                safeTransferNative(
-                    IERC20Metadata(token),
+                IERC20Metadata(token).safeTransferNative(
                     address(_poolInfo[_receiverStrategy].strategy),
                     tokensRemainder[y]
                 );
@@ -808,7 +863,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         for (uint256 i = 0; i < POOL_ASSETS; i++) {
             tokenAmount_ = pendingDeposit[i];
             if (tokenAmount_ > 0) {
-                safeTransferNative(IERC20Metadata(tokens[i]), _msgSender(), tokenAmount_);
+                IERC20Metadata(tokens[i]).safeTransferNative(_msgSender(), tokenAmount_);
             }
         }
     }
@@ -818,62 +873,21 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
      * @param _token - IERC20Metadata token that should be fully withdraw from Zunami
      */
     function withdrawStuckToken(IERC20Metadata _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 tokenBalance = balanceOfNative(_token);
+        uint256 tokenBalance = _token.balanceOfNative();
         if (tokenBalance > 0) {
-            safeTransferNative(_token, _msgSender(), tokenBalance);
+            _token.safeTransferNative(_msgSender(), tokenBalance);
         }
     }
 
-    function disablePool(uint256 _pid) external onlyRole(PAUSER_ROLE) {
-        require(_poolInfo[_pid].enabled, "not enabled");
-        _poolInfo[_pid].enabled = false;
+    function togglePoolStatus(uint256 _pid) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _poolInfo[_pid].enabled = !_poolInfo[_pid].enabled;
 
-        emit ChangedPoolEnabledStatus(address(_poolInfo[_pid].strategy), _poolInfo[_pid].enabled);
-    }
-
-    function enablePool(uint256 _pid) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(!_poolInfo[_pid].enabled, "not disabled");
-        _poolInfo[_pid].enabled = true;
-
-        emit ChangedPoolEnabledStatus(address(_poolInfo[_pid].strategy), _poolInfo[_pid].enabled);
+        emit ToggledEnabledPoolStatus(address(_poolInfo[_pid].strategy), _poolInfo[_pid].enabled);
     }
 
     function fillArrayN(uint256 _value) internal pure returns (uint256[POOL_ASSETS] memory values) {
         for (uint256 i; i < POOL_ASSETS; i++) {
             values[i] = _value;
-        }
-    }
-
-    function balanceOfNative(IERC20Metadata token_) internal view returns (uint256) {
-        if (address(token_) == ETH_MOCK_ADDRESS) {
-            return address(this).balance;
-        } else {
-            return token_.balanceOf(address(this));
-        }
-    }
-
-    function safeTransferNative(
-        IERC20Metadata token,
-        address receiver,
-        uint256 amount
-    ) internal {
-        if (address(token) == ETH_MOCK_ADDRESS) {
-            receiver.call{ value: amount }(''); // don't fail if user contract doesn't accept ETH
-        } else {
-            token.safeTransfer(receiver, amount);
-        }
-    }
-
-    function safeTransferFromNative(
-        IERC20Metadata token,
-        address sender,
-        address receiver,
-        uint256 amount
-    ) internal {
-        if (address(token) == ETH_MOCK_ADDRESS) {
-            require(msg.value == amount, 'ETH wrong');
-        } else {
-            token.safeTransferFrom(sender, receiver, amount);
         }
     }
 }

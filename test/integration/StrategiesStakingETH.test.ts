@@ -141,13 +141,15 @@ describe('Single ETH FraxStaking strategy tests', () => {
         const RewardManagerFactory = await ethers.getContractFactory(
             'SellingCurveRewardManagerNative'
         );
-        rewardManager = await RewardManagerFactory.deploy(feeCollector.getAddress());
+        rewardManager = await RewardManagerFactory.deploy();
         await rewardManager.deployed();
     });
 
     beforeEach(async () => {
         const ZunamiFactory = await ethers.getContractFactory('ZunamiNative');
-        zunami = await ZunamiFactory.deploy();
+        // const ZunamiFactory = await ethers.getContractFactory('ZunamiNative');
+        zunami = await ZunamiFactory.deploy(
+        );
         await zunami.deployed();
 
         await zunami.addTokens(
@@ -267,7 +269,7 @@ describe('Single ETH FraxStaking strategy tests', () => {
                 await expect(
                     zunami
                         .connect(user)
-                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.Base, 0)
+                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0])
                 )
                     .to.emit(zunami, 'CreatedPendingWithdrawal')
                     .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0, 0, 0]);
@@ -278,46 +280,7 @@ describe('Single ETH FraxStaking strategy tests', () => {
             await toggleUnlockStakes();
 
             await expect(
-                zunami.completeWithdrawalsBase(
-                    [alice.getAddress(), bob.getAddress()],
-                    [0, 0, 0, 0, 0]
-                )
-            ).to.emit(zunami, 'Withdrawn');
-
-            await toggleUnlockStakes();
-        }
-    });
-
-    it('should withdraw assets in optimized one coin mode', async () => {
-        for (let poolId = 0; poolId < strategies.length; poolId++) {
-            await zunami.addPool(strategies[poolId].address);
-            await zunami.setDefaultDepositPid(poolId);
-            await zunami.setDefaultWithdrawPid(poolId);
-
-            const minAmounts = getMinAmount();
-            for (const user of [alice, bob]) {
-                await expect(
-                    zunami.connect(user).deposit(minAmounts, { value: minAmounts[0] })
-                ).to.emit(zunami, 'Deposited');
-
-                const zlpAmount = BigNumber.from(await zunami.balanceOf(user.getAddress()));
-                expect(zlpAmount).to.gt(0);
-
-                await expect(
-                    zunami
-                        .connect(user)
-                        .delegateWithdrawal(zlpAmount, [0, 0, 0, 0, 0], WithdrawalType.OneCoin, 0)
-                )
-                    .to.emit(zunami, 'CreatedPendingWithdrawal')
-                    .withArgs(await user.getAddress(), zlpAmount, [0, 0, 0, 0, 0]);
-            }
-
-            await increaseChainTime(60 * 60);
-
-            await toggleUnlockStakes();
-
-            await expect(
-                zunami.completeWithdrawalsOneCoin(
+                zunami.completeWithdrawals(
                     [alice.getAddress(), bob.getAddress()],
                     [0, 0, 0, 0, 0]
                 )

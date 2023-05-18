@@ -29,7 +29,7 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, config) {
 async function main() {
     console.log('Start deploy');
     const Zunami = await ethers.getContractFactory('ZunamiNative');
-    const zunami = await Zunami.deploy(globalConfig.tokens);
+    const zunami = await Zunami.deploy();
     // const zunami = await Zunami.attach(''); // prod
 
     await zunami.deployed();
