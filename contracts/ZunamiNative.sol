@@ -31,7 +31,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
     bytes32 public constant PAUSER_ROLE = keccak256('PAUSER_ROLE');
     uint256 public constant LP_RATIO_MULTIPLIER = 1e18;
     uint256 public constant FEE_DENOMINATOR = 100000;
-    uint256 public constant MAX_FEE = 300; // 30%
+    uint256 public constant MAX_FEE = 30000; // 30%
     uint256 public constant MIN_LOCK_TIME = 1 days;
     uint256 public constant FUNDS_DENOMINATOR = 10000000000;
     uint8 public constant ALL_WITHDRAWAL_TYPES_MASK = uint8(3); // Binary 11 = 2^0 + 2^1;
@@ -169,6 +169,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
             decimalsMultipliers[tokenCount_] = _tokenDecimalMultipliers[i];
             tokenCount_ += 1;
         }
+        tokenCount = tokenCount_;
     }
 
     function replaceToken(
@@ -368,6 +369,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
      */
     function completeDeposits(address[] memory userList)
         external
+        nonReentrant
         onlyRole(OPERATOR_ROLE)
     {
         IStrategy strategy = _poolInfo[defaultDepositPid].strategy;
@@ -549,7 +551,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
     function completeWithdrawals(
         address[] memory userList,
         uint256[POOL_ASSETS] memory minAmountsTotal
-    ) external onlyRole(OPERATOR_ROLE) {
+    ) external nonReentrant onlyRole(OPERATOR_ROLE) {
         require(userList.length > 0, 'zero requests');
 
         IStrategy strategy = _poolInfo[defaultWithdrawPid].strategy;
