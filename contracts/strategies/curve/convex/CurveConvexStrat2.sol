@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import './CurveConvexExtraStratBase.sol';
 import '../../../interfaces/ICurvePool.sol';
-import '../interfaces/ICurvePool2.sol';
+import '../../interfaces/ICurvePool2.sol';
 
 contract CurveConvexStrat2 is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;

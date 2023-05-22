@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../interfaces/ICurvePool.sol';
-import '../interfaces/ICurvePool2.sol';
 import './CurveStakeDaoExtraStratBase.sol';
+import "../../interfaces/ICurvePool2.sol";
 
 contract CurveStakeDaoStrat2 is CurveStakeDaoExtraStratBase {
     using SafeERC20 for IERC20Metadata;

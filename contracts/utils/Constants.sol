@@ -34,6 +34,7 @@ library Constants {
     uint256 internal constant CVX_FRAX_ALUSD_PID = 106;
     uint256 internal constant CVX_FRAX_clevUSD_PID = 41;
     uint256 internal constant CVX_FRAX_eUSD_PID = 44;
+    uint256 internal constant CVX_FRAX_UZD_PID = ???;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 

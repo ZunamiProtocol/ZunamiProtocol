@@ -91,8 +91,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
     function transferAllTokensOut(address withdrawer, uint256 prevBalance) internal {
-        uint256 transferAmount;
-        transferAmount = _config.token.balanceOf(address(this)) - prevBalance;
+        uint256 transferAmount = _config.token.balanceOf(address(this)) - prevBalance;
         if (transferAmount > 0) {
             _config.token.safeTransfer(withdrawer, transferAmount);
         }
@@ -131,7 +130,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
         uint256 tokenAmount
     ) external virtual onlyZunami returns (bool) {
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, 'Wrong lp Ratio');
-        (bool success, uint256 removingCrvLps, uint256[] memory tokenAmountsDynamic) = calcCrvLps(
+        (bool success, uint256 removingCrvLps) = calcCrvLps(
             userRatioOfCrvLps,
             tokenAmount
         );
@@ -144,7 +143,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
 
         vault.withdraw(removingCrvLps);
 
-        removeCrvLps(removingCrvLps, tokenAmountsDynamic, tokenAmount);
+        removeCrvLps(removingCrvLps, tokenAmount);
 
         transferAllTokensOut(withdrawer, prevBalance);
 
@@ -159,13 +158,11 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
         virtual
         returns (
             bool success,
-            uint256 removingCrvLps,
-            uint256[] memory tokenAmountsDynamic
+            uint256 removingCrvLps
         );
 
     function removeCrvLps(
         uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic,
         uint256 tokenAmount
     ) internal virtual;
 

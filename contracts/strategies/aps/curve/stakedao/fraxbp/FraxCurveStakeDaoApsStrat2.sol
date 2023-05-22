@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import "../../../../curve/interfaces/ICurvePool2.sol";
 import "../CurveStakeDaoExtraApsStratBase.sol";
 import "../../../../../interfaces/IZunamiVault.sol";
 import "../../../../../interfaces/IZunamiStableVault.sol";
+import "../../../../interfaces/ICurvePool2.sol";
 
 //import "hardhat/console.sol";
 
@@ -149,8 +149,7 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         override
         returns (
             bool success,
-            uint256 removingCrvLps,
-            uint256[] memory tokenAmountsDynamic
+            uint256 removingCrvLps
         )
     {
         removingCrvLps = (vault.liquidityGauge().balanceOf(address(this)) *
@@ -159,13 +158,10 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
         uint256[2] memory minAmounts;
         minAmounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
         success = removingCrvLps >= crvFraxTokenPool.calc_token_amount(minAmounts, false);
-
-        tokenAmountsDynamic = new uint256[](2);
     }
 
     function removeCrvLps(
         uint256 removingCrvLps,
-        uint256[] memory,
         uint256 tokenAmount
     ) internal override {
         removeCrvLpsInternal(removingCrvLps, tokenAmount);
