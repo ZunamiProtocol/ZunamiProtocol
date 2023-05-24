@@ -6,25 +6,19 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../../utils/Constants.sol';
-import '../../../interfaces/IZunami.sol';
-import '../../../interfaces/IUniswapRouter.sol';
-import './interfaces/IConvexMinter.sol';
-import './interfaces/IConvexBooster.sol';
-import './interfaces/IConvexRewards.sol';
-import '../../interfaces/IRewardManager.sol';
+import '../../../../utils/Constants.sol';
+import "../../../curve/convex/interfaces/IConvexMinter.sol";
+import "../../../curve/convex/interfaces/IConvexBooster.sol";
+import "../../../../interfaces/IZunami.sol";
+import "../../../interfaces/IRewardManager.sol";
+import "../../../curve/convex/interfaces/IConvexRewards.sol";
 
-abstract contract CurveConvexStratBase is Ownable {
+abstract contract CurveConvexApsStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
-    enum WithdrawalType {
-        Base,
-        OneCoin
-    }
-
     struct Config {
-        IERC20Metadata[3] tokens;
+        IERC20Metadata token;
         IERC20Metadata crv;
         IConvexMinter cvx;
         IConvexBooster booster;
@@ -38,21 +32,15 @@ abstract contract CurveConvexStratBase is Ownable {
     uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
-    uint256 public constant ZUNAMI_DAI_TOKEN_ID = 0;
-    uint256 public constant ZUNAMI_USDC_TOKEN_ID = 1;
-    uint256 public constant ZUNAMI_USDT_TOKEN_ID = 2;
 
     uint256 public minDepositAmount = 9975; // 99.75%
     address public feeDistributor;
 
     uint256 public managementFees = 0;
-    uint256 public feeTokenId = ZUNAMI_USDT_TOKEN_ID;
 
     IERC20Metadata public poolLP;
     IConvexRewards public cvxRewards;
     uint256 public cvxPoolPID;
-
-    uint256[4] public decimalsMultipliers;
 
     event SetRewardManager(address rewardManager);
 
@@ -72,10 +60,6 @@ abstract contract CurveConvexStratBase is Ownable {
     ) {
         _config = config_;
 
-        for (uint256 i; i < 3; i++) {
-            decimalsMultipliers[i] = calcTokenDecimalsMultiplier(_config.tokens[i]);
-        }
-
         cvxPoolPID = poolPID;
         poolLP = IERC20Metadata(poolLPAddr);
         cvxRewards = IConvexRewards(rewardsAddr);
@@ -90,55 +74,45 @@ abstract contract CurveConvexStratBase is Ownable {
      * @dev Returns deposited amount in USD.
      * If deposit failed return zero
      * @return Returns deposited amount in USD.
-     * @param amounts - amounts in stablecoins that user deposit
+     * @param amount - amount in stablecoin that user deposit
      */
-    function deposit(uint256[3] memory amounts) external returns (uint256) {
-        if (!checkDepositSuccessful(amounts)) {
+    function deposit(uint256 amount) external returns (uint256) {
+        if (!checkDepositSuccessful(amount)) {
             return 0;
         }
 
-        uint256 poolLPs = depositPool(amounts);
+        uint256 poolLPs = depositPool(amount, 0);
 
         return (poolLPs * getCurvePoolPrice()) / CURVE_PRICE_DENOMINATOR;
     }
 
-    function checkDepositSuccessful(uint256[3] memory amounts) internal view virtual returns (bool);
+    function checkDepositSuccessful(uint256 amount) internal view virtual returns (bool);
 
-    function depositPool(uint256[3] memory amounts) internal virtual returns (uint256);
+    function depositPool(uint256 tokenAmount, uint256 usdcAmount) internal virtual returns (uint256);
 
     function getCurvePoolPrice() internal view virtual returns (uint256);
 
-    function transferAllTokensOut(address withdrawer, uint256[] memory prevBalances) internal {
-        uint256 transferAmount;
-        for (uint256 i = 0; i < 3; i++) {
-            transferAmount =
-                _config.tokens[i].balanceOf(address(this)) -
-                prevBalances[i] -
-                ((i == feeTokenId) ? managementFees : 0);
-            if (transferAmount > 0) {
-                _config.tokens[i].safeTransfer(withdrawer, transferAmount);
-            }
+    function transferAllTokensOut(address withdrawer, uint256 prevBalance) internal {
+        uint256 transferAmount = _config.token.balanceOf(address(this)) - prevBalance;
+        if (transferAmount > 0) {
+            _config.token.safeTransfer(withdrawer, transferAmount);
         }
     }
 
     function transferZunamiAllTokens() internal {
-        uint256 transferAmount;
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 managementFee = (i == feeTokenId) ? managementFees : 0;
-            transferAmount = _config.tokens[i].balanceOf(address(this)) - managementFee;
-            if (transferAmount > 0) {
-                _config.tokens[i].safeTransfer(_msgSender(), transferAmount);
-            }
+        uint256 transferAmount = _config.token.balanceOf(address(this));
+        if (transferAmount > 0) {
+            _config.token.safeTransfer(_msgSender(), transferAmount);
         }
     }
 
-    function calcWithdrawOneCoin(uint256 sharesAmount, uint128 tokenIndex)
+    function calcWithdrawOneCoin(uint256 sharesAmount)
         external
         view
         virtual
         returns (uint256 tokenAmount);
 
-    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256 tokenAmount, bool isDeposit)
         external
         view
         virtual
@@ -150,105 +124,92 @@ abstract contract CurveConvexStratBase is Ownable {
      * @return Returns true if withdraw success and false if fail.
      * @param withdrawer - address of user that deposit funds
      * @param userRatioOfCrvLps - user's Ratio of ZLP for withdraw
-     * @param tokenAmounts -  array of amounts stablecoins that user want minimum receive
+     * @param tokenAmount -  array of amounts stablecoins that user want minimum receive
      */
     function withdraw(
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
-        WithdrawalType withdrawalType,
-        uint128 tokenIndex
+        uint256 tokenAmount
     ) external virtual onlyZunami returns (bool) {
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, 'Wrong lp Ratio');
-        (bool success, uint256 removingCrvLps, uint256[] memory tokenAmountsDynamic) = calcCrvLps(
-            withdrawalType,
+        (bool success, uint256 removingCrvLps) = calcCrvLps(
             userRatioOfCrvLps,
-            tokenAmounts,
-            tokenIndex
+            tokenAmount
         );
 
         if (!success) {
             return false;
         }
 
-        uint256[] memory prevBalances = new uint256[](3);
-        for (uint256 i = 0; i < 3; i++) {
-            prevBalances[i] =
-                _config.tokens[i].balanceOf(address(this)) -
-                ((i == feeTokenId) ? managementFees : 0);
-        }
+        uint256 prevBalance = _config.token.balanceOf(address(this));
 
         cvxRewards.withdrawAndUnwrap(removingCrvLps, false);
 
-        removeCrvLps(removingCrvLps, tokenAmountsDynamic, withdrawalType, tokenAmounts, tokenIndex);
+        removeCrvLps(removingCrvLps, tokenAmount);
 
-        transferAllTokensOut(withdrawer, prevBalances);
+        transferAllTokensOut(withdrawer, prevBalance);
 
         return true;
     }
 
     function calcCrvLps(
-        WithdrawalType withdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[3] memory tokenAmounts,
-        uint128 tokenIndex
+        uint256 tokenAmount
     )
         internal
         virtual
         returns (
             bool success,
-            uint256 removingCrvLps,
-            uint256[] memory tokenAmountsDynamic
+            uint256 removingCrvLps
         );
 
     function removeCrvLps(
         uint256 removingCrvLps,
-        uint256[] memory tokenAmountsDynamic,
-        WithdrawalType withdrawalType,
-        uint256[3] memory tokenAmounts,
-        uint128 tokenIndex
+        uint256 tokenAmount
     ) internal virtual;
-
-    function calcTokenDecimalsMultiplier(IERC20Metadata token) internal view returns (uint256) {
-        uint8 decimals = token.decimals();
-        require(decimals <= 18, 'Zunami: wrong token decimals');
-        if (decimals == 18) return 1;
-        return 10**(18 - decimals);
-    }
 
     /**
      * @dev anyone can sell rewards, func do nothing if config crv&cvx balance is zero
      */
     function sellRewards() internal virtual {
-        uint256 cvxBalance = _config.cvx.balanceOf(address(this));
-        uint256 crvBalance = _config.crv.balanceOf(address(this));
-        if (cvxBalance == 0 && crvBalance == 0) {
+        uint256 rewardsLength_ = 2;
+
+        IERC20Metadata[] memory rewards = new IERC20Metadata[](rewardsLength_);
+        rewards[0] = _config.crv;
+        rewards[1] = _config.cvx;
+
+        uint256[] memory rewardBalances = new uint256[](rewardsLength_);
+        bool allRewardsEmpty = true;
+
+        for (uint256 i = 0; i < rewardsLength_; i++) {
+            rewardBalances[i] = rewards[i].balanceOf(address(this));
+            if (rewardBalances[i] > 0) {
+                allRewardsEmpty = false;
+            }
+        }
+        if (allRewardsEmpty) {
             return;
         }
 
-        uint256 feeTokenBalanceBefore = _config.tokens[feeTokenId].balanceOf(address(this));
+        IERC20Metadata feeToken_ = IERC20Metadata(Constants.USDC_ADDRESS);
+        uint256 feeTokenBalanceBefore = feeToken_.balanceOf(address(this));
 
-        if (cvxBalance > 0) {
-            _config.cvx.transfer(address(rewardManager), cvxBalance);
-            rewardManager.handle(
-                address(_config.cvx),
-                cvxBalance,
-                address(_config.tokens[feeTokenId])
-            );
-        }
-
-        if (crvBalance > 0) {
-            _config.crv.transfer(address(rewardManager), crvBalance);
-            rewardManager.handle(
-                address(_config.crv),
-                crvBalance,
-                address(_config.tokens[feeTokenId])
+        IRewardManager rewardManager_ = rewardManager;
+        IERC20Metadata rewardToken_;
+        for (uint256 i = 0; i < rewardsLength_; i++) {
+            if (rewardBalances[i] == 0) continue;
+            rewardToken_ = rewards[i];
+            rewardToken_.transfer(address(rewardManager_), rewardBalances[i]);
+            rewardManager_.handle(
+                address(rewardToken_),
+                rewardBalances[i],
+                Constants.USDC_ADDRESS
             );
         }
 
         sellRewardsExtra();
 
-        uint256 feeTokenBalanceAfter = _config.tokens[feeTokenId].balanceOf(address(this));
+        uint256 feeTokenBalanceAfter = feeToken_.balanceOf(address(this));
 
         managementFees += zunami.calcManagementFee(feeTokenBalanceAfter - feeTokenBalanceBefore);
     }
@@ -260,13 +221,10 @@ abstract contract CurveConvexStratBase is Ownable {
 
         sellRewards();
 
-        uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this)) -
+        uint256 feeTokenBalance = IERC20Metadata(Constants.USDC_ADDRESS).balanceOf(address(this)) -
             managementFees;
 
-        uint256[3] memory amounts;
-        amounts[feeTokenId] = feeTokenBalance;
-
-        if (feeTokenBalance > 0) depositPool(amounts);
+        if (feeTokenBalance > 0) depositPool(0, feeTokenBalance);
     }
 
     /**
@@ -283,7 +241,7 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 crvEarningsInFeeToken = rewardManager.valuate(
             address(_config.crv),
             amountIn,
-            address(_config.tokens[feeTokenId])
+            Constants.USDC_ADDRESS
         );
 
         uint256 cvxTotalCliffs = _config.cvx.totalCliffs();
@@ -298,19 +256,15 @@ abstract contract CurveConvexStratBase is Ownable {
         uint256 cvxEarningsInFeeToken = rewardManager.valuate(
             address(_config.cvx),
             amountIn,
-            address(_config.tokens[feeTokenId])
+            Constants.USDC_ADDRESS
         );
 
-        uint256 tokensHoldings = 0;
-        for (uint256 i = 0; i < 3; i++) {
-            tokensHoldings += _config.tokens[i].balanceOf(address(this)) * decimalsMultipliers[i];
-        }
+        uint256 tokensHolding = _config.token.balanceOf(address(this));
 
         return
-            tokensHoldings +
+            tokensHolding +
             crvLpHoldings +
-            (cvxEarningsInFeeToken + crvEarningsInFeeToken) *
-            decimalsMultipliers[feeTokenId];
+            (cvxEarningsInFeeToken + crvEarningsInFeeToken) * 12; // USDC token multiplier 18 - 6
     }
 
     /**
@@ -318,12 +272,14 @@ abstract contract CurveConvexStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public returns (uint256) {
-        uint256 feeTokenBalance = _config.tokens[feeTokenId].balanceOf(address(this));
-        uint256 transferBalance = managementFees > feeTokenBalance
+        IERC20Metadata feeToken_ = IERC20Metadata(Constants.USDC_ADDRESS);
+        uint256 managementFees_ = managementFees;
+        uint256 feeTokenBalance = feeToken_.balanceOf(address(this));
+        uint256 transferBalance = managementFees_ > feeTokenBalance
             ? feeTokenBalance
-            : managementFees;
+            : managementFees_;
         if (transferBalance > 0) {
-            _config.tokens[feeTokenId].safeTransfer(feeDistributor, transferBalance);
+            feeToken_.safeTransfer(feeDistributor, transferBalance);
         }
         managementFees = 0;
 
@@ -360,10 +316,6 @@ abstract contract CurveConvexStratBase is Ownable {
         emit SetRewardManager(rewardManagerAddr);
     }
 
-    function setFeeTokenId(uint256 feeTokenIdParam) external onlyOwner {
-        feeTokenId = feeTokenIdParam;
-    }
-
     /**
      * @dev governance can withdraw all stuck funds in emergency case
      * @param _token - IERC20Metadata token that should be fully withdraw from Strategy
@@ -381,44 +333,5 @@ abstract contract CurveConvexStratBase is Ownable {
      */
     function changeFeeDistributor(address _feeDistributor) external onlyOwner {
         feeDistributor = _feeDistributor;
-    }
-
-    function toArr2(uint256[] memory arrInf) internal pure returns (uint256[2] memory arr) {
-        arr[0] = arrInf[0];
-        arr[1] = arrInf[1];
-    }
-
-    function fromArr2(uint256[2] memory arr) internal pure returns (uint256[] memory arrInf) {
-        arrInf = new uint256[](2);
-        arrInf[0] = arr[0];
-        arrInf[1] = arr[1];
-    }
-
-    function toArr3(uint256[] memory arrInf) internal pure returns (uint256[3] memory arr) {
-        arr[0] = arrInf[0];
-        arr[1] = arrInf[1];
-        arr[2] = arrInf[2];
-    }
-
-    function fromArr3(uint256[3] memory arr) internal pure returns (uint256[] memory arrInf) {
-        arrInf = new uint256[](3);
-        arrInf[0] = arr[0];
-        arrInf[1] = arr[1];
-        arrInf[2] = arr[2];
-    }
-
-    function toArr4(uint256[] memory arrInf) internal pure returns (uint256[4] memory arr) {
-        arr[0] = arrInf[0];
-        arr[1] = arrInf[1];
-        arr[2] = arrInf[2];
-        arr[3] = arrInf[3];
-    }
-
-    function fromArr4(uint256[4] memory arr) internal pure returns (uint256[] memory arrInf) {
-        arrInf = new uint256[](4);
-        arrInf[0] = arr[0];
-        arrInf[1] = arr[1];
-        arrInf[2] = arr[2];
-        arrInf[3] = arr[3];
     }
 }

@@ -37,6 +37,8 @@ abstract contract StakingFraxCurveConvexApsStratBase is Context, Ownable {
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
 
+    uint128 constant ZUNAMI_USDC_TOKEN_ID = 1;
+
     uint256 private constant FRAX_USDC_POOL_USDC_ID = 1;
     int128 private constant FRAX_USDC_POOL_USDC_ID_INT = 1;
     uint256 private constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID = 1;

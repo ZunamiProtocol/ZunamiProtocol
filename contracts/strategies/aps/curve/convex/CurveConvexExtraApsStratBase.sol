@@ -6,18 +6,18 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import './interfaces/IConvexRewards.sol';
-import './CurveConvexStratBase.sol';
+import './CurveConvexApsStratBase.sol';
+import "../../../curve/convex/interfaces/IConvexRewards.sol";
 
-abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
+abstract contract CurveConvexExtraApsStratBase is Context, CurveConvexApsStratBase {
     using SafeERC20 for IERC20Metadata;
-
-    uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 3;
 
     IERC20Metadata public token;
     IERC20Metadata public extraRewardToken;
     IConvexRewards public extraRewards;
     address[] extraTokenSwapPath;
+
+    uint256 public decimalsMultiplier;
 
     constructor(
         Config memory config,
@@ -27,14 +27,14 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         address tokenAddr,
         address extraRewardsAddr,
         address extraRewardTokenAddr
-    ) CurveConvexStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
+    ) CurveConvexApsStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
         token = IERC20Metadata(tokenAddr);
         if (extraRewardTokenAddr != address(0)) {
             extraRewardToken = IERC20Metadata(extraRewardTokenAddr);
         }
         extraRewards = IConvexRewards(extraRewardsAddr);
 
-        decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID] = calcTokenDecimalsMultiplier(token);
+       decimalsMultiplier = calcTokenDecimalsMultiplier(token);
     }
 
     /**
@@ -50,16 +50,15 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
             extraEarningsFeeToken = rewardManager.valuate(
                 address(extraRewardToken),
                 amountIn,
-                address(_config.tokens[feeTokenId])
+                Constants.USDC_ADDRESS
             );
         }
 
         return
             super.totalHoldings() +
-            extraEarningsFeeToken *
-            decimalsMultipliers[feeTokenId] +
+            extraEarningsFeeToken * 12 + // 18 - 6
             token.balanceOf(address(this)) *
-            decimalsMultipliers[ZUNAMI_EXTRA_TOKEN_ID];
+            decimalsMultiplier;
     }
 
     function sellRewardsExtra() internal virtual override {
@@ -76,7 +75,7 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
         rewardManager.handle(
             address(extraRewardToken),
             extraBalance,
-            address(_config.tokens[feeTokenId])
+            Constants.USDC_ADDRESS
         );
     }
 
@@ -95,4 +94,11 @@ abstract contract CurveConvexExtraStratBase is Context, CurveConvexStratBase {
     }
 
     function withdrawAllSpecific() internal virtual;
+
+    function calcTokenDecimalsMultiplier(IERC20Metadata _token) internal view returns (uint256) {
+        uint8 decimals = _token.decimals();
+        require(decimals <= 18, 'Zunami: wrong token decimals');
+        if (decimals == 18) return 1;
+        return 10**(18 - decimals);
+    }
 }

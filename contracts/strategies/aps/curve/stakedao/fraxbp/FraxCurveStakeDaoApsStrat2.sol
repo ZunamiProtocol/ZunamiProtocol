@@ -23,15 +23,15 @@ abstract contract FraxCurveStakeDaoApsStratBase is CurveStakeDaoExtraApsStratBas
     uint256 constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID = 1;
     int128 constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT = 1;
 
-    IZunamiVault public zunamiPool;
-    IZunamiStableVault public zunamiStable;
+    IZunamiVault public immutable zunamiPool;
+    IZunamiStableVault public immutable zunamiStable;
 
     // fraxUsdcPool = FRAX + USDC => crvFrax
-    ICurvePool2 public fraxUsdcPool;
-    IERC20Metadata public fraxUsdcPoolLp; // crvFrax
+    ICurvePool2 public immutable fraxUsdcPool;
+    IERC20Metadata public immutable fraxUsdcPoolLp; // crvFrax
     // crvFraxTokenPool = crvFrax + Token
-    ICurvePool2 public crvFraxTokenPool;
-    IERC20Metadata public crvFraxTokenPoolLp;
+    ICurvePool2 public immutable crvFraxTokenPool;
+    IERC20Metadata public immutable crvFraxTokenPoolLp;
 
     constructor(
         Config memory config,

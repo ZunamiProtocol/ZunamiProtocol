@@ -11,8 +11,6 @@ import "./CurveStakeDaoApsStratBase.sol";
 abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
-    uint256 public constant ZUNAMI_EXTRA_TOKEN_ID = 1;
-
     IERC20Metadata public immutable token;
     IERC20Metadata public immutable extraRewardToken;
 

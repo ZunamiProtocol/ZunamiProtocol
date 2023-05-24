@@ -12,7 +12,7 @@ contract UzdStakingFraxCurveConvex is StakingFraxCurveConvexApsStratBase {
             Constants.FRAX_USDC_LP_ADDRESS,
             Constants.CRV_FRAX_UZD_ADDRESS,
             Constants.CRV_FRAX_UZD_LP_ADDRESS,
-            Constants.CVX_FRAX_UZD_PID // ???
+            Constants.CVX_FRAX_STAKED_UZD_PID // 47
         )
     {}
 }

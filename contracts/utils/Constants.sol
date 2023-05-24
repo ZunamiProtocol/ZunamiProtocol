@@ -34,7 +34,8 @@ library Constants {
     uint256 internal constant CVX_FRAX_ALUSD_PID = 106;
     uint256 internal constant CVX_FRAX_clevUSD_PID = 41;
     uint256 internal constant CVX_FRAX_eUSD_PID = 44;
-    uint256 internal constant CVX_FRAX_UZD_PID = ???;
+    uint256 internal constant CVX_FRAX_UZD_PID = 158;
+    uint256 internal constant CVX_FRAX_STAKED_UZD_PID = 47;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
@@ -190,4 +191,6 @@ library Constants {
 
     address internal constant ZUNAMI_POOL_ADDRESS = 0x2ffCC661011beC72e1A9524E12060983E74D14ce;
     address internal constant ZUNAMI_STABLE_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
+
+    address internal constant CVX_FRAX_UZD_REWARDS_ADDRESS = 0x820Fad75512c8C3E57Ad021d016846CEEB5F7105;
 }
