@@ -144,133 +144,133 @@ describe('Single strategy tests', () => {
         strategies = [];
     });
 
-    // it('should deposit assets in optimized mode', async () => {
-    //     for (let poolId = 0; poolId < strategies.length; poolId++) {
-    //         await zunamiAPS.addPool(strategies[poolId].address);
-    //         await zunamiAPS.setDefaultDepositPid(poolId);
-    //         await zunamiAPS.setDefaultWithdrawPid(poolId);
-    //
-    //         for (const user of [alice, bob]) {
-    //             const uzdBefore = await uzd.balanceOf(user.getAddress());
-    //
-    //             await expect(zunamiAPS.connect(user).delegateDeposit(getMinAmount()))
-    //                 .to.emit(zunamiAPS, 'CreatedPendingDeposit')
-    //                 .withArgs(await user.getAddress(), getMinAmount());
-    //
-    //             expect(uzdBefore).to.gt(await uzd.balanceOf(user.getAddress()));
-    //         }
-    //     }
-    //
-    //     for (const user of [alice, bob]) {
-    //         expect(await zunamiAPS.balanceOf(user.getAddress())).to.eq(0);
-    //     }
-    //
-    //     await expect(zunamiAPS.completeDeposits([alice.getAddress(), bob.getAddress()])).to.emit(
-    //         zunamiAPS,
-    //         'Deposited'
-    //     );
-    //
-    //     for (const user of [alice, bob]) {
-    //         expect(await zunamiAPS.balanceOf(user.getAddress())).to.gt(0);
-    //     }
-    // });
-    //
-    // it('should deposit assets in not optimized mode', async () => {
-    //     for (let poolId = 0; poolId < strategies.length; poolId++) {
-    //         await zunamiAPS.addPool(strategies[poolId].address);
-    //         await zunamiAPS.setDefaultDepositPid(poolId);
-    //         await zunamiAPS.setDefaultWithdrawPid(poolId);
-    //
-    //         for (const user of [alice, bob]) {
-    //             const uzdBefore = await uzd.balanceOf(user.getAddress());
-    //             const zlpBefore = await zunamiAPS.balanceOf(user.getAddress());
-    //
-    //             await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
-    //                 zunamiAPS,
-    //                 'Deposited'
-    //             );
-    //
-    //             expect(await uzd.balanceOf(user.getAddress())).to.lt(uzdBefore);
-    //             expect(await zunamiAPS.balanceOf(user.getAddress())).to.gt(zlpBefore);
-    //         }
-    //     }
-    // });
-    //
-    // it('should withdraw assets in butch mode', async () => {
-    //     for (let poolId = 0; poolId < strategies.length; poolId++) {
-    //         await zunamiAPS.addPool(strategies[poolId].address);
-    //         await zunamiAPS.setDefaultDepositPid(poolId);
-    //         await zunamiAPS.setDefaultWithdrawPid(poolId);
-    //
-    //         for (const user of [alice, bob]) {
-    //             await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
-    //                 zunamiAPS,
-    //                 'Deposited'
-    //             );
-    //
-    //             const zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
-    //             expect(zlpAmount).to.gt(0);
-    //
-    //             await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, 0))
-    //                 .to.emit(zunamiAPS, 'CreatedPendingWithdrawal')
-    //                 .withArgs(await user.getAddress(), zlpAmount, 0);
-    //         }
-    //
-    //         await expect(
-    //             zunamiAPS.completeWithdrawals([alice.getAddress(), bob.getAddress()])
-    //         ).to.emit(zunamiAPS, 'Withdrawn');
-    //     }
-    // });
-    //
-    // it('should withdraw assets in optimized mode', async () => {
-    //     for (let poolId = 0; poolId < strategies.length; poolId++) {
-    //         await zunamiAPS.addPool(strategies[poolId].address);
-    //         await zunamiAPS.setDefaultDepositPid(poolId);
-    //         await zunamiAPS.setDefaultWithdrawPid(poolId);
-    //
-    //         for (const user of [alice, bob]) {
-    //             await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
-    //                 zunamiAPS,
-    //                 'Deposited'
-    //             );
-    //
-    //             const zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
-    //             expect(zlpAmount).to.gt(0);
-    //
-    //             await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, 0))
-    //                 .to.emit(zunamiAPS, 'CreatedPendingWithdrawal')
-    //                 .withArgs(await user.getAddress(), zlpAmount, 0);
-    //         }
-    //
-    //         await expect(
-    //             zunamiAPS.completeWithdrawalsOptimized([alice.getAddress(), bob.getAddress()])
-    //         ).to.emit(zunamiAPS, 'Withdrawn');
-    //     }
-    // });
-    //
-    // it('should withdraw assets in not optimized mode', async () => {
-    //     for (let poolId = 0; poolId < strategies.length; poolId++) {
-    //         await zunamiAPS.addPool(strategies[poolId].address);
-    //         await zunamiAPS.setDefaultDepositPid(poolId);
-    //         await zunamiAPS.setDefaultWithdrawPid(poolId);
-    //
-    //         for (const user of [alice, bob]) {
-    //             await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
-    //                 zunamiAPS,
-    //                 'Deposited'
-    //             );
-    //
-    //             let zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
-    //             expect(zlpAmount).to.gt(0);
-    //
-    //             await expect(
-    //                 zunamiAPS.connect(user).withdraw(zlpAmount, 0)
-    //             ).to.emit(zunamiAPS, 'Withdrawn');
-    //             zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
-    //             expect(zlpAmount).to.eq(0);
-    //         }
-    //     }
-    // });
+    it('should deposit assets in optimized mode', async () => {
+        for (let poolId = 0; poolId < strategies.length; poolId++) {
+            await zunamiAPS.addPool(strategies[poolId].address);
+            await zunamiAPS.setDefaultDepositPid(poolId);
+            await zunamiAPS.setDefaultWithdrawPid(poolId);
+
+            for (const user of [alice, bob]) {
+                const uzdBefore = await uzd.balanceOf(user.getAddress());
+
+                await expect(zunamiAPS.connect(user).delegateDeposit(getMinAmount()))
+                    .to.emit(zunamiAPS, 'CreatedPendingDeposit')
+                    .withArgs(await user.getAddress(), getMinAmount());
+
+                expect(uzdBefore).to.gt(await uzd.balanceOf(user.getAddress()));
+            }
+        }
+
+        for (const user of [alice, bob]) {
+            expect(await zunamiAPS.balanceOf(user.getAddress())).to.eq(0);
+        }
+
+        await expect(zunamiAPS.completeDeposits([alice.getAddress(), bob.getAddress()])).to.emit(
+            zunamiAPS,
+            'Deposited'
+        );
+
+        for (const user of [alice, bob]) {
+            expect(await zunamiAPS.balanceOf(user.getAddress())).to.gt(0);
+        }
+    });
+
+    it('should deposit assets in not optimized mode', async () => {
+        for (let poolId = 0; poolId < strategies.length; poolId++) {
+            await zunamiAPS.addPool(strategies[poolId].address);
+            await zunamiAPS.setDefaultDepositPid(poolId);
+            await zunamiAPS.setDefaultWithdrawPid(poolId);
+
+            for (const user of [alice, bob]) {
+                const uzdBefore = await uzd.balanceOf(user.getAddress());
+                const zlpBefore = await zunamiAPS.balanceOf(user.getAddress());
+
+                await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
+                    zunamiAPS,
+                    'Deposited'
+                );
+
+                expect(await uzd.balanceOf(user.getAddress())).to.lt(uzdBefore);
+                expect(await zunamiAPS.balanceOf(user.getAddress())).to.gt(zlpBefore);
+            }
+        }
+    });
+
+    it('should withdraw assets in butch mode', async () => {
+        for (let poolId = 0; poolId < strategies.length; poolId++) {
+            await zunamiAPS.addPool(strategies[poolId].address);
+            await zunamiAPS.setDefaultDepositPid(poolId);
+            await zunamiAPS.setDefaultWithdrawPid(poolId);
+
+            for (const user of [alice, bob]) {
+                await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
+                    zunamiAPS,
+                    'Deposited'
+                );
+
+                const zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
+                expect(zlpAmount).to.gt(0);
+
+                await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, 0))
+                    .to.emit(zunamiAPS, 'CreatedPendingWithdrawal')
+                    .withArgs(await user.getAddress(), zlpAmount, 0);
+            }
+
+            await expect(
+                zunamiAPS.completeWithdrawals([alice.getAddress(), bob.getAddress()])
+            ).to.emit(zunamiAPS, 'Withdrawn');
+        }
+    });
+
+    it('should withdraw assets in optimized mode', async () => {
+        for (let poolId = 0; poolId < strategies.length; poolId++) {
+            await zunamiAPS.addPool(strategies[poolId].address);
+            await zunamiAPS.setDefaultDepositPid(poolId);
+            await zunamiAPS.setDefaultWithdrawPid(poolId);
+
+            for (const user of [alice, bob]) {
+                await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
+                    zunamiAPS,
+                    'Deposited'
+                );
+
+                const zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
+                expect(zlpAmount).to.gt(0);
+
+                await expect(zunamiAPS.connect(user).delegateWithdrawal(zlpAmount, 0))
+                    .to.emit(zunamiAPS, 'CreatedPendingWithdrawal')
+                    .withArgs(await user.getAddress(), zlpAmount, 0);
+            }
+
+            await expect(
+                zunamiAPS.completeWithdrawalsOptimized([alice.getAddress(), bob.getAddress()])
+            ).to.emit(zunamiAPS, 'Withdrawn');
+        }
+    });
+
+    it('should withdraw assets in not optimized mode', async () => {
+        for (let poolId = 0; poolId < strategies.length; poolId++) {
+            await zunamiAPS.addPool(strategies[poolId].address);
+            await zunamiAPS.setDefaultDepositPid(poolId);
+            await zunamiAPS.setDefaultWithdrawPid(poolId);
+
+            for (const user of [alice, bob]) {
+                await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
+                    zunamiAPS,
+                    'Deposited'
+                );
+
+                let zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
+                expect(zlpAmount).to.gt(0);
+
+                await expect(
+                    zunamiAPS.connect(user).withdraw(zlpAmount, 0)
+                ).to.emit(zunamiAPS, 'Withdrawn');
+                zlpAmount = BigNumber.from(await zunamiAPS.balanceOf(user.getAddress()));
+                expect(zlpAmount).to.eq(0);
+            }
+        }
+    });
 
     it('should withdraw assets in one coin mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {

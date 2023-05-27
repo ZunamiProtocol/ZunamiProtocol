@@ -7,6 +7,13 @@ const configStakeDaoAPS = {
     rewards: [globalConfig.crv, globalConfig.sdt],
 };
 
+const configConvexAPS = {
+    token: globalConfig.token_aps,
+    crv: globalConfig.crv,
+    cvx: globalConfig.cvx,
+    booster: globalConfig.booster,
+};
+
 async function deployAndLinkStrategy(name, zunamiAPS, rewardManager, config) {
     const factory = await ethers.getContractFactory(name);
     const strategy = await factory.deploy(config);
@@ -51,6 +58,7 @@ async function main() {
 
     //await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_aps);
     //await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
+    await deployAndLinkStrategy('UzdFraxCurveConvex', zunamiAPS, rewardManagerAddress, configConvexAPS);
 }
 
 main()

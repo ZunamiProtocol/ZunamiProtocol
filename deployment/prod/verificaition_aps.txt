@@ -4,3 +4,5 @@ npx hardhat verify --network mainnet 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd 
 npx hardhat verify --network mainnet 0xdC1AEb773Bd7dEd31170C1Ffe54Dd3639459bE07 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c
 
 npx hardhat verify --network mainnet --constructor-args ./deployment/aps_stakedao_strategy_arguments.js 0xf36bdf167722FD90d021c42c642eAA48EE37f62a
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/aps_convex_strategy_arguments.js 0x294a5EE0d021b4FAe28A76382C9B11D1D886f604
