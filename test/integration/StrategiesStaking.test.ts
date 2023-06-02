@@ -19,7 +19,9 @@ async function toggleUnlockStakes() {
     const stakingOwner = '0xB1748C79709f4Ba2Dd82834B8c82D4a505003f27';
     const stakingAddresses = [
         '0x4edF7C64dAD8c256f6843AcFe56876024b54A1b6',
-        '0x5745506d56b0088f800085b1227b3f1f7d419c89'
+        '0x5745506d56b0088f800085b1227b3f1f7d419c89',
+        '0x4c9AD8c53d0a001E7fF08a3E5E26dE6795bEA5ac',
+        '0x711d650cd10df656c2c28d375649689f137005fa'
     ];
     const stakingABI = [
         {
@@ -56,7 +58,8 @@ describe('Single strategy tests', () => {
     const strategyNames = [
         'XAIStakingFraxCurveConvex',
         'alUSDStakingFraxCurveConvex',
-        'clevUSDStakingFraxCurveConvex'
+        'clevUSDStakingFraxCurveConvex',
+        'eUSDStakingFraxCurveConvex'
     ];
     enum WithdrawalType {
         Base,
