@@ -167,9 +167,9 @@ describe('Single strategy tests', () => {
         }
 
         for (const user of [alice, bob]) {
-            await uzd.connect(user).approve(zunamiAPS.address, parseUnits('500000', 'ether'));
+            await uzd.connect(user).approve(zunamiAPS.address, parseUnits('499000', 'ether'));
 
-            await uzd.transfer(user.getAddress(), ethers.utils.parseUnits('500000', 'ether'));
+            await uzd.transfer(user.getAddress(), ethers.utils.parseUnits('499000', 'ether'));
         }
     });
 
@@ -208,7 +208,7 @@ describe('Single strategy tests', () => {
         }
     });
 
-    it.only('should deposit assets in not optimized mode', async () => {
+    it('should deposit assets in not optimized mode', async () => {
         for (let poolId = 0; poolId < strategies.length; poolId++) {
             await zunamiAPS.addPool(strategies[poolId].address);
             await zunamiAPS.setDefaultDepositPid(poolId);

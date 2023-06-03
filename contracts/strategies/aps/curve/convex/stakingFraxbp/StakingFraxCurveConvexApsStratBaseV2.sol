@@ -15,7 +15,7 @@ import '../../../../interfaces/IStakingProxyConvex.sol';
 
 //import "hardhat/console.sol";
 
-abstract contract StakingFraxCurveConvexApsStratBase is Context, Ownable {
+abstract contract StakingFraxCurveConvexApsStratBaseV2 is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
 
     enum WithdrawalType {
@@ -236,34 +236,18 @@ abstract contract StakingFraxCurveConvexApsStratBase is Context, Ownable {
      */
     function totalHoldings() public view virtual returns (uint256) {
         uint256 crvLpHolding;
-        uint256 rewardEarningInFeeToken;
         if (address(stakingVault) != address(0)) {
             crvLpHolding =
                 (stakingVault.stakingAddress().lockedLiquidityOf(address(stakingVault)) *
                 getCurvePoolPrice()) /
                 CURVE_PRICE_DENOMINATOR;
-
-            (address[] memory tokenAddresses, uint256[] memory totalEarned) = stakingVault.earned();
-
-            IRewardManager rewardManager_ = rewardManager;
-            for (uint256 i = 0; i < tokenAddresses.length; i++) {
-                uint256 amountIn = totalEarned[i] +
-                IERC20Metadata(tokenAddresses[i]).balanceOf(address(this));
-                if (amountIn == 0) continue;
-                rewardEarningInFeeToken += rewardManager_.valuate(
-                    tokenAddresses[i],
-                    amountIn,
-                    Constants.USDC_ADDRESS
-                );
-            }
         }
 
         uint256 tokensHolding = _config.token.balanceOf(address(this));
 
         return
             tokensHolding +
-            crvLpHolding +
-            rewardEarningInFeeToken * 12; // USDC token multiplier 18 - 6
+            crvLpHolding;
     }
 
     /**
