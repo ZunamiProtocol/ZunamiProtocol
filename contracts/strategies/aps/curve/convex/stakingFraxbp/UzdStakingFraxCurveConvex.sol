@@ -2,11 +2,11 @@
 pragma solidity ^0.8.0;
 
 import '../../../../../utils/Constants.sol';
-import './StakingFraxCurveConvexApsStratBase.sol';
+import './StakingFraxCurveConvexApsStratBaseV2.sol';
 
-contract UzdStakingFraxCurveConvex is StakingFraxCurveConvexApsStratBase {
+contract UzdStakingFraxCurveConvex is StakingFraxCurveConvexApsStratBaseV2 {
     constructor(Config memory config)
-        StakingFraxCurveConvexApsStratBase(
+        StakingFraxCurveConvexApsStratBaseV2(
             config,
             Constants.FRAX_USDC_ADDRESS,
             Constants.FRAX_USDC_LP_ADDRESS,
