@@ -1,0 +1,5 @@
+Start deploy
+Zunami ETH deployed to: 0x9dE83985047ab3582668320A784F6b9736c6EEa7
+Zunami ETH tokens added
+Reward manager deployed to: 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
+

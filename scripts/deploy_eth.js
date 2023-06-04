@@ -29,32 +29,36 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, config) {
 async function main() {
     console.log('Start deploy');
     const Zunami = await ethers.getContractFactory('ZunamiNative');
-    const zunami = await Zunami.deploy();
-    // const zunami = await Zunami.attach(''); // prod
+    // const zunami = await Zunami.deploy();
+    // await zunami.deployed();
 
-    await zunami.deployed();
-    console.log('Zunami deployed to:', zunami.address);
+    const zunami = await Zunami.attach('0x9dE83985047ab3582668320A784F6b9736c6EEa7'); // prod
 
-    await zunami.addTokens(
-        [addrs.stablecoins.wEth, addrs.stablecoins.frxEth],
-        [1, 1]
-    );
+    console.log('Zunami ETH deployed to:', zunami.address);
 
-    const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerNative');
-    const rewardManager = await RewardManagerFactory.deploy();
-    await rewardManager.deployed();
+    // const tx = await zunami.addTokens(
+    //     [addrs.stablecoins.wEth, addrs.stablecoins.frxEth],
+    //     [1, 1]
+    // );
+    // await tx.wait();
+    //
+    // console.log('Zunami ETH tokens added');
 
-    const rewardManagerAddress = rewardManager.address;
-    // const rewardManagerAddress = '';
+    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerNative');
+    // const rewardManager = await RewardManagerFactory.deploy();
+    // await rewardManager.deployed();
+    //
+    // const rewardManagerAddress = rewardManager.address;
+    const rewardManagerAddress = '0x66434474AF84fE23C927b0f08B28CEc43a1a9b31';
 
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
-    await deployAndLinkStrategy(
-        'frxEthStakingFraxCurveConvex',
-        zunami,
-        rewardManagerAddress,
-        configStakingConvexETH
-    );
+    // await deployAndLinkStrategy(
+    //     'frxEthStakingFraxCurveConvex',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     configStakingConvexETH
+    // );
 }
 
 main()
