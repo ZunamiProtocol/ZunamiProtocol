@@ -16,7 +16,7 @@ import '../../../../../interfaces/IWETH.sol';
 
 //import "hardhat/console.sol";
 
-abstract contract StakingEthFraxCurveConvexStratBase is Context, Ownable {
+abstract contract StakingFraxEthCurveConvexStratBase is Context, Ownable {
     using SafeERC20 for IERC20Metadata;
 
     uint8 public constant POOL_ASSETS = 5;
