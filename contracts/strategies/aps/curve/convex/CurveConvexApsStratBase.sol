@@ -264,7 +264,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
         return
             tokensHolding +
             crvLpHoldings +
-            (cvxEarningsInFeeToken + crvEarningsInFeeToken) * 12; // USDC token multiplier 18 - 6
+            (cvxEarningsInFeeToken + crvEarningsInFeeToken) * (10**12); // USDC token multiplier 18 - 6
     }
 
     /**

@@ -261,7 +261,7 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
         return
             tokensHolding +
             crvLpHolding +
-            rewardEarningInFeeToken * 12; // USDC token multiplier 18 - 6
+            rewardEarningInFeeToken * (10**12); // USDC token multiplier 18 - 6
     }
 
     /**

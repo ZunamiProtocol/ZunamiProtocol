@@ -51,7 +51,7 @@ abstract contract CurveStakeDaoExtraApsStratBase is Context, CurveStakeDaoApsStr
 
         return
             super.totalHoldings() +
-            extraEarningsFeeToken * 12 + // USDC token multiplier 18 - 6
+            extraEarningsFeeToken * (10**12) + // USDC token multiplier 18 - 6
             token.balanceOf(address(this)) *
             decimalsMultiplier;
     }
