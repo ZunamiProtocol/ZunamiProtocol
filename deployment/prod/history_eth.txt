@@ -2,4 +2,10 @@ Start deploy
 Zunami ETH deployed to: 0x9dE83985047ab3582668320A784F6b9736c6EEa7
 Zunami ETH tokens added
 Reward manager deployed to: 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
+Native frxETH converter deployed to: 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e
 
+0 alEthFraxEthCurveConvex strategy deployed to: 0x3b62cf2f3Ec02412D9083c1E5a81Be319F197809
+Added alEthFraxEthCurveConvex pool to Zunami
+Set zunami address 0x9dE83985047ab3582668320A784F6b9736c6EEa7 in alEthFraxEthCurveConvex strategy
+Set reward manager 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
+Set native convertor 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e

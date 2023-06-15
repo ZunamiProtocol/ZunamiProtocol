@@ -23,8 +23,8 @@ enum WithdrawalType {
 
 describe('Single strategy tests', () => {
     const strategyNames = [
-        'sEthFraxEthCurveConvex',
         'alEthFraxEthCurveConvex',
+        'sEthFraxEthCurveConvex',
     ];
     enum WithdrawalType {
         Base,

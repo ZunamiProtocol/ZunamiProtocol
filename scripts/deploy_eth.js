@@ -8,21 +8,38 @@ const configStakingConvexETH = {
     booster: globalConfig.stakingBooster,
 };
 
-async function deployAndLinkStrategy(name, zunami, rewardManager, config) {
+const configConvexETH = {
+    tokens: globalConfig.tokensETH,
+    crv: globalConfig.crv,
+    cvx: globalConfig.cvx,
+    booster: globalConfig.booster,
+};
+
+
+async function deployAndLinkStrategy(name, zunami, rewardManager, nativeConverter, config) {
     const factory = await ethers.getContractFactory(name);
     const strategy = await factory.deploy(config);
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
 
-    // await zunami.addPool(strategy.address);
+    // let tx = await zunami.addPool(strategy.address);
+    // await tx.wait();
     // console.log(`Added ${name} pool to Zunami`);
 
-    await strategy.setZunami(zunami.address);
+    tx = await strategy.setZunami(zunami.address);
+    await tx.wait();
     console.log(`Set zunami address ${zunami.address} in ${name} strategy`);
 
     if (rewardManager) {
-        await strategy.setRewardManager(rewardManager);
+        tx = await strategy.setRewardManager(rewardManager);
+        await tx.wait();
         console.log(`Set reward manager ${rewardManager}`);
+    }
+
+    if (nativeConverter) {
+        tx = await strategy.setNativeConverter(nativeConverter);
+        await tx.wait();
+        console.log(`Set native convertor ${nativeConverter}`);
     }
 }
 
@@ -50,13 +67,37 @@ async function main() {
     //
     // const rewardManagerAddress = rewardManager.address;
     const rewardManagerAddress = '0x66434474AF84fE23C927b0f08B28CEc43a1a9b31';
-
     console.log('Reward manager deployed to:', rewardManagerAddress);
+
+    // const NativeConverterFactory = await ethers.getContractFactory('FraxEthNativeConverter');
+    // const nativeConverter = await NativeConverterFactory.deploy();
+    // await nativeConverter.deployed();
+    // const nativeConverterAddress = nativeConverter.address;
+    const nativeConverterAddress = "0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e";
+
+    console.log('Native frxETH converter deployed to:', nativeConverterAddress);
+
+    await deployAndLinkStrategy(
+        'alEthFraxEthCurveConvex',
+        zunami,
+        rewardManagerAddress,
+        nativeConverterAddress,
+        configConvexETH
+    );
+
+    // await deployAndLinkStrategy(
+    //     'sEthFraxEthCurveConvex',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     nativeConverterAddress,
+    //     configConvexETH
+    // );
 
     // await deployAndLinkStrategy(
     //     'frxEthStakingFraxCurveConvex',
     //     zunami,
     //     rewardManagerAddress,
+    //     undefined,
     //     configStakingConvexETH
     // );
 }
