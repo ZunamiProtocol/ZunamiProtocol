@@ -6,11 +6,10 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../utils/Constants.sol';
 import '../../interfaces/IRewardManagerNative.sol';
-import '../../interfaces/IStableConverter.sol';
-import './ICurve3CryptoPool.sol';
 import './AggregatorV2V3Interface.sol';
 import '../../interfaces/IElasticRigidVault.sol';
 import '../../interfaces/IWETH.sol';
+import "./ICurveExchangePool.sol";
 
 //import "hardhat/console.sol";
 
@@ -61,7 +60,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
     ) external {
         if (amount == 0) return;
 
-        ICurve3CryptoPool rewardEthPool = ICurve3CryptoPool(rewardEthCurvePools[reward]);
+        ICurveExchangePool rewardEthPool = ICurveExchangePool(rewardEthCurvePools[reward]);
 
         IERC20Metadata(reward).safeIncreaseAllowance(address(rewardEthPool), amount);
 
@@ -89,7 +88,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
     function valuate(address reward, uint256 amount) public view returns (uint256) {
         if (amount == 0) return 0;
 
-        ICurve3CryptoPool rewardEthPool = ICurve3CryptoPool(rewardEthCurvePools[reward]);
+        ICurveExchangePool rewardEthPool = ICurveExchangePool(rewardEthCurvePools[reward]);
 
         return
             rewardEthPool.get_dy(
@@ -109,7 +108,7 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
         if (rewardEthOracle != address(0)) {
             AggregatorV2V3Interface oracle = AggregatorV2V3Interface(rewardEthOracle);
             (, int256 answer, , uint256 updatedAt, ) = oracle.latestRoundData();
-            require(block.timestamp - updatedAt >  STALE_DELAY, 'Oracle stale');
+            require(block.timestamp - updatedAt <= STALE_DELAY, 'Oracle stale');
 
             wethAmountByOracle = (uint256(answer) * amount) / 1e18;
         } else {
@@ -117,11 +116,12 @@ contract SellingCurveRewardManagerNative is IRewardManagerNative {
                 rewardUsdChainlinkOracles[reward]
             );
             (, int256 rewardAnswer, , uint256 updatedAt, ) = rewardOracle.latestRoundData();
-            require(block.timestamp - updatedAt >  STALE_DELAY, 'Oracle usd stale');
+
+            require(block.timestamp - updatedAt <= STALE_DELAY, 'Oracle usd stale');
 
             AggregatorV2V3Interface ethOracle = AggregatorV2V3Interface(ethUsdChainlinkOracle);
             (, int256 ethAnswer, , uint256 ethUpdatedAt, ) = ethOracle.latestRoundData();
-            require(block.timestamp - ethUpdatedAt >  STALE_DELAY, 'Oracle eth stale');
+            require(block.timestamp - ethUpdatedAt <= STALE_DELAY, 'Oracle eth stale');
 
             wethAmountByOracle = (uint256(rewardAnswer) * amount) / uint256(ethAnswer);
         }

@@ -32,8 +32,9 @@ const config: HardhatUserConfig = {
             forking: {
                 url: `${process.env.ETH_NODE_API_KEY}`,
                 // blockNumber: 16883000, // Frax Extension
-                blockNumber: 16200000, // Staking strategy
+                // blockNumber: 16200000, // Staking strategy
                 // blockNumber: 15183276, // Strategies
+                blockNumber: 17483568, // Staking ETH strategy
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each

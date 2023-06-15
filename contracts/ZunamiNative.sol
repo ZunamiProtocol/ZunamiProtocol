@@ -10,6 +10,8 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IStrategy.sol';
 import './interfaces/IZunamiRebalancer.sol';
 
+//import "hardhat/console.sol";
+
 /**
  *
  * @title Zunami Protocol v2
@@ -872,6 +874,7 @@ contract ZunamiNative is ERC20, Pausable, AccessControl, ReentrancyGuard {
         address receiver,
         uint256 amount
     ) internal {
+
         if (address(token) == ETH_MOCK_ADDRESS) {
             require(msg.value == amount, 'ETH wrong');
         } else {

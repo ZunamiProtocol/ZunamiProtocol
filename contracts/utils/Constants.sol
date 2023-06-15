@@ -57,6 +57,7 @@ library Constants {
     address internal constant USDN_ADDRESS = 0x674C6Ad92Fd080e4004b2312b45f796a192D27a0;
     address internal constant USDK_ADDRESS = 0x1c48f86ae57291F7686349F12601910BD8D470bb;
     address internal constant FRAX_ADDRESS = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
+    address internal constant FRX_ETH_ADDRESS = 0x5E8422345238F34275888049021821E8E08CAa1f;
     address internal constant RSV_ADDRESS = 0x196f4727526eA7FB1e17b2071B3d8eAA38486988;
     address internal constant UST_ADDRESS = 0xa47c8bf37f92aBed4A126BDA807A7b7498661acD;
     address internal constant PUSD_ADDRESS = 0x466a756E9A7401B5e2444a3fCB3c2C12FBEa0a54;
@@ -179,4 +180,19 @@ library Constants {
 
     address internal constant ETH_frxETH_ADDRESS = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
     address internal constant ETH_frxETH_LP_ADDRESS = 0xf43211935C781D5ca1a41d2041F397B8A7366C7A;
+
+    address internal constant CRV_FRAX_stETH_ADDRESS = 0x4d9f9D15101EEC665F77210cB999639f760F831E;
+    address internal constant CRV_FRAX_stETH_LP_ADDRESS = 0x4d9f9D15101EEC665F77210cB999639f760F831E;
+    address internal constant CVX_FRAX_stETH_REWARDS_ADDRESS = 0xC3D0B8170E105d6476fE407934492930CAc3BDAC;
+    uint256 internal constant CVX_FRAX_stETH_PID = 161;
+
+    address internal constant CRV_FRAX_sETH_ADDRESS = 0x663aC72a1c3E1C4186CD3dCb184f216291F4878C;
+    address internal constant CRV_FRAX_sETH_LP_ADDRESS = 0x663aC72a1c3E1C4186CD3dCb184f216291F4878C;
+    address internal constant CVX_FRAX_sETH_REWARDS_ADDRESS = 0x55cdF6c7E6d04b83835E4702ed395D0263237DA2;
+    uint256 internal constant CVX_FRAX_sETH_PID = 167;
+
+    address internal constant CRV_FRAX_alETH_ADDRESS = 0xB657B895B265C38c53FFF00166cF7F6A3C70587d;
+    address internal constant CRV_FRAX_alETH_LP_ADDRESS = 0xB657B895B265C38c53FFF00166cF7F6A3C70587d;
+    address internal constant CVX_FRAX_alETH_REWARDS_ADDRESS = 0xe0DbbCF08A5465db7c7401C86cce89030e11aB67;
+    uint256 internal constant CVX_FRAX_alETH_PID = 166;
 }
