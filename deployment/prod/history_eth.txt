@@ -9,3 +9,9 @@ Added alEthFraxEthCurveConvex pool to Zunami
 Set zunami address 0x9dE83985047ab3582668320A784F6b9736c6EEa7 in alEthFraxEthCurveConvex strategy
 Set reward manager 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
 Set native convertor 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e
+
+1 sEthFraxEthCurveConvex strategy deployed to: 0xC6A13D923FB29AF45f116889956763538D73cC51
+Added sEthFraxEthCurveConvex pool to Zunami
+Set zunami address 0x9dE83985047ab3582668320A784F6b9736c6EEa7 in sEthFraxEthCurveConvex strategy
+Set reward manager 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
+Set native convertor 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e

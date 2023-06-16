@@ -22,9 +22,9 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, nativeConverte
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
 
-    // let tx = await zunami.addPool(strategy.address);
-    // await tx.wait();
-    // console.log(`Added ${name} pool to Zunami`);
+    let tx = await zunami.addPool(strategy.address);
+    await tx.wait();
+    console.log(`Added ${name} pool to Zunami`);
 
     tx = await strategy.setZunami(zunami.address);
     await tx.wait();
@@ -77,21 +77,21 @@ async function main() {
 
     console.log('Native frxETH converter deployed to:', nativeConverterAddress);
 
-    await deployAndLinkStrategy(
-        'alEthFraxEthCurveConvex',
-        zunami,
-        rewardManagerAddress,
-        nativeConverterAddress,
-        configConvexETH
-    );
-
     // await deployAndLinkStrategy(
-    //     'sEthFraxEthCurveConvex',
+    //     'alEthFraxEthCurveConvex',
     //     zunami,
     //     rewardManagerAddress,
     //     nativeConverterAddress,
     //     configConvexETH
     // );
+
+    await deployAndLinkStrategy(
+        'sEthFraxEthCurveConvex',
+        zunami,
+        rewardManagerAddress,
+        nativeConverterAddress,
+        configConvexETH
+    );
 
     // await deployAndLinkStrategy(
     //     'frxEthStakingFraxCurveConvex',

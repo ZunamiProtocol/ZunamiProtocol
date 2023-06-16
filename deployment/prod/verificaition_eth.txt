@@ -5,3 +5,4 @@ npx hardhat verify --network mainnet 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
 npx hardhat verify --network mainnet 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e
 
 npx hardhat verify --network mainnet --constructor-args ./deployment/convex_eth_strategy_arguments.js --contract contracts/strategies/eth/curve/convex/fraxbp/alEthFraxEthCurveConvex.sol:alEthFraxEthCurveConvex 0x3b62cf2f3Ec02412D9083c1E5a81Be319F197809
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_eth_strategy_arguments.js --contract contracts/strategies/eth/curve/convex/fraxbp/sEthFraxEthCurveConvex.sol:sEthFraxEthCurveConvex 0xC6A13D923FB29AF45f116889956763538D73cC51
