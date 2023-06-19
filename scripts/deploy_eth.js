@@ -66,7 +66,7 @@ async function main() {
     // await rewardManager.deployed();
     //
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0x66434474AF84fE23C927b0f08B28CEc43a1a9b31';
+    const rewardManagerAddress = '0xc79122ec6a1e4938D6cc0ceFD838FF150B6f42cd';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     // const NativeConverterFactory = await ethers.getContractFactory('FraxEthNativeConverter');
@@ -74,7 +74,6 @@ async function main() {
     // await nativeConverter.deployed();
     // const nativeConverterAddress = nativeConverter.address;
     const nativeConverterAddress = "0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e";
-
     console.log('Native frxETH converter deployed to:', nativeConverterAddress);
 
     // await deployAndLinkStrategy(
@@ -85,13 +84,13 @@ async function main() {
     //     configConvexETH
     // );
 
-    await deployAndLinkStrategy(
-        'sEthFraxEthCurveConvex',
-        zunami,
-        rewardManagerAddress,
-        nativeConverterAddress,
-        configConvexETH
-    );
+    // await deployAndLinkStrategy(
+    //     'sEthFraxEthCurveConvex',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     nativeConverterAddress,
+    //     configConvexETH
+    // );
 
     // await deployAndLinkStrategy(
     //     'frxEthStakingFraxCurveConvex',
