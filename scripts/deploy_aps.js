@@ -14,6 +14,12 @@ const configConvexAPS = {
     booster: globalConfig.booster,
 };
 
+const configStakingConvexAPS = {
+    token: globalConfig.token_aps,
+    rewards: [globalConfig.crv, globalConfig.cvx, globalConfig.fxs],
+    booster: globalConfig.stakingBooster,
+};
+
 async function deployAndLinkStrategy(name, zunamiAPS, rewardManager, config) {
     const factory = await ethers.getContractFactory(name);
     const strategy = await factory.deploy(config);
@@ -44,7 +50,6 @@ async function main() {
     await zunamiAPS.deployed();
     console.log('ZunamiAPS deployed to:', zunamiAPS.address);
 
-
     // const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
     // console.log('Stable converter deployed to:', stableConverterAddress);
     //
@@ -58,7 +63,8 @@ async function main() {
 
     //await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_aps);
     //await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
-    await deployAndLinkStrategy('UzdFraxCurveConvex', zunamiAPS, rewardManagerAddress, configConvexAPS);
+    // await deployAndLinkStrategy('UzdFraxCurveConvex', zunamiAPS, rewardManagerAddress, configConvexAPS);
+    await deployAndLinkStrategy('UzdStakingFraxCurveConvex', zunamiAPS, rewardManagerAddress, configStakingConvexAPS);
 }
 
 main()

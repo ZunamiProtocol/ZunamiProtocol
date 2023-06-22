@@ -114,6 +114,9 @@ abstract contract StakingFraxCurveConvexApsStratBaseV2 is Context, Ownable {
      * @param amount - amount in stablecoin that user deposit
      */
     function deposit(uint256 amount) external returns (uint256) {
+        // prevent read-only reentrancy for CurvePool.get_virtual_price()
+        crvFraxTokenPool.remove_liquidity(0, [uint256(0),0]);
+
         if (!checkDepositSuccessful(amount)) {
             return 0;
         }
