@@ -1,34 +1,22 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-
-import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-import '@openzeppelin/contracts/utils/Context.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../utils/Constants.sol';
-
-import '../../interfaces/IZunami.sol';
-
-contract VaultAPSStrat is Ownable {
+contract VaultAPSStrat {
     using SafeERC20 for IERC20Metadata;
 
     uint256 public constant PRICE_DENOMINATOR = 1e18;
 
-    IZunami public zunami;
+    address public zunami;
     IERC20Metadata token;
-
-    uint256 public managementFees = 0;
-    uint256 public minDepositAmount = 9975; // 99.75%
 
     /**
      * @dev Throws if called by any account other than the Zunami
      */
     modifier onlyZunami() {
-        require(_msgSender() == address(zunami), 'must be called by Zunami contract');
+        require(msg.sender == zunami, 'must be called by Zunami contract');
         _;
     }
 
@@ -37,7 +25,7 @@ contract VaultAPSStrat is Ownable {
     }
 
     function withdrawAll() external onlyZunami {
-        transferAllTokensTo(address(zunami));
+        transferAllTokensTo(zunami);
     }
 
     function transferAllTokensTo(address withdrawer) internal {
@@ -84,26 +72,6 @@ contract VaultAPSStrat is Ownable {
      */
     function totalHoldings() public view virtual returns (uint256) {
         return token.balanceOf(address(this));
-    }
-
-    /**
-     * @dev disable renounceOwnership for safety
-     */
-    function renounceOwnership() public view override onlyOwner {
-        revert('The strategy must have an owner');
-    }
-
-    /**
-     * @dev dev set Zunami (main contract) address
-     * @param zunamiAddr - address of main contract (Zunami)
-     */
-    function setZunami(address zunamiAddr) external onlyOwner {
-        zunami = IZunami(zunamiAddr);
-    }
-
-    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
-        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
-        minDepositAmount = _minDepositAmount;
     }
 
     function claimManagementFees() external returns (uint256) {
