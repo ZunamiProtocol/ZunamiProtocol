@@ -10,7 +10,7 @@ import '../../../../utils/Constants.sol';
 import "../../../curve/convex/interfaces/IConvexMinter.sol";
 import "../../../curve/convex/interfaces/IConvexBooster.sol";
 import "../../../../interfaces/IZunami.sol";
-import "../../../interfaces/IRewardManager.sol";
+import "../../../interfaces/IRewardManagerNative.sol";
 import "../../../curve/convex/interfaces/IConvexRewards.sol";
 
 abstract contract CurveConvexApsStratBase is Ownable {
@@ -190,7 +190,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
             return;
         }
 
-        IERC20Metadata feeToken_ = IERC20Metadata(Constants.USDC_ADDRESS);
+        IERC20Metadata feeToken_ = IERC20Metadata(Constants.FRX_ETH_ADDRESS);
         uint256 feeTokenBalanceBefore = feeToken_.balanceOf(address(this));
 
         IRewardManager rewardManager_ = rewardManager;
