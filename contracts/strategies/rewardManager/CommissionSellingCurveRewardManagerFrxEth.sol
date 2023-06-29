@@ -39,10 +39,10 @@ contract CommissionSellingCurveRewardManagerFrxEth is IRewardManagerFrxEth {
     address immutable feeCollector;
 
     constructor(address frxEthConverterAddr, address zstableAddr, address feeCollectorAddr) {
-        zlp = IERC20Metadata(0x9dE83985047ab3582668320A784F6b9736c6EEa7);
+        zlp = IERC20Metadata(Constants.ZUNAMI_ETH_POOL_ADDRESS);
 
         require(frxEthConverterAddr != address(0), "frxEthConverter");
-        frxEthConverterAddr = INativeConverter(frxEthConverterAddr);
+        frxEthConverter = INativeConverter(frxEthConverterAddr);
 
         require(zstableAddr != address(0), "zStable");
         zstable = IElasticRigidVault(zstableAddr);
@@ -86,12 +86,14 @@ contract CommissionSellingCurveRewardManagerFrxEth is IRewardManagerFrxEth {
 
         IERC20Metadata(reward).safeIncreaseAllowance(address(rewardEthPool), amount);
 
-        uint256 wethAmount = rewardEthPool.exchange(
+        rewardEthPool.exchange(
             CURVE_WETH_REWARD_POOL_REWARD_ID,
             CURVE_WETH_REWARD_POOL_WETH_ID,
             amount,
             0
         );
+
+        uint256 wethAmount = IERC20Metadata(Constants.WETH_ADDRESS).balanceOf(address(this));
 
         uint256 frxEthAmount = frxEthConverter.handle(true, wethAmount, 0);
 

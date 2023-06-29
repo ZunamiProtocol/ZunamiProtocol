@@ -33,7 +33,7 @@ const config: HardhatUserConfig = {
                 url: `${process.env.ETH_NODE_API_KEY}`,
                 // blockNumber: 16883000,
                 // blockNumber: 16800000, // Staking strategy
-                blockNumber: 17392600,
+                blockNumber: 17783852,
                 // blockNumber: 15183276, // Strategies 16693134
                 // blockNumber: 15183276, // Strategies
                 // blockNumber: 17392600 //17313000, // 17254000, // APS

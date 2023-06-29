@@ -195,6 +195,9 @@ library Constants {
     address internal constant ZUNAMI_POOL_ADDRESS = 0x2ffCC661011beC72e1A9524E12060983E74D14ce;
     address internal constant ZUNAMI_STABLE_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
 
+    address internal constant ZUNAMI_ETH_POOL_ADDRESS = 0x9dE83985047ab3582668320A784F6b9736c6EEa7;
+    address internal constant ZUNAMI_ETH_STABLE_ADDRESS = 0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b;
+
     address internal constant CVX_FRAX_UZD_REWARDS_ADDRESS = 0x820Fad75512c8C3E57Ad021d016846CEEB5F7105;
 
     address internal constant ETH_frxETH_ADDRESS = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
@@ -203,5 +206,11 @@ library Constants {
     address internal constant SDT_CRVUSD_USDT_VAULT_ADDRESS = 0x37b24ac19504C0c6FC1ADc8deb5D24f5C4F6A2f2;
     address internal constant CRV_CRVUSD_USDT_LP_ADDRESS = 0x390f3595bCa2Df7d23783dFd126427CCeb997BF4;
     address internal constant CRV_CRVUSD_USDT_ADDRESS = 0x390f3595bCa2Df7d23783dFd126427CCeb997BF4;
+
+    address internal constant CRV_FRXETH_ZETH_ADDRESS = 0xfC89b519658967fCBE1f525f1b8f4bf62d9b9018;
+    address internal constant CRV_FRXETH_ZETH_LP_ADDRESS = 0xfC89b519658967fCBE1f525f1b8f4bf62d9b9018;
+    address internal constant CVX_FRXETH_ZETH_REWARDS_ADDRESS = 0x98B662443695f7328F6A7fDe9894CC0E88630269;
+    uint256 internal constant CVX_FRXETH_ZETH_PID = 210;
+    address internal constant zETH_ADDRESS = 0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b;
 }
 

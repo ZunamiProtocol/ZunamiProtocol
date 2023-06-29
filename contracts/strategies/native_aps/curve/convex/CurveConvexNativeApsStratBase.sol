@@ -10,10 +10,10 @@ import '../../../../utils/Constants.sol';
 import "../../../curve/convex/interfaces/IConvexMinter.sol";
 import "../../../curve/convex/interfaces/IConvexBooster.sol";
 import "../../../../interfaces/IZunami.sol";
-import "../../../interfaces/IRewardManagerNative.sol";
 import "../../../curve/convex/interfaces/IConvexRewards.sol";
+import "../../../../interfaces/IRewardManagerFrxEth.sol";
 
-abstract contract CurveConvexApsStratBase is Ownable {
+abstract contract CurveConvexNativeApsStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;
 
@@ -27,7 +27,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
     Config internal _config;
 
     IZunami public zunami;
-    IRewardManager public rewardManager;
+    IRewardManagerFrxEth public rewardManager;
 
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
@@ -193,7 +193,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
         IERC20Metadata feeToken_ = IERC20Metadata(Constants.FRX_ETH_ADDRESS);
         uint256 feeTokenBalanceBefore = feeToken_.balanceOf(address(this));
 
-        IRewardManager rewardManager_ = rewardManager;
+        IRewardManagerFrxEth rewardManager_ = rewardManager;
         IERC20Metadata rewardToken_;
         for (uint256 i = 0; i < rewardsLength_; i++) {
             if (rewardBalances[i] == 0) continue;
@@ -201,8 +201,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
             rewardToken_.transfer(address(rewardManager_), rewardBalances[i]);
             rewardManager_.handle(
                 address(rewardToken_),
-                rewardBalances[i],
-                Constants.USDC_ADDRESS
+                rewardBalances[i]
             );
         }
 
@@ -220,7 +219,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
 
         sellRewards();
 
-        uint256 feeTokenBalance = IERC20Metadata(Constants.USDC_ADDRESS).balanceOf(address(this)) -
+        uint256 feeTokenBalance = IERC20Metadata(Constants.FRX_ETH_ADDRESS).balanceOf(address(this)) -
             managementFees;
 
         if (feeTokenBalance > 0) depositPool(0, feeTokenBalance);
@@ -239,8 +238,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
         uint256 amountIn = crvEarned + _config.crv.balanceOf(address(this));
         uint256 crvEarningsInFeeToken = rewardManager.valuate(
             address(_config.crv),
-            amountIn,
-            Constants.USDC_ADDRESS
+            amountIn
         );
 
         uint256 cvxTotalCliffs = _config.cvx.totalCliffs();
@@ -254,8 +252,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
             _config.cvx.balanceOf(address(this));
         uint256 cvxEarningsInFeeToken = rewardManager.valuate(
             address(_config.cvx),
-            amountIn,
-            Constants.USDC_ADDRESS
+            amountIn
         );
 
         uint256 tokensHolding = _config.token.balanceOf(address(this));
@@ -263,7 +260,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
         return
             tokensHolding +
             crvLpHoldings +
-            (cvxEarningsInFeeToken + crvEarningsInFeeToken) * (10**12); // USDC token multiplier 18 - 6
+            (cvxEarningsInFeeToken + crvEarningsInFeeToken);
     }
 
     /**
@@ -271,7 +268,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
      * when tx completed managementFees = 0
      */
     function claimManagementFees() public returns (uint256) {
-        IERC20Metadata feeToken_ = IERC20Metadata(Constants.USDC_ADDRESS);
+        IERC20Metadata feeToken_ = IERC20Metadata(Constants.FRX_ETH_ADDRESS);
         uint256 managementFees_ = managementFees;
         uint256 feeTokenBalance = feeToken_.balanceOf(address(this));
         uint256 transferBalance = managementFees_ > feeTokenBalance
@@ -311,7 +308,7 @@ abstract contract CurveConvexApsStratBase is Ownable {
     }
 
     function setRewardManager(address rewardManagerAddr) external onlyOwner {
-        rewardManager = IRewardManager(rewardManagerAddr);
+        rewardManager = IRewardManagerFrxEth(rewardManagerAddr);
         emit SetRewardManager(rewardManagerAddr);
     }
 

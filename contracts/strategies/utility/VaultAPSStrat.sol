@@ -1,10 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-contract VaultAPSStrat {
+contract VaultAPSStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
 
     uint256 public constant PRICE_DENOMINATOR = 1e18;
@@ -36,9 +37,9 @@ contract VaultAPSStrat {
     }
 
     /**
-     * @dev Returns deposited amount in USD.
+     * @dev Returns deposited amount.
      * If deposit failed return zero
-     * @return Returns deposited amount in USD.
+     * @return Returns deposited amount.
      * @param amount - amount in stablecoin that user deposit
      */
     function deposit(uint256 amount) external returns (uint256) {
@@ -58,7 +59,7 @@ contract VaultAPSStrat {
     }
 
     function transferPortionTokensTo(address withdrawer, uint256 userRatioOfCrvLps) internal {
-        uint256 transferAmountOut = (token.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
+        uint256 transferAmountOut = (token.balanceOf(address(this)) * userRatioOfCrvLps) / PRICE_DENOMINATOR;
         if (transferAmountOut > 0) {
             token.safeTransfer(withdrawer, transferAmountOut);
         }
@@ -72,6 +73,14 @@ contract VaultAPSStrat {
      */
     function totalHoldings() public view virtual returns (uint256) {
         return token.balanceOf(address(this));
+    }
+
+    /**
+     * @dev dev set Zunami (main contract) address
+     * @param zunamiAddr - address of main contract (Zunami)
+     */
+    function setZunami(address zunamiAddr) external onlyOwner {
+        zunami = zunamiAddr;
     }
 
     function claimManagementFees() external returns (uint256) {

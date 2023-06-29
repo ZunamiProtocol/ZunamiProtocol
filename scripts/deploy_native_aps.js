@@ -50,7 +50,7 @@ async function main() {
     const feeCollectorAddr = "0xb056B9A45f09b006eC7a69770A65339586231a34";
     console.log('feeCollector deployed to:', feeCollectorAddr);
 
-    const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingFraxNativeCurveRewardManager');
+    const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManagerFrxEth');
     const rewardManager = await RewardManagerFactory.deploy(
       nativeConverterAddress,
       zstableAddr,

@@ -6,10 +6,10 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import './CurveConvexApsStratBase.sol';
+import './CurveConvexNativeApsStratBase.sol';
 import "../../../curve/convex/interfaces/IConvexRewards.sol";
 
-abstract contract CurveConvexExtraApsStratBase is Context, CurveConvexApsStratBase {
+abstract contract CurveConvexExtraNativeApsStratBase is Context, CurveConvexNativeApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
     IERC20Metadata public token;
@@ -27,7 +27,7 @@ abstract contract CurveConvexExtraApsStratBase is Context, CurveConvexApsStratBa
         address tokenAddr,
         address extraRewardsAddr,
         address extraRewardTokenAddr
-    ) CurveConvexApsStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
+    ) CurveConvexNativeApsStratBase(config, poolLPAddr, rewardsAddr, poolPID) {
         token = IERC20Metadata(tokenAddr);
         if (extraRewardTokenAddr != address(0)) {
             extraRewardToken = IERC20Metadata(extraRewardTokenAddr);
@@ -49,14 +49,13 @@ abstract contract CurveConvexExtraApsStratBase is Context, CurveConvexApsStratBa
                 extraRewardToken.balanceOf(address(this));
             extraEarningsFeeToken = rewardManager.valuate(
                 address(extraRewardToken),
-                amountIn,
-                Constants.USDC_ADDRESS
+                amountIn
             );
         }
 
         return
             super.totalHoldings() +
-            extraEarningsFeeToken * (10**12) + // 18 - 6
+            extraEarningsFeeToken +
             token.balanceOf(address(this)) *
             decimalsMultiplier;
     }
@@ -74,8 +73,7 @@ abstract contract CurveConvexExtraApsStratBase is Context, CurveConvexApsStratBa
         extraRewardToken.transfer(address(rewardManager), extraBalance);
         rewardManager.handle(
             address(extraRewardToken),
-            extraBalance,
-            Constants.USDC_ADDRESS
+            extraBalance
         );
     }
 
