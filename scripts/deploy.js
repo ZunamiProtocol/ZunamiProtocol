@@ -65,18 +65,18 @@ async function main() {
     // await stableConverter.deployed();
     // const stableConverterAddress = stableConverter.address;
 
-    const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
-    console.log('Stable converter deployed to:', stableConverterAddress);
+    // console.log('Stable converter deployed to:', stableConverterAddress);
+    const stableConverterAddress = "0xce5c753716607110ce702042f080580f5c29f892";
 
     // const uzdAddress = '0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c';
     // const feeCollector = '0xb056B9A45f09b006eC7a69770A65339586231a34';
-
+    //
     // const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManager');
     // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress, uzdAddress, feeCollector);
     // await rewardManager.deployed();
     //
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b';
+    const rewardManagerAddress = '0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a';
 
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
@@ -111,13 +111,13 @@ async function main() {
     //     stableConverterAddress,
     //     configStakingConvex
     // );
-    await deployAndLinkStrategy(
-        'eUSDStakingFraxCurveConvex',
-        zunami,
-        rewardManagerAddress,
-        stableConverterAddress,
-        configStakingConvex
-    );
+    // await deployAndLinkStrategy(
+    //     'CrvUSDUsdtCurveStakeDao',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     stableConverterAddress,
+    //     configStakeDao
+    // );
 
     // await linkStrategy("USDNCurveConvex", "0xeDD04c680f9751Db7aF9f5082328Bc9D954316B2", zunami)
     // await linkStrategy("LUSDCurveConvex", "0x9903ABbd0006350115D15e721f2d7e3eb6f13b97", zunami)

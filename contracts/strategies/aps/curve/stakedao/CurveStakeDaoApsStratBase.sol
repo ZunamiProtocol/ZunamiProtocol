@@ -28,7 +28,6 @@ abstract contract CurveStakeDaoApsStratBase is Ownable {
     IZunami public zunami;
     IRewardManager public rewardManager;
 
-    uint256 public constant UNISWAP_USD_MULTIPLIER = 1e12;
     uint256 public constant CURVE_PRICE_DENOMINATOR = 1e18;
     uint256 public constant DEPOSIT_DENOMINATOR = 10000;
 

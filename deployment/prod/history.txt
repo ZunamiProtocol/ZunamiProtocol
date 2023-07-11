@@ -105,3 +105,15 @@ Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in eUSDStakingFraxCurveConvex strategy
 Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
 Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+
+Reward manager deployed to: 0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a
+
+20 CrvUSDUsdtCurveStakeDao strategy deployed to: 0x45DF43f61428e270dFaDCB8E9bd6e93d68831343
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in CrvUSDUsdtCurveStakeDao strategy
+Set reward manager 0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a
+Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+
+Stable converter deployed to: 0xce5c753716607110ce702042f080580f5c29f892
+
+20 CrvUSDUsdtCurveStakeDao
+Set stable convertor 0xce5c753716607110ce702042f080580f5c29f892

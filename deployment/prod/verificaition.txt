@@ -28,3 +28,9 @@ npx hardhat verify --network mainnet 0x3D8aBC464D5313a576e78706aC97F79fe1EB0b61 
 npx hardhat verify --network mainnet --constructor-args ./deployment/convex_staking_strategy_arguments.js --contract contracts/strategies/curve/convex/stakingFraxbp/clevUSDStakingFraxCurveConvex.sol:clevUSDStakingFraxCurveConvex 0x06A62C6e449BA3026E238E1350c7e25a3d409544
 
 npx hardhat verify --network mainnet --constructor-args ./deployment/convex_staking_strategy_arguments.js --contract contracts/strategies/curve/convex/stakingFraxbp/eUSDStakingFraxCurveConvex.sol:eUSDStakingFraxCurveConvex 0xfF68b4C48Bf59694CaCCBA224F1b10ec566D330A
+
+npx hardhat verify --network mainnet 0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a 0x939d4051eD5447f3Dc542af93b7E343f19AEe469 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c 0xb056B9A45f09b006eC7a69770A65339586231a34
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/stakedao_strategy_arguments.js --contract contracts/strategies/curve/stakedao/usdt/CrvUSDUsdtCurveStakeDao.sol:CrvUSDUsdtCurveStakeDao 0x45DF43f61428e270dFaDCB8E9bd6e93d68831343
+
+npx hardhat verify --network mainnet 0xce5c753716607110ce702042f080580f5c29f892

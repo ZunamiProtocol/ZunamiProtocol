@@ -15,8 +15,14 @@ function getMinAmount(): BigNumber[] {
     return [dai, usdc, usdt];
 }
 
+async function increaseChainTime(time: number) {
+    await network.provider.send('evm_increaseTime', [time]);
+    await network.provider.send('evm_mine');
+}
+
 describe('Single strategy tests', () => {
     const strategyNames = [
+        'CrvUSDUsdtCurveStakeDao',
         'MIMCurveStakeDao',
         'LUSDCurveConvex',
         'LUSDFraxCurveConvex',
@@ -125,7 +131,7 @@ describe('Single strategy tests', () => {
         const stubElasticRigidVault = await StubElasticRigidVault.deploy();
         await stubElasticRigidVault.deployed();
 
-        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+        const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManager');
         rewardManager = await RewardManagerFactory.deploy(stableConverter.address, stubElasticRigidVault.address, feeCollector.getAddress());
         await rewardManager.deployed();
     });
@@ -153,7 +159,7 @@ describe('Single strategy tests', () => {
             strategy.setZunami(zunami.address);
 
             strategy.setRewardManager(rewardManager.address);
-            if (strategyName.includes('Frax')) {
+            if (strategyName.includes('Frax') || strategyName.includes('UsdtCurve')) {
                 strategy.setStableConverter(stableConverter.address);
             }
 
@@ -350,16 +356,64 @@ describe('Single strategy tests', () => {
             );
         }
 
-        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 7]);
+        await increaseChainTime(3600 * 24 * 7);
+
         await zunami.autoCompoundAll();
 
-        let token;
+        let tokens;
         let balance;
         for (let strategy of strategies) {
-            token = new ethers.Contract(await strategy.token(), erc20ABI, admin);
-            balance = await token.balanceOf(strategy.address);
+            if(!strategy.token) {
+                continue;
+            }
+            const config = await strategy.config();
+            if(config.rewards) {
+                tokens = [await strategy.token(), ...config.rewards]
+                  .map((token) => new ethers.Contract(token, erc20ABI, admin));
+            } else {
+                tokens = [await strategy.token(), config.crv, config.cvx]
+                  .map((token) => new ethers.Contract(token, erc20ABI, admin));
+            }
 
-            expect(balance).to.eq(0);
+            for(let token of tokens) {
+                balance = await token.balanceOf(strategy.address);
+                expect(balance).to.eq(0);
+            }
         }
+    });
+
+    it.only('should moveFunds only to not outdated pool', async () => {
+        const poolSrc = 0;
+        const poolDst = 1;
+        const percentage = 10_000;
+
+        for (let poolId = 0; poolId < 2; poolId++) {
+            await zunami.addPool(strategies[poolId].address);
+        }
+
+        await zunami.setDefaultDepositPid(poolSrc);
+        await zunami.setDefaultWithdrawPid(poolSrc);
+
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.eq(0);
+        await expect(zunami.connect(alice).deposit(getMinAmount())).to.emit(zunami, 'Deposited');
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
+
+        console.log("(await zunami.poolInfo(poolSrc)).lpShares", (await zunami.poolInfo(poolSrc)).lpShares);
+        console.log("(await zunami.poolInfo(poolDst)).lpShares", (await zunami.poolInfo(poolDst)).lpShares);
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
+        await expect((await zunami.poolInfo(poolDst)).lpShares).to.be.eq(0);
+        await expect(zunami.moveFundsBatch([poolSrc], [percentage], poolDst));
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.eq(0);
+        await expect((await zunami.poolInfo(poolDst)).lpShares).to.be.gt(0);
+
+        console.log("(await zunami.poolInfo(poolSrc)).lpShares", (await zunami.poolInfo(poolSrc)).lpShares);
+        console.log("(await zunami.poolInfo(poolDst)).lpShares", (await zunami.poolInfo(poolDst)).lpShares);
+
+        await expect(zunami.moveFundsBatch([poolDst], [percentage], poolSrc));
+        await expect((await zunami.poolInfo(poolSrc)).lpShares).to.be.gt(0);
+        await expect((await zunami.poolInfo(poolDst)).lpShares).to.be.eq(0);
+
+        console.log("(await zunami.poolInfo(poolSrc)).lpShares", (await zunami.poolInfo(poolSrc)).lpShares);
+        console.log("(await zunami.poolInfo(poolDst)).lpShares", (await zunami.poolInfo(poolDst)).lpShares);
     });
 });

@@ -39,6 +39,7 @@ library Constants {
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
+    address internal constant CRVUSD_ADDRESS = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
     address internal constant CVX_ADDRESS = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
     address internal constant CRV_ADDRESS = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address internal constant FXS_ADDRESS = 0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0;
@@ -65,6 +66,7 @@ library Constants {
     address internal constant USDD_ADDRESS = 0x0C10bF8FcB7Bf5412187A595ab97a3609160b5c6;
     address internal constant DOLA_ADDRESS = 0x865377367054516e17014CcdED1e7d814EDC9ce4;
     address internal constant WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address internal constant SDT_ADDRESS = 0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F;
     address internal constant SUSHI_ROUTER_ADDRESS = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
     address internal constant SUSHI_CRV_WETH_ADDRESS = 0x58Dc5a51fE44589BEb22E8CE67720B5BC5378009;
     address internal constant SUSHI_WETH_CVX_ADDRESS = 0x05767d9EF41dC40689678fFca0608878fb3dE906;
@@ -193,4 +195,8 @@ library Constants {
     address internal constant ZUNAMI_STABLE_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
 
     address internal constant CVX_FRAX_UZD_REWARDS_ADDRESS = 0x820Fad75512c8C3E57Ad021d016846CEEB5F7105;
+
+    address internal constant SDT_CRVUSD_USDT_VAULT_ADDRESS = 0x37b24ac19504C0c6FC1ADc8deb5D24f5C4F6A2f2;
+    address internal constant CRV_CRVUSD_USDT_LP_ADDRESS = 0x390f3595bCa2Df7d23783dFd126427CCeb997BF4;
+    address internal constant CRV_CRVUSD_USDT_ADDRESS = 0x390f3595bCa2Df7d23783dFd126427CCeb997BF4;
 }

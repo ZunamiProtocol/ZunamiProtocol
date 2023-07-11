@@ -56,6 +56,7 @@ contract CommissionSellingCurveRewardManager is IRewardManager {
         rewardEthCurvePools[Constants.CRV_ADDRESS] = 0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511; // https://curve.fi/#/ethereum/pools/crveth
         rewardEthCurvePools[Constants.FXS_ADDRESS] = 0x941Eb6F616114e4Ecaa85377945EA306002612FE; // https://curve.fi/#/ethereum/pools/fxseth
         rewardEthCurvePools[Constants.SPELL_ADDRESS] = 0x98638FAcf9a3865cd033F36548713183f6996122; // https://curve.fi/#/ethereum/pools/spelleth
+        rewardEthCurvePools[Constants.SDT_ADDRESS] = 0xfB8814D005C5f32874391e888da6eB2fE7a27902; // https://curve.fi/#/ethereum/pools/factory-crypto-11
 
         rewardUsdChainlinkOracles[
             Constants.CVX_ADDRESS
@@ -69,6 +70,9 @@ contract CommissionSellingCurveRewardManager is IRewardManager {
         rewardUsdChainlinkOracles[
             Constants.SPELL_ADDRESS
         ] = 0x8c110B94C5f1d347fAcF5E1E938AB2db60E3c9a8; // https://data.chain.link/ethereum/mainnet/crypto-usd/spell-usd
+        rewardUsdChainlinkOracles[
+            Constants.SDT_ADDRESS
+        ] = address(0);
     }
 
     function handle(
@@ -149,6 +153,9 @@ contract CommissionSellingCurveRewardManager is IRewardManager {
         uint256 amount,
         uint256 feeTokenAmount
     ) internal view {
+        address oracleAddress = rewardUsdChainlinkOracles[reward];
+        if(oracleAddress == address(0)) return;
+
         AggregatorV2V3Interface oracle = AggregatorV2V3Interface(rewardUsdChainlinkOracles[reward]);
         (, int256 answer, , , ) = oracle.latestRoundData();
 
