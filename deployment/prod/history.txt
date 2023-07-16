@@ -117,3 +117,7 @@ Stable converter deployed to: 0xce5c753716607110ce702042f080580f5c29f892
 
 20 CrvUSDUsdtCurveStakeDao
 Set stable convertor 0xce5c753716607110ce702042f080580f5c29f892
+
+21 VaultStrat strategy deployed to: 0x2D09FaC78BBbcEE4aF6dFAE5D3Dd425b2883C30b
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in VaultStrat strategy
+

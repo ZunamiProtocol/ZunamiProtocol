@@ -80,6 +80,7 @@ async function main() {
 
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
+    // await deployAndLinkStrategy('VaultStrat', zunami, undefined, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('RebalancingStrat', zunami, undefined, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('MIMCurveConvex', zunami, undefined, undefined, configConvex);
     // await deployAndLinkStrategy('USDNCurveConvex', zunami, undefined, undefined, configConvex);

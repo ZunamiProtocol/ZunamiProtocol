@@ -34,3 +34,5 @@ npx hardhat verify --network mainnet 0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a 
 npx hardhat verify --network mainnet --constructor-args ./deployment/stakedao_strategy_arguments.js --contract contracts/strategies/curve/stakedao/usdt/CrvUSDUsdtCurveStakeDao.sol:CrvUSDUsdtCurveStakeDao 0x45DF43f61428e270dFaDCB8E9bd6e93d68831343
 
 npx hardhat verify --network mainnet 0xce5c753716607110ce702042f080580f5c29f892
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/zunami_arguments.js 0x2D09FaC78BBbcEE4aF6dFAE5D3Dd425b2883C30b

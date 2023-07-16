@@ -22,6 +22,7 @@ async function increaseChainTime(time: number) {
 
 describe('Single strategy tests', () => {
     const strategyNames = [
+        'VaultStrat',
         'CrvUSDUsdtCurveStakeDao',
         'MIMCurveStakeDao',
         'LUSDCurveConvex',
@@ -152,13 +153,17 @@ describe('Single strategy tests', () => {
                 ? configStakeDao
                 : strategyName.includes('Staking')
                 ? configStakingConvex
+                : strategyName.includes('VaultStrat')
+                ? configStakeDao.tokens
                 : configConvex;
             const strategy = await factory.deploy(config);
             await strategy.deployed();
 
             strategy.setZunami(zunami.address);
 
-            strategy.setRewardManager(rewardManager.address);
+            if (!strategyName.includes('VaultStrat')) {
+                strategy.setRewardManager(rewardManager.address);
+            }
             if (strategyName.includes('Frax') || strategyName.includes('UsdtCurve')) {
                 strategy.setStableConverter(stableConverter.address);
             }
@@ -382,7 +387,7 @@ describe('Single strategy tests', () => {
         }
     });
 
-    it.only('should moveFunds only to not outdated pool', async () => {
+    it('should moveFunds only to not outdated pool', async () => {
         const poolSrc = 0;
         const poolDst = 1;
         const percentage = 10_000;
