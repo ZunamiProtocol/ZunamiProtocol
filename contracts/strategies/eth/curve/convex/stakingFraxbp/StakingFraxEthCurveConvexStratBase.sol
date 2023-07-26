@@ -121,8 +121,7 @@ abstract contract StakingFraxEthCurveConvexStratBase is Context, Ownable {
      * @param amounts - amounts in stablecoins that user deposit
      */
     function deposit(uint256[POOL_ASSETS] memory amounts) external payable returns (uint256) {
-        // prevent read-only reentrancy for CurvePool.get_virtual_price()
-        fraxEthPool.remove_liquidity(0, [uint256(0),0]);
+        checkCurveNativeReentrancy();
 
         if (!checkDepositSuccessful(amounts)) {
             return 0;
@@ -190,6 +189,8 @@ abstract contract StakingFraxEthCurveConvexStratBase is Context, Ownable {
         uint128 tokenIndex
     ) external virtual onlyZunami returns (bool) {
         require(userRatioOfCrvLps > 0 && userRatioOfCrvLps <= 1e18, 'Wrong lp Ratio');
+        checkCurveNativeReentrancy();
+        
         (bool success, uint256 removingCrvLps, uint256[] memory tokenAmountsDynamic) = calcCrvLps(
             withdrawalType,
             userRatioOfCrvLps,
@@ -613,5 +614,10 @@ abstract contract StakingFraxEthCurveConvexStratBase is Context, Ownable {
         } else {
             token.safeTransfer(receiver, amount);
         }
+    }
+
+    function checkCurveNativeReentrancy() internal {
+        // prevent read-only reentrancy for CurvePool.get_virtual_price()
+        fraxEthPool.remove_liquidity(0, [uint256(0),0]);
     }
 }
