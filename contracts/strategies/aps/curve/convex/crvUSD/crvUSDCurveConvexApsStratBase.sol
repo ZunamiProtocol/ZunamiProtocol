@@ -11,28 +11,21 @@ import '../../../../../interfaces/IStrategy.sol';
 import "../../../../../interfaces/IZunamiVault.sol";
 import "../../../../../interfaces/IZunamiStableVault.sol";
 
-abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
+abstract contract crvUSDCurveConvexApsStratBase is CurveConvexExtraApsStratBase {
     using SafeERC20 for IERC20Metadata;
 
-    uint128 constant ZUNAMI_USDC_TOKEN_ID = 1;
+    uint256 private constant CRVUSD_TOKEN_POOL_TOKEN_ID = 0;
+    int128 constant CRVUSD_TOKEN_POOL_TOKEN_ID_INT = 0;
 
-    uint256 constant FRAX_USDC_POOL_USDC_ID = 1;
-    int128 constant FRAX_USDC_POOL_USDC_ID_INT = 1;
-    uint256 constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID = 1;
-    int128 constant CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT = 1;
-
-    uint256 private constant CRVFRAX_TOKEN_POOL_TOKEN_ID = 0;
-    int128 constant CRVFRAX_TOKEN_POOL_TOKEN_ID_INT = 0;
+    uint256 constant CRVUSD_TOKEN_POOL_CRVUSD_ID = 1;
+    int128 constant CRVUSD_TOKEN_POOL_CRVUSD_ID_INT = 1;
 
     IZunamiVault public immutable zunamiPool;
     IZunamiStableVault public immutable zunamiStable;
 
-    // fraxUsdcPool = FRAX + USDC => crvFrax
-    ICurvePool2 public immutable fraxUsdcPool;
-    IERC20Metadata public immutable fraxUsdcPoolLp; // crvFrax
-    // crvFraxTokenPool = crvFrax + Token
-    ICurvePool2 public immutable crvFraxTokenPool;
-    IERC20Metadata public immutable crvFraxTokenPoolLp;
+    // crvUSDTokenPool = crvUSD + Token
+    ICurvePool2 public immutable crvUSDTokenPool;
+    IERC20Metadata public immutable crvUSDTokenPoolLp;
 
     constructor(
         Config memory config,
@@ -40,8 +33,8 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
         address zunamiStableAddr,
         address fraxUsdcPoolAddr,
         address fraxUsdcPoolLpAddr,
-        address crvFraxTokenPoolAddr,
-        address crvFraxTokenPoolLpAddr,
+        address crvUSDTokenPoolAddr,
+        address crvUSDTokenPoolLpAddr,
         address rewardsAddr,
         uint256 poolPID,
         address tokenAddr,
@@ -50,7 +43,7 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
     )
         CurveConvexExtraApsStratBase(
             config,
-            crvFraxTokenPoolLpAddr,
+            crvUSDTokenPoolLpAddr,
             rewardsAddr,
             poolPID,
             tokenAddr,
@@ -64,8 +57,8 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
         fraxUsdcPool = ICurvePool2(fraxUsdcPoolAddr);
         fraxUsdcPoolLp = IERC20Metadata(fraxUsdcPoolLpAddr);
 
-        crvFraxTokenPool = ICurvePool2(crvFraxTokenPoolAddr);
-        crvFraxTokenPoolLp = IERC20Metadata(crvFraxTokenPoolLpAddr);
+        crvUSDTokenPool = ICurvePool2(crvUSDTokenPoolAddr);
+        crvUSDTokenPoolLp = IERC20Metadata(crvUSDTokenPoolLpAddr);
     }
 
     function checkDepositSuccessful(uint256 tokenAmount)
@@ -77,10 +70,10 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
         uint256 amountsMin = (tokenAmount * minDepositAmount) / DEPOSIT_DENOMINATOR;
 
         uint256[2] memory amounts;
-        amounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
+        amounts[CRVUSD_TOKEN_POOL_TOKEN_ID] = tokenAmount;
 
-        uint256 lpPrice = crvFraxTokenPool.get_virtual_price();
-        uint256 depositedLp = crvFraxTokenPool.calc_token_amount(amounts, true);
+        uint256 lpPrice = crvUSDTokenPool.get_virtual_price();
+        uint256 depositedLp = crvUSDTokenPool.calc_token_amount(amounts, true);
 
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
@@ -101,24 +94,24 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
             );
 
             crvFraxAmount = fraxUsdcPool.add_liquidity(amounts, 0);
-            fraxUsdcPoolLp.safeIncreaseAllowance(address(crvFraxTokenPool), crvFraxAmount);
+            fraxUsdcPoolLp.safeIncreaseAllowance(address(crvUSDTokenPool), crvFraxAmount);
         }
 
         if(tokenAmount > 0) {
-            token.safeIncreaseAllowance(address(crvFraxTokenPool), tokenAmount);
+            token.safeIncreaseAllowance(address(crvUSDTokenPool), tokenAmount);
         }
 
         uint256[2] memory tokenPoolAmounts;
-        tokenPoolAmounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
-        tokenPoolAmounts[CRVFRAX_TOKEN_POOL_CRVFRAX_ID] = crvFraxAmount;
-        poolLpAmount = crvFraxTokenPool.add_liquidity(tokenPoolAmounts, 0);
+        tokenPoolAmounts[CRVUSD_TOKEN_POOL_TOKEN_ID] = tokenAmount;
+        tokenPoolAmounts[CRVUSD_TOKEN_POOL_CRVUSD_ID] = crvFraxAmount;
+        poolLpAmount = crvUSDTokenPool.add_liquidity(tokenPoolAmounts, 0);
 
-        crvFraxTokenPoolLp.safeIncreaseAllowance(address(_config.booster), poolLpAmount);
+        crvUSDTokenPoolLp.safeIncreaseAllowance(address(_config.booster), poolLpAmount);
         _config.booster.depositAll(cvxPoolPID, true);
     }
 
     function getCurvePoolPrice() internal view override returns (uint256) {
-        return crvFraxTokenPool.get_virtual_price();
+        return crvUSDTokenPool.get_virtual_price();
     }
 
     function calcWithdrawOneCoin(uint256 userRatioOfCrvLps)
@@ -128,9 +121,9 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
         returns (uint256)
     {
         uint256 removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
-        return crvFraxTokenPool.calc_withdraw_one_coin(
+        return crvUSDTokenPool.calc_withdraw_one_coin(
             removingCrvLps,
-            CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT
+            CRVUSD_TOKEN_POOL_CRVUSD_ID_INT
         );
     }
 
@@ -141,8 +134,8 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
         returns (uint256)
     {
         uint256[2] memory tokenAmounts2;
-        tokenAmounts2[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
-        return crvFraxTokenPool.calc_token_amount(tokenAmounts2, isDeposit);
+        tokenAmounts2[CRVUSD_TOKEN_POOL_TOKEN_ID] = tokenAmount;
+        return crvUSDTokenPool.calc_token_amount(tokenAmounts2, isDeposit);
     }
 
     function calcCrvLps(
@@ -160,8 +153,8 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
         removingCrvLps = (cvxRewards.balanceOf(address(this)) * userRatioOfCrvLps) / 1e18;
 
         uint256[2] memory minAmounts;
-        minAmounts[CRVFRAX_TOKEN_POOL_TOKEN_ID] = tokenAmount;
-        success = removingCrvLps >= crvFraxTokenPool.calc_token_amount(minAmounts, false);
+        minAmounts[CRVUSD_TOKEN_POOL_TOKEN_ID] = tokenAmount;
+        success = removingCrvLps >= crvUSDTokenPool.calc_token_amount(minAmounts, false);
     }
 
     function removeCrvLps(
@@ -172,22 +165,22 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
     }
 
     function removeCrvLpsInternal(uint256 removingCrvLps, uint256 minTokenAmount) internal {
-        crvFraxTokenPool.remove_liquidity_one_coin(
+        crvUSDTokenPool.remove_liquidity_one_coin(
             removingCrvLps,
-            CRVFRAX_TOKEN_POOL_TOKEN_ID_INT,
+            CRVUSD_TOKEN_POOL_TOKEN_ID_INT,
             minTokenAmount
         );
     }
 
     function withdrawAllSpecific() internal override {
-        removeCrvLpsInternal(crvFraxTokenPoolLp.balanceOf(address(this)), 0);
+        removeCrvLpsInternal(crvUSDTokenPoolLp.balanceOf(address(this)), 0);
     }
 
     function sellToken() public {
         uint256 sellBal = token.balanceOf(address(this));
         if (sellBal > 0) {
-            token.safeIncreaseAllowance(address(crvFraxTokenPool), sellBal);
-            crvFraxTokenPool.exchange_underlying(0, 1, sellBal, 0);
+            token.safeIncreaseAllowance(address(crvUSDTokenPool), sellBal);
+            crvUSDTokenPool.exchange_underlying(0, 1, sellBal, 0);
         }
     }
 
@@ -196,9 +189,9 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
 
         cvxRewards.withdrawAndUnwrap(removingCrvLps, false);
 
-        uint256 crvFraxAmount = crvFraxTokenPool.remove_liquidity_one_coin(
+        uint256 crvFraxAmount = crvUSDTokenPool.remove_liquidity_one_coin(
             removingCrvLps,
-            CRVFRAX_TOKEN_POOL_CRVFRAX_ID_INT,
+            CRVUSD_TOKEN_POOL_CRVUSD_ID_INT,
             0
         );
 
@@ -224,9 +217,9 @@ abstract contract FraxCrvUSDConvexApsStratBase is CurveConvexExtraApsStratBase {
 
         cvxRewards.withdrawAndUnwrap(removingCrvLps, false);
 
-        uint256 tokenAmount = crvFraxTokenPool.remove_liquidity_one_coin(
+        uint256 tokenAmount = crvUSDTokenPool.remove_liquidity_one_coin(
             removingCrvLps,
-            CRVFRAX_TOKEN_POOL_TOKEN_ID_INT,
+            CRVUSD_TOKEN_POOL_TOKEN_ID_INT,
             0
         );
 
