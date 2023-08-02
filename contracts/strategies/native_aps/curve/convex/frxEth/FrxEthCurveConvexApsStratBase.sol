@@ -222,8 +222,8 @@ abstract contract FrxEthCurveConvexApsStratBase is CurveConvexExtraNativeApsStra
             ZUNAMI_frxETH_TOKEN_ID_INT
         );
 
-        uint256 frxEth = IERC20Metadata(Constants.FRX_ETH_ADDRESS).balanceOf(address(this));
+        uint256 frxEthBalance = frxEth.balanceOf(address(this));
 
-        depositPool(0, frxEth - managementFees);
+        depositPool(0, frxEthBalance - managementFees);
     }
 }

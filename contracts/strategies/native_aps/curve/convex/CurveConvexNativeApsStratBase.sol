@@ -13,6 +13,8 @@ import "../../../../interfaces/IZunami.sol";
 import "../../../curve/convex/interfaces/IConvexRewards.sol";
 import "../../../../interfaces/IRewardManagerFrxEth.sol";
 
+//import "hardhat/console.sol";
+
 abstract contract CurveConvexNativeApsStratBase is Ownable {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for IConvexMinter;

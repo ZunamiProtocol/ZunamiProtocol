@@ -15,3 +15,5 @@ Set zunami address 0x0b49D1Dd3F045c986F7816c2Ad56F01D8FB29C82 in VaultAPSStrat s
 Added zEthFrxEthCurveConvex pool to Zunami
 Set zunami address 0x0b49D1Dd3F045c986F7816c2Ad56F01D8FB29C82 in zEthFrxEthCurveConvex strategy
 Set reward manager 0xF6A9a9dD2ddAF055A2e27EC63D282f63D30f2A5e
+
+Reward manager deployed to: 0xded9e5A44d192054A19fFDa988382e2B2199E5B9

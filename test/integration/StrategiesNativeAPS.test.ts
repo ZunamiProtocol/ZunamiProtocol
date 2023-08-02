@@ -28,6 +28,33 @@ async function mintZEthAmount(admin: Signer, omnipool: Contract, zStable: Contra
     await zStable.deposit(zlpAmount, admin.getAddress());
 }
 
+async function mintTokenTo(
+  receiverAddr: string,
+  ethVault: Signer,
+  tokenAddr: string,
+  tokenVaultAddr: string,
+  tokenAmount: BigNumber
+) {
+    const token = new ethers.Contract(tokenAddr, erc20ABI, ethVault);
+    //fund vault with eth
+    await ethVault.sendTransaction({
+        to: tokenVaultAddr,
+        value: ethers.utils.parseEther('1'),
+    });
+    await network.provider.request({
+        method: 'hardhat_impersonateAccount',
+        params: [tokenVaultAddr],
+    });
+    const tokenVaultSigner: Signer = ethers.provider.getSigner(tokenVaultAddr);
+    await token
+      .connect(tokenVaultSigner)
+      .transfer(receiverAddr, tokenAmount);
+    await network.provider.request({
+        method: 'hardhat_stopImpersonatingAccount',
+        params: [tokenVaultAddr],
+    });
+}
+
 describe('Single strategy tests', () => {
     const strategyNames = [
         'VaultAPSStrat',
@@ -62,8 +89,8 @@ describe('Single strategy tests', () => {
         converter = await FraxEthNativeConverter.deploy();
         await converter.deployed();
 
-        const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManagerFrxEth');
-        rewardManager = await RewardManagerFactory.deploy(converter.address, zStable.address, feeCollector.getAddress());
+        const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerFrxEthV2');
+        rewardManager = await RewardManagerFactory.deploy(converter.address);
         await rewardManager.deployed();
 
         await mintZEthAmount(admin, zOmnipool, zStable);
@@ -276,7 +303,17 @@ describe('Single strategy tests', () => {
             );
         }
 
-        await ethers.provider.send('evm_increaseTime', [3600 * 24 * 7]);
+        // "0xD533a949740bb3306d119CC777fa900bA034cd52", // CRV
+        // "0xF977814e90dA44bFA03b6295A0616a897441aceC", // CRV Vault
+        await mintTokenTo(
+          strategies[1].address, // zEthFrxEthCurveConvex
+          admin,
+          "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B", // CVX
+          "0x28C6c06298d514Db089934071355E5743bf21d60", // CVX Vault
+          parseUnits('1000', 'ether')
+        );
+
+        // await ethers.provider.send('evm_increaseTime', [3600 * 24 * 7]);
         await zAPS.autoCompoundAll();
 
         let tokens;
@@ -285,6 +322,7 @@ describe('Single strategy tests', () => {
             if(!strategy.token) {
                 continue;
             }
+
             const config = await strategy.config();
             if(config.rewards) {
                 tokens = [await strategy.token(), ...config.rewards]

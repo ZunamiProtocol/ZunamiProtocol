@@ -16,13 +16,6 @@ async function main() {
     const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_NODE_API_KEY);
     const zunami = new ethers.Contract(zunamiAddr, zunamiAbi, provider);
 
-    const descriptions: any[] = [
-        "Before MEV",
-        "After MEV",
-        "After Flash",
-        "Current",
-    ];
-
     const blocks: any[] = [
         16491516,
         16491517,
@@ -31,7 +24,6 @@ async function main() {
     ];
     for (let i = 0; i < blocks.length; i++) {
         const block = blocks[i];
-        const description = descriptions[i];
 
         const [zlpPriceInt, zunamiTotalHoldingsInt] = await Promise.all([
             zunami.lpPrice({ blockTag: block }),
@@ -41,7 +33,7 @@ async function main() {
         const zlpPrice: BigNumber = new BigNumber(+zlpPriceInt).dividedBy(1e18);
         const zunamiTotalHoldings: BigNumber = new BigNumber(+zunamiTotalHoldingsInt).dividedBy(1e18);
 
-        console.log(`Block: ${block} (${description})`);
+        console.log(`Block: ${block}`);
         console.log(`Zunami LP: ${zlpPrice.toString()}`);
         console.log(`Zunami Total Holdings: ${zunamiTotalHoldings.toString()}`);
         console.log('');

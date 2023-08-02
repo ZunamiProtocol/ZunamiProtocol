@@ -64,20 +64,14 @@ async function main() {
     // const stableConverter = await StableConverterFactory.deploy();
     // await stableConverter.deployed();
     // const stableConverterAddress = stableConverter.address;
-
-    // console.log('Stable converter deployed to:', stableConverterAddress);
     const stableConverterAddress = "0xce5c753716607110ce702042f080580f5c29f892";
+    console.log('Stable converter deployed to:', stableConverterAddress);
 
-    // const uzdAddress = '0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c';
-    // const feeCollector = '0xb056B9A45f09b006eC7a69770A65339586231a34';
-    //
-    // const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManager');
-    // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress, uzdAddress, feeCollector);
+    // const RewardManagerFactory = await ethers.getContractFactory('SplitSellingCurveRewardManagerV2');
+    // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress);
     // await rewardManager.deployed();
-    //
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a';
-
+    const rewardManagerAddress = '0x4460654C22C92cB8e449093E63EBa3a3A50C065B';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     // await deployAndLinkStrategy('VaultStrat', zunami, undefined, undefined, globalConfig.tokens);

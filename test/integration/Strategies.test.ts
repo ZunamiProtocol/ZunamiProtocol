@@ -128,12 +128,12 @@ describe('Single strategy tests', () => {
         stableConverter = await StableConverterFactory.deploy();
         await stableConverter.deployed();
 
-        const StubElasticRigidVault = await ethers.getContractFactory('StubElasticRigidVault');
-        const stubElasticRigidVault = await StubElasticRigidVault.deploy();
-        await stubElasticRigidVault.deployed();
+        // const StubElasticRigidVault = await ethers.getContractFactory('StubElasticRigidVault');
+        // const stubElasticRigidVault = await StubElasticRigidVault.deploy();
+        // await stubElasticRigidVault.deployed();
 
-        const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManager');
-        rewardManager = await RewardManagerFactory.deploy(stableConverter.address, stubElasticRigidVault.address, feeCollector.getAddress());
+        const RewardManagerFactory = await ethers.getContractFactory('SplitSellingCurveRewardManagerV2');
+        rewardManager = await RewardManagerFactory.deploy(stableConverter.address); //stubElasticRigidVault.address, feeCollector.getAddress());
         await rewardManager.deployed();
     });
 

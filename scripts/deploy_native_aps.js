@@ -41,24 +41,16 @@ async function main() {
     // const nativeConverter = await NativeConverterFactory.deploy();
     // await nativeConverter.deployed();
     // const nativeConverterAddress = nativeConverter.address;
-    // const nativeConverterAddress = "0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e";
-    // console.log('Native frxETH converter deployed to:', nativeConverterAddress);
-    //
-    // const zstableAddr = "0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b";
-    // console.log('zStable is:', zstableAddr);
-    //
-    // const feeCollectorAddr = "0xb056B9A45f09b006eC7a69770A65339586231a34";
-    // console.log('feeCollector is:', feeCollectorAddr);
+    const nativeConverterAddress = "0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e";
+    console.log('Native frxETH converter deployed to:', nativeConverterAddress);
 
-    // const RewardManagerFactory = await ethers.getContractFactory('CommissionSellingCurveRewardManagerFrxEth');
+    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerFrxEthV2');
     // const rewardManager = await RewardManagerFactory.deploy(
-    //   nativeConverterAddress,
-    //   zstableAddr,
-    //   feeCollectorAddr
+    //   nativeConverterAddress
     // );
     // await rewardManager.deployed();
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0xF6A9a9dD2ddAF055A2e27EC63D282f63D30f2A5e';
+    const rewardManagerAddress = '0xded9e5A44d192054A19fFDa988382e2B2199E5B9';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     // await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_eth_aps);

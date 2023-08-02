@@ -45,26 +45,25 @@ async function main() {
     const ZunamiAPS = await ethers.getContractFactory('ZunamiAPS');
     // const zunamiAPS = await ZunamiAPS.deploy(globalConfig.token_aps);
     const zunamiAPS = await ZunamiAPS.attach('0xCaB49182aAdCd843b037bBF885AD56A3162698Bd'); // prod
-    // const zunamiAPS = await ZunamiAPS.attach(''); // test
 
     await zunamiAPS.deployed();
     console.log('ZunamiAPS deployed to:', zunamiAPS.address);
 
-    // const stableConverterAddress = "0x939d4051eD5447f3Dc542af93b7E343f19AEe469";
+    // const stableConverterAddress = "0xce5c753716607110ce702042f080580f5c29f892";
     // console.log('Stable converter deployed to:', stableConverterAddress);
     //
-    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManager');
+    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerV2');
     // const rewardManager = await RewardManagerFactory.deploy(stableConverterAddress);
     // await rewardManager.deployed();
     //
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0xA94999dB7dAb9cA4478b36142D026d5f2db3B356';
+    const rewardManagerAddress = '0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     //await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_aps);
     //await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
     // await deployAndLinkStrategy('UzdFraxCurveConvex', zunamiAPS, rewardManagerAddress, configConvexAPS);
-    await deployAndLinkStrategy('UzdStakingFraxCurveConvex', zunamiAPS, rewardManagerAddress, configStakingConvexAPS);
+    // await deployAndLinkStrategy('UzdStakingFraxCurveConvex', zunamiAPS, rewardManagerAddress, configStakingConvexAPS);
 }
 
 main()
