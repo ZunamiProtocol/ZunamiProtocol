@@ -18,6 +18,10 @@ async function main() {
     const blocks: any[] = [
         17491887,
         17491888,
+        17806055,
+        17806056,
+        17811570,
+        17811571,
         await await provider.getBlockNumber()
     ];
     for (let i = 0; i < blocks.length; i++) {

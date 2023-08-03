@@ -17,3 +17,5 @@ Set reward manager 0x66434474AF84fE23C927b0f08B28CEc43a1a9b31
 Set native convertor 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e
 
 Reward manager deployed to: 0xc79122ec6a1e4938D6cc0ceFD838FF150B6f42cd
+
+Reward manager deployed to: 0x288f617000c5b56e58e49c72615d654dDe43a946

@@ -13,7 +13,7 @@ import "./ICurveExchangePool.sol";
 
 //import "hardhat/console.sol";
 
-contract SellingCurveRewardManager is IRewardManager {
+contract SplitSellingCurveRewardManager is IRewardManager {
     using SafeERC20 for IERC20Metadata;
 
     uint256 public constant SLIPPAGE_DENOMINATOR = 10_000;

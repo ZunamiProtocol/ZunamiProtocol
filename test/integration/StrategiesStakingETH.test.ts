@@ -139,7 +139,7 @@ describe('Single ETH FraxStaking strategy tests', () => {
         });
 
         const RewardManagerFactory = await ethers.getContractFactory(
-            'SellingCurveRewardManagerNative'
+            'SplitSellingCurveRewardManagerNativeV2'
         );
         rewardManager = await RewardManagerFactory.deploy();
         await rewardManager.deployed();

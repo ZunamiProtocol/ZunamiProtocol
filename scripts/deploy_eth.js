@@ -61,12 +61,12 @@ async function main() {
     //
     // console.log('Zunami ETH tokens added');
 
-    // const RewardManagerFactory = await ethers.getContractFactory('SellingCurveRewardManagerNative');
+    // const RewardManagerFactory = await ethers.getContractFactory('SplitSellingCurveRewardManagerNativeV2');
     // const rewardManager = await RewardManagerFactory.deploy();
     // await rewardManager.deployed();
     //
     // const rewardManagerAddress = rewardManager.address;
-    const rewardManagerAddress = '0xc79122ec6a1e4938D6cc0ceFD838FF150B6f42cd';
+    const rewardManagerAddress = '0x288f617000c5b56e58e49c72615d654dDe43a946';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     // const NativeConverterFactory = await ethers.getContractFactory('FraxEthNativeConverter');

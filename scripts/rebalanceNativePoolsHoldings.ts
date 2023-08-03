@@ -38,7 +38,7 @@ async function main() {
     ]);
 
     const zlpPriceCurrent: BigNumber = new BigNumber(+zlpPriceInt).dividedBy(1e18);
-    const zlpPrice: BigNumber = zlpPriceCurrent; //new BigNumber(1.11679926379888973558);
+    const zlpPrice: BigNumber = zlpPriceCurrent; //new BigNumber(1.00515);
 
     const zunamiTotalHoldings: BigNumber = new BigNumber(+zunamiTotalHoldingsInt).dividedBy(1e18);
     const pools: IPoolValueInfo[] = [];
