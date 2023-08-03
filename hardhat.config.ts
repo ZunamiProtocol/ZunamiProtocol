@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
                 // blockNumber: 16200000, // Staking strategy
                 // blockNumber: 15183276, // Strategies
                 // blockNumber: 17483568, // Staking ETH strategy
-                blockNumber: 17820173,
+                blockNumber: 17835058,
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each
