@@ -10,3 +10,7 @@ npx hardhat verify --network mainnet --constructor-args ./deployment/convex_eth_
 npx hardhat verify --network mainnet 0xc79122ec6a1e4938D6cc0ceFD838FF150B6f42cd
 
 npx hardhat verify --network mainnet 0x288f617000c5b56e58e49c72615d654dDe43a946
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/convex_eth_strategy_arguments.js --contract contracts/strategies/eth/curve/convex/fraxbp/stEthFraxEthCurveConvex.sol:stEthFraxEthCurveConvex 0xdd28FEBC515939A3e60B364D5f7cB471F23795B5
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/zunami_eth_arguments.js 0x5255e95cE870F6C92Bdc533221CFa011Dec4d3f9

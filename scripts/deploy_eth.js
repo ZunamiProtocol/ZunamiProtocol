@@ -22,9 +22,9 @@ async function deployAndLinkStrategy(name, zunami, rewardManager, nativeConverte
     await strategy.deployed();
     console.log(`${name} strategy deployed to: ${strategy.address}`);
 
-    let tx = await zunami.addPool(strategy.address);
-    await tx.wait();
-    console.log(`Added ${name} pool to Zunami`);
+    // let tx = await zunami.addPool(strategy.address);
+    // await tx.wait();
+    // console.log(`Added ${name} pool to Zunami`);
 
     tx = await strategy.setZunami(zunami.address);
     await tx.wait();
@@ -99,6 +99,22 @@ async function main() {
     //     undefined,
     //     configStakingConvexETH
     // );
+
+    await deployAndLinkStrategy(
+        'stEthFraxEthCurveConvex',
+        zunami,
+        rewardManagerAddress,
+        nativeConverterAddress,
+        configConvexETH
+    );
+
+    await deployAndLinkStrategy(
+      'VaultNativeStrat',
+      zunami,
+      undefined,
+      undefined,
+      globalConfig.tokensETH
+    );
 }
 
 main()
