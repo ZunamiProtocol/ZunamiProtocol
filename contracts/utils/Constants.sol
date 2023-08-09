@@ -212,5 +212,8 @@ library Constants {
     address internal constant CVX_FRXETH_ZETH_REWARDS_ADDRESS = 0x98B662443695f7328F6A7fDe9894CC0E88630269;
     uint256 internal constant CVX_FRXETH_ZETH_PID = 210;
     address internal constant zETH_ADDRESS = 0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b;
+
+    address internal constant CONCENTRATOR_UZD_VAULT_ADDRESS = 0x3Cf54F3A1969be9916DAD548f3C084331C4450b5;
+    uint256 internal constant CONCENTRATOR_UZD_VAULT_PID = 57;
 }
 

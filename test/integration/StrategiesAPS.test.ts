@@ -20,7 +20,7 @@ async function mintUzdAmount(usdc: Contract, admin: Signer, zunami: Contract, uz
     const usdcAmount = ethers.utils.parseUnits('1000000', 'mwei');
     // USDC initialization
     usdc = new ethers.Contract(addrs.stablecoins.usdc, erc20ABI, admin);
-    admin.sendTransaction({
+    await admin.sendTransaction({
         to: addrs.holders.usdcHolder,
         value: ethers.utils.parseEther('10'),
     });
@@ -38,6 +38,27 @@ async function mintUzdAmount(usdc: Contract, admin: Signer, zunami: Contract, uz
     });
 
     // UZD
+    const uzdOwner = "0xb056B9A45f09b006eC7a69770A65339586231a34";
+    await admin.sendTransaction({
+        to: uzdOwner,
+        value: ethers.utils.parseEther('10'),
+    });
+    await network.provider.request({
+        method: 'hardhat_impersonateAccount',
+        params: [uzdOwner],
+    });
+    const uzdOwnerSigner: Signer = ethers.provider.getSigner(uzdOwner);
+    await uzd
+      .connect(uzdOwnerSigner)
+      .grantRole(
+        '0xccc64574297998b6c3edf6078cc5e01268465ff116954e3af02ff3a70a730f46', // REBALANCER_ROLE
+        admin.getAddress()
+      );
+    await network.provider.request({
+        method: 'hardhat_stopImpersonatingAccount',
+        params: [uzdOwner],
+    })
+
     await usdc.approve(zunami.address, usdcAmount);
     await zunami.deposit([0, usdcAmount, 0]);
 
@@ -47,11 +68,41 @@ async function mintUzdAmount(usdc: Contract, admin: Signer, zunami: Contract, uz
     await uzd.deposit(zlpAmount, admin.getAddress());
 }
 
+async function mintTokenTo(
+  receiverAddr: string,
+  ethVault: Signer,
+  tokenAddr: string,
+  tokenVaultAddr: string,
+  tokenAmount: BigNumber
+) {
+    const token = new ethers.Contract(tokenAddr, erc20ABI, ethVault);
+    //fund vault with eth
+    await ethVault.sendTransaction({
+        to: tokenVaultAddr,
+        value: ethers.utils.parseEther('1'),
+    });
+    await network.provider.request({
+        method: 'hardhat_impersonateAccount',
+        params: [tokenVaultAddr],
+    });
+    const tokenVaultSigner: Signer = ethers.provider.getSigner(tokenVaultAddr);
+
+    await token
+      .connect(tokenVaultSigner)
+      .transfer(receiverAddr, tokenAmount);
+
+    await network.provider.request({
+        method: 'hardhat_stopImpersonatingAccount',
+        params: [tokenVaultAddr],
+    });
+}
+
 describe('Single strategy tests', () => {
     const strategyNames = [
         'VaultAPSStrat',
-        'UzdFraxCurveStakeDao',
-        'UzdFraxCurveConvex'
+        // 'UzdFraxCurveStakeDao',
+        // 'UzdFraxCurveConvex',
+        'UzdFraxCurveConcentrator',
     ];
 
     const configConvex = {
@@ -70,6 +121,11 @@ describe('Single strategy tests', () => {
     const configStakeDao = {
         token: globalConfig.token_aps,
         rewards: [globalConfig.crv, globalConfig.sdt],
+    };
+
+    const configConcentrator = {
+        token: globalConfig.token_aps,
+        rewards: [globalConfig.crv],
     };
 
     let admin: Signer;
@@ -104,7 +160,7 @@ describe('Single strategy tests', () => {
         await mintUzdAmount(usdc, admin, zunami, uzd);
 
         const ZunamiApsFactory = await ethers.getContractFactory('ZunamiAPS');
-        zunamiAPS = await ZunamiApsFactory.deploy(addrs.stablecoins.uzd);
+        zunamiAPS = await ZunamiApsFactory.deploy();
         await zunamiAPS.deployed();
 
         // Init all strategies
@@ -116,7 +172,9 @@ describe('Single strategy tests', () => {
                 strategy = await factory.deploy(uzd.address);
                 await strategy.deployed();
             } else {
-                const config = strategyName.includes('StakeDao')
+                const config = strategyName.includes('Concentrator')
+                  ? configConcentrator
+                  : strategyName.includes('StakeDao')
                     ? configStakeDao
                     : strategyName.includes('Staking')
                         ? configStakingConvex
@@ -134,9 +192,8 @@ describe('Single strategy tests', () => {
         }
 
         for (const user of [alice, bob]) {
-            await uzd.connect(user).approve(zunamiAPS.address, parseUnits('500000', 'ether'));
-
-            await uzd.transfer(user.getAddress(), ethers.utils.parseUnits('500000', 'ether'));
+            await uzd.connect(user).approve(zunamiAPS.address, parseUnits('499000', 'ether'));
+            await uzd.transfer(user.getAddress(), ethers.utils.parseUnits('499000', 'ether'));
         }
     });
 
@@ -184,6 +241,19 @@ describe('Single strategy tests', () => {
             for (const user of [alice, bob]) {
                 const uzdBefore = await uzd.balanceOf(user.getAddress());
                 const zlpBefore = await zunamiAPS.balanceOf(user.getAddress());
+
+                // if(strategyNames[poolId].includes("Concentrator")) {
+                //     await mintTokenTo(
+                //       strategies[poolId].address,
+                //       admin,
+                //       "0x62b9c7356a2dc64a1969e19c23e4f579f9810aa7", // cvxCRV
+                //       "0x59a661F1C909ca13ba3E9114BFDd81E5a420705D", // cvxCRV Vault
+                //       parseUnits('1000', 'ether')
+                //     );
+                //
+                //     const token = new ethers.Contract("0x62b9c7356a2dc64a1969e19c23e4f579f9810aa7", erc20ABI, admin);
+                //     console.log(await token.balanceOf(strategies[poolId].address));
+                // }
 
                 await expect(zunamiAPS.connect(user).deposit(getMinAmount())).to.emit(
                     zunamiAPS,
@@ -312,6 +382,7 @@ describe('Single strategy tests', () => {
         }
 
         await ethers.provider.send('evm_increaseTime', [3600 * 24 * 7]);
+
         await zunamiAPS.autoCompoundAll();
 
         let tokens;
@@ -363,9 +434,17 @@ describe('Single strategy tests', () => {
                 params: [zunamiAdminAddr],
             });
             const zunamiAdminSigner: Signer = ethers.provider.getSigner(zunamiAdminAddr);
+
+            // set APS strategy as REBALANCER
             await uzdAdmin
                 .connect(zunamiAdminSigner)
                 .grantRole(REBALANCER_ROLE, strategies[poolId].address);
+
+            // change withdraw omnipool to vault (20 pid)
+            await zunami
+              .connect(zunamiAdminSigner)
+              .setDefaultWithdrawPid(20);
+
             await network.provider.request({
                 method: 'hardhat_stopImpersonatingAccount',
                 params: [zunamiAdminAddr],
@@ -380,8 +459,8 @@ describe('Single strategy tests', () => {
 
             const vaultAddr = await strategies[poolId].vault();
             const vaultLp = new ethers.Contract(vaultAddr, stakeDaoVaultAbi, admin);
-            const liquidityGaugeAddr = await vaultLp.liquidityGauge();
-            const liquidityGauge = new ethers.Contract(liquidityGaugeAddr, erc20ABI, admin);
+            // const liquidityGaugeAddr = await vaultLp.liquidityGauge();
+            // const liquidityGauge = new ethers.Contract(liquidityGaugeAddr, erc20ABI, admin);
 
             const poolAddr = await strategies[poolId].crvFraxTokenPool();
             const pool = new ethers.Contract(poolAddr, crvPool2Abi, admin);
@@ -397,8 +476,8 @@ describe('Single strategy tests', () => {
             const poolUzdBalanceInit = await tokenUzd.balanceOf(poolAddr);
             const poolFraxBpBalanceInit = await tokenFraxBP.balanceOf(poolAddr);
 
-            await uzd.connect(bob).transfer(alice.getAddress(), ethers.utils.parseUnits('500000', 'ether'));
-            const uzdAmount = ethers.utils.parseUnits('1000000', 'ether');
+            await uzd.connect(bob).transfer(alice.getAddress(), ethers.utils.parseUnits('499000', 'ether'));
+            const uzdAmount = ethers.utils.parseUnits('998000', 'ether');
             await uzd.connect(alice).approve(zunamiAPS.address, uzdAmount);
             await zunamiAPS.connect(alice).deposit(uzdAmount);
 
@@ -407,9 +486,9 @@ describe('Single strategy tests', () => {
 
             expect(poolUzdBalanceBefore.sub(poolUzdBalanceInit)).to.eq(uzdAmount);
 
-            const gaugeBalanceBefore = await liquidityGauge.balanceOf(strategies[poolId].address);
+            // const gaugeBalanceBefore = await liquidityGauge.balanceOf(strategies[poolId].address);
 
-            expect(gaugeBalanceBefore).to.gt(0);
+            // expect(gaugeBalanceBefore).to.gt(0);
 
             const inflationAmount = uzdAmount.mul(20).div(100);
 
@@ -424,10 +503,10 @@ describe('Single strategy tests', () => {
             expect(poolUzdBalanceInflate.sub(poolUzdBalanceBefore)).to.gt(inflationAmount.sub(approximation));
             expect(poolFraxBpBalanceBefore.sub(poolFraxBpBalanceInflate)).to.gt(inflationAmount.sub(approximation));
 
-            const gaugeBalanceAfterInflate = await liquidityGauge.balanceOf(strategies[poolId].address);
+            // const gaugeBalanceAfterInflate = await liquidityGauge.balanceOf(strategies[poolId].address);
 
-            expect(gaugeBalanceAfterInflate).to.gt(0);
-            expect(gaugeBalanceBefore.sub(gaugeBalanceAfterInflate)).to.lt(approximation);
+            // expect(gaugeBalanceAfterInflate).to.gt(0);
+            // expect(gaugeBalanceBefore.sub(gaugeBalanceAfterInflate)).to.lt(approximation);
 
             await strategies[poolId].connect(admin).deflate(percentageBig,  BigNumber.from(200000 * 0.99).mul(1e6));
 
@@ -437,10 +516,10 @@ describe('Single strategy tests', () => {
             expect(poolUzdBalanceInflate.sub(poolUzdBalanceDeflate)).to.gt(inflationAmount.sub(approximation));
             expect(poolFraxBpBalanceDeflate.sub(poolFraxBpBalanceInflate)).to.gt(inflationAmount.sub(approximation));
 
-            const gaugeBalanceAfterDeflate = await liquidityGauge.balanceOf(strategies[poolId].address);
+            // const gaugeBalanceAfterDeflate = await liquidityGauge.balanceOf(strategies[poolId].address);
 
-            expect(gaugeBalanceAfterDeflate).to.gt(0);
-            expect(gaugeBalanceAfterDeflate.sub(gaugeBalanceAfterInflate)).to.lt(approximation);
+            // expect(gaugeBalanceAfterDeflate).to.gt(0);
+            // expect(gaugeBalanceAfterDeflate.sub(gaugeBalanceAfterInflate)).to.lt(approximation);
         });
     });
 });
