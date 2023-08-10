@@ -66,10 +66,10 @@ async function main() {
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
     //await deployAndLinkStrategy('VaultAPSStrat', zunamiAPS, undefined, globalConfig.token_aps);
-    //await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
+    await deployAndLinkStrategy('UzdFraxCurveStakeDao', zunamiAPS, rewardManagerAddress, configStakeDaoAPS);
     // await deployAndLinkStrategy('UzdFraxCurveConvex', zunamiAPS, rewardManagerAddress, configConvexAPS);
     // await deployAndLinkStrategy('UzdStakingFraxCurveConvex', zunamiAPS, rewardManagerAddress, configStakingConvexAPS);
-    await deployAndLinkStrategy('UzdFraxCurveConcentrator', zunamiAPS, rewardManagerAddress, configConcentratorAPS);
+    // await deployAndLinkStrategy('UzdFraxCurveConcentrator', zunamiAPS, rewardManagerAddress, configConcentratorAPS);
 }
 
 main()
