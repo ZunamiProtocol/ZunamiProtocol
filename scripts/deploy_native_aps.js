@@ -32,7 +32,7 @@ async function main() {
     console.log('Start deploy');
     const ZunamiAPS = await ethers.getContractFactory('ZunamiNativeAPS');
     // const zunamiAPS = await ZunamiAPS.deploy();
-    const zunamiAPS = await ZunamiAPS.attach('0x0b49D1Dd3F045c986F7816c2Ad56F01D8FB29C82'); // prod
+    const zunamiAPS = await ZunamiAPS.attach('0x8fc72dcfbf39FE686c96f47C697663EE08C78380'); // prod
 
     await zunamiAPS.deployed();
     console.log('ZunamiNativeAPS deployed to:', zunamiAPS.address);
