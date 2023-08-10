@@ -21,3 +21,7 @@ Set reward manager 0xA94999dB7dAb9cA4478b36142D026d5f2db3B356
 
 Stable converter is: 0xce5c753716607110ce702042f080580f5c29f892
 Reward manager deployed to: 0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770
+
+4 UzdFraxCurveConcentrator strategy deployed to: 0xbF7a41f8E57a9940951Fdd266f30EfbAf9a3A138
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveConcentrator strategy
+Set reward manager 0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770

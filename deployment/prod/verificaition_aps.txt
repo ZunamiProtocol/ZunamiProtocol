@@ -10,3 +10,5 @@ npx hardhat verify --network mainnet --constructor-args ./deployment/aps_convex_
 npx hardhat verify --network mainnet --constructor-args ./deployment/aps_convex_staking_strategy_arguments.js 0x5bC926B2A5FcF521B7d1cfD4d0BC265eF00AB2F1
 
 npx hardhat verify --network mainnet 0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770 0xce5c753716607110ce702042f080580f5c29f892
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/aps_convex_concentrator_strategy_arguments.js 0xbF7a41f8E57a9940951Fdd266f30EfbAf9a3A138
