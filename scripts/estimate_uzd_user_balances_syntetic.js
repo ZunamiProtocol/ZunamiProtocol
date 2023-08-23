@@ -94,7 +94,7 @@ async function calcMinters(transfers, zaps, replacers) {
 
 async function writeCsv(balances, total, pie) {
   const csvWriter = createCsvWriter({
-    path: './scrips/results/zunami_uzd_balances.csv',
+    path: './scripts/results/zunami_uzd_balances.csv',
     header: [
       {id: 'user', title: 'USER'},
       {id: 'balance', title: 'BALANCE'},
@@ -208,6 +208,22 @@ function pricify(number, price) {
   return number.mul(price).div(base)
 }
 
+async function acceptTransferredValue(crvUsdBalances, crvUsdTransfers, exceptions) {
+  const minters = Object.keys(crvUsdBalances);
+  for (const minter of minters) {
+    const transfers = crvUsdTransfers.filter((tr)=> tr.from === minter);
+    for (const transfer of transfers) {
+      if(!exceptions.includes(transfer.to)) {
+        if(!crvUsdBalances[transfer.to]) crvUsdBalances[transfer.to] = zero;
+        console.log(`Accept Transfer from ${minter} to ${transfer.to} value ${toDecimalStringified(crvUsdBalances[minter])}`);
+        crvUsdBalances[transfer.to] = crvUsdBalances[transfer.to].add(crvUsdBalances[minter]);
+        delete crvUsdBalances[minter];
+      }
+    }
+  }
+  return crvUsdBalances;
+}
+
 async function main() {
   const curveZaps = ["0x08780fb7E580e492c1935bEe4fA5920b94AA95Da", "0x271fbE8aB7f1fB262f81C77Ea5303F03DA9d3d6A"];
 
@@ -215,6 +231,7 @@ async function main() {
     "0xeB33BFFa3CEE6E94667625663094Fe2BA3CBd66A": "0x9f4be89cF01f7A038e0b9015b6b3A354Ff169CA2",
     "0x8f4A7b7AeaA5c0E01b7b3c0e966D8E62e7b3cBf6": "0x3dFc49e5112005179Da613BdE5973229082dAc35",
     "0xA849456125301De7DedA49c09a65B673C115Cf37": "0x3dFc49e5112005179Da613BdE5973229082dAc35",
+    "0x2B10AfF9c2F2e167bd263DDa581ecE825B56b1D6": "0x3E7bFa35D6d76076482ED6b627FE862098a7da15"
   };
 
   const configs = [
@@ -261,7 +278,17 @@ async function main() {
   const {transfers: crvUsdTransfers, token: crvUsdPoolToken, totalSupply: crvUsdPoolTotalSupply} =
     await getTransfersBy(uzdCrvUsdBpConfig);
   console.log("crvUSD Pool total supply: ", toDecimalStringified(crvUsdPoolTotalSupply));
-  const crvUsdBalances = await calcMinters(crvUsdTransfers, curveZaps, safeOwnerReplacer);
+  let crvUsdBalances = await calcMinters(crvUsdTransfers, curveZaps, safeOwnerReplacer);
+  crvUsdBalances = await acceptTransferredValue(
+    crvUsdBalances,
+    crvUsdTransfers,
+    [
+      "0x0000000000000000000000000000000000000000",
+      "0xe39c817fe25Ac1A8Bd343A74037E3C90b09bEeEF", // curve gauge
+      "0x989AEb4d175e16225E39E87d0D97A3360524AD80", // convex
+      "0x1Be554D7eD9DEdd39cd949a3cF1AE8D4A12bD7C4", // stakeDAO
+    ]
+  );
 
   const crvUSDPoolTotalCounted = countTotalByBalances(crvUsdBalances);
   console.log("crvUSD Pool counted: ", toDecimalStringified(crvUSDPoolTotalCounted));
@@ -285,7 +312,36 @@ async function main() {
   const {transfers: fraxBpTransfers, token: fraxBpPoolToken, totalSupply: fraxBpPoolTotalSupply} =
     await getTransfersBy(uzdFraxBpConfig);
   console.log("fraxBp Pool total supply: ", toDecimalStringified(fraxBpPoolTotalSupply));
-  const fraxBpBalances = await calcMinters(fraxBpTransfers, curveZaps, safeOwnerReplacer);
+  let fraxBpBalances = await calcMinters(fraxBpTransfers, curveZaps, safeOwnerReplacer);
+  fraxBpBalances = await acceptTransferredValue(
+    fraxBpBalances,
+    fraxBpTransfers,
+    [
+      "0x0000000000000000000000000000000000000000",
+      "0x08780fb7E580e492c1935bEe4fA5920b94AA95Da", // zap
+      "0xBdCA4F610e7101Cc172E2135ba025737B99AbD30", // curve gauge
+      "0x989AEb4d175e16225E39E87d0D97A3360524AD80", // convex
+      "0xDe0fE7E57d56190F43C57541a886ec3AdCC91C86", // convex stacking
+      "0x6A7e696ca09E92efc64515856dfD9c95a2ad3f52", // convex stacking
+      "0x569DBCcCd24f8CA2C002243d1e0bb6fb70cC6127", // convex stacking
+      "0xB2991b85FC27FA1Ff27C59dCD7767A6312840d45", // convex stacking
+      "0xf2b086747E86A5928a02082fB4eCcCaE3e5c94a3", // convex stacking
+      "0xFcc5D5b01Ff2dC1ac2d9D82C30aE1178a63268a1", // convex stacking
+      "0xb3D2Bc2437d12d386Ad2D9Fc06F9410eDCdCda93", // convex stacking
+      "0x57Fb068BDa27351EF0913113264Ce3EF4EeA3316", // convex stacking
+      "0xCb698FB42a5eAeB8711286829Fb5391890Ad10c4", // convex stacking
+      "0x4Cb37Bb40bf658F17c47B7bF9BbDe8f7D938Fd2c", // convex stacking
+      "0x6CdED68Aed664e1d9977239C505448D07E97F6BB", // convex stacking
+      "0x0b2005845061DF695D543888e309ae8d9672604c", // convex stacking
+      "0x006FeD3dD802761BA2A7843df80Cdc55Bc1Ff624", // convex stacking
+      "0x78CA6E015CaC5E97B14eB93d2A2D5155314ea321", // convex stacking
+      "0xEc50a402D6B00D97bCd8050723ACc7DBC4F965f4", // convex stacking
+      "0x5836200c034ddA13549e9cda340bF3b4DE2a2F3F", // convex stacking
+      "0x1C00908a6d8f31CbfA74c48d628b42A4A7624065", // convex stacking
+      "0xbc61f6973cE564eFFB16Cd79B5BC3916eaD592E2", // stakeDAO,
+      "0x3Cf54F3A1969be9916DAD548f3C084331C4450b5", // сoncentrator
+    ]
+  );
 
   const fraxBpPoolTotalCounted = countTotalByBalances(fraxBpBalances);
   console.log("fraxBp Pool total counted: ", toDecimalStringified(fraxBpPoolTotalCounted));

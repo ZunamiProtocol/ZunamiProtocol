@@ -94,7 +94,7 @@ async function calcMinters(transfers, zaps, replacers) {
 
 async function writeCsv(balances, total, pie) {
   const csvWriter = createCsvWriter({
-    path: './scrips/results/zunami_zeth_balances.csv',
+    path: './scripts/results/zunami_zeth_balances.csv',
     header: [
       {id: 'user', title: 'USER'},
       {id: 'balance', title: 'BALANCE'},
