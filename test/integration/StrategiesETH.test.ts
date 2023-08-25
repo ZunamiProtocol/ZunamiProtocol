@@ -24,8 +24,9 @@ enum WithdrawalType {
 describe('Single strategy tests', () => {
     const strategyNames = [
         'VaultNativeStrat',
-        'sEthFraxEthCurveConvex',
-        'stEthFraxEthCurveConvex',
+        'ClaimingNativeStrat',
+        // 'sEthFraxEthCurveConvex',
+        // 'stEthFraxEthCurveConvex',
     ];
     enum WithdrawalType {
         Base,
@@ -154,7 +155,7 @@ describe('Single strategy tests', () => {
                 ? configStakeDaoETH
                 : strategyName.includes('Staking')
                     ? configStakingConvexETH
-                    : strategyName.includes('VaultNative')
+                    : (strategyName.includes('VaultNative') || strategyName.includes('ClaimingNativeStrat'))
                         ? [addrs.stablecoins.ethCurve, addrs.stablecoins.wEth, addrs.stablecoins.frxEth]
                         : configConvexETH;
             const strategy = await factory.deploy(config);
@@ -162,7 +163,7 @@ describe('Single strategy tests', () => {
 
             strategy.setZunami(zunami.address);
 
-            if(!strategyName.includes('VaultNative')) {
+            if(!strategyName.includes('VaultNative') && !strategyName.includes('ClaimingNativeStrat')) {
                 strategy.setRewardManager(rewardManager.address);
                 strategy.setNativeConverter(nativeConverter.address);
             }

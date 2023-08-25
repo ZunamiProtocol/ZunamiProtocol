@@ -27,3 +27,7 @@ Set native convertor 0xAe525CE04abe27c4D759C8E0E8b3b8AE36aa5d7e
 
 3 VaultNativeStrat strategy deployed to: 0x5255e95cE870F6C92Bdc533221CFa011Dec4d3f9
 Set zunami address 0x9dE83985047ab3582668320A784F6b9736c6EEa7 in VaultNativeStrat strategy
+
+ClaimingNativeStrat strategy deployed to: 0x6756EfFa8aABeB9031279e4C71d8c1BD3Ae8f9Ef
+Set zunami address 0x9dE83985047ab3582668320A784F6b9736c6EEa7 in ClaimingNativeStrat strategy
+

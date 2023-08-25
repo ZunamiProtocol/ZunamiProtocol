@@ -100,16 +100,24 @@ async function main() {
     //     configStakingConvexETH
     // );
 
-    await deployAndLinkStrategy(
-        'stEthFraxEthCurveConvex',
-        zunami,
-        rewardManagerAddress,
-        nativeConverterAddress,
-        configConvexETH
-    );
+    // await deployAndLinkStrategy(
+    //     'stEthFraxEthCurveConvex',
+    //     zunami,
+    //     rewardManagerAddress,
+    //     nativeConverterAddress,
+    //     configConvexETH
+    // );
+
+    // await deployAndLinkStrategy(
+    //   'VaultNativeStrat',
+    //   zunami,
+    //   undefined,
+    //   undefined,
+    //   globalConfig.tokensETH
+    // );
 
     await deployAndLinkStrategy(
-      'VaultNativeStrat',
+      'ClaimingNativeStrat',
       zunami,
       undefined,
       undefined,
