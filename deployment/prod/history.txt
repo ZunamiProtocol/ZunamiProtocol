@@ -122,3 +122,7 @@ Set stable convertor 0xce5c753716607110ce702042f080580f5c29f892
 Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in VaultStrat strategy
 
 Reward manager deployed to: 0x4460654C22C92cB8e449093E63EBa3a3A50C065B
+
+
+ClaimingStrat strategy deployed to: 0xa655Aa809D1FE7a55e22425780bb676E8AE0A143
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in ClaimingStrat strategy

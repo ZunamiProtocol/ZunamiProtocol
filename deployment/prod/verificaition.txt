@@ -38,3 +38,5 @@ npx hardhat verify --network mainnet 0xce5c753716607110ce702042f080580f5c29f892
 npx hardhat verify --network mainnet --constructor-args ./deployment/zunami_arguments.js 0x2D09FaC78BBbcEE4aF6dFAE5D3Dd425b2883C30b
 
 npx hardhat verify --network mainnet 0x12aDa2ba6fE3D0E7c03a2C6B2488b4Bd22b84998
+
+npx hardhat verify --network mainnet --constructor-args ./deployment/zunami_arguments.js 0xa655Aa809D1FE7a55e22425780bb676E8AE0A143

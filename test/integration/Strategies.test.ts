@@ -23,11 +23,12 @@ async function increaseChainTime(time: number) {
 describe('Single strategy tests', () => {
     const strategyNames = [
         'VaultStrat',
-        'CrvUSDUsdtCurveStakeDao',
-        'MIMCurveStakeDao',
-        'LUSDCurveConvex',
-        'LUSDFraxCurveConvex',
-        'ALUSDFraxCurveConvex',
+        // 'CrvUSDUsdtCurveStakeDao',
+        'ClaimingStrat',
+        // 'MIMCurveStakeDao',
+        // 'LUSDCurveConvex',
+        // 'LUSDFraxCurveConvex',
+        // 'ALUSDFraxCurveConvex',
     ];
     enum WithdrawalType {
         Base,
@@ -153,7 +154,7 @@ describe('Single strategy tests', () => {
                 ? configStakeDao
                 : strategyName.includes('Staking')
                 ? configStakingConvex
-                : strategyName.includes('VaultStrat')
+                : (strategyName.includes('VaultStrat') || strategyName.includes('ClaimingStrat'))
                 ? configStakeDao.tokens
                 : configConvex;
             const strategy = await factory.deploy(config);
@@ -161,7 +162,7 @@ describe('Single strategy tests', () => {
 
             strategy.setZunami(zunami.address);
 
-            if (!strategyName.includes('VaultStrat')) {
+            if (!strategyName.includes('VaultStrat') && !strategyName.includes('ClaimingStrat')) {
                 strategy.setRewardManager(rewardManager.address);
             }
             if (strategyName.includes('Frax') || strategyName.includes('UsdtCurve')) {

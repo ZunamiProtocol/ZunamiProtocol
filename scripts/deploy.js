@@ -74,6 +74,7 @@ async function main() {
     const rewardManagerAddress = '0x4460654C22C92cB8e449093E63EBa3a3A50C065B';
     console.log('Reward manager deployed to:', rewardManagerAddress);
 
+    // await deployAndLinkStrategy('ClaimingStrat', zunami, undefined, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('VaultStrat', zunami, undefined, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('RebalancingStrat', zunami, undefined, undefined, globalConfig.tokens);
     // await deployAndLinkStrategy('MIMCurveConvex', zunami, undefined, undefined, configConvex);

@@ -19,6 +19,11 @@ import '../../interfaces/IStrategy.sol';
 contract ClaimingStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
 
+    enum WithdrawalType {
+        Base,
+        OneCoin
+    }
+
     IZunami public zunami;
     IERC20Metadata[3] public tokens;
 
@@ -174,7 +179,7 @@ contract ClaimingStrat is Ownable {
         address withdrawer,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
         uint256[3] memory,
-        uint256,
+        WithdrawalType,
         uint128
     ) external virtual onlyZunami returns (bool) {
         revert();
