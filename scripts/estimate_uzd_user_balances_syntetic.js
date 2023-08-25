@@ -161,6 +161,14 @@ async function getTransfersBy(config) {
     event: event
   }));
   console.log(`Transfers before ${toBlock}: ${transfers.length}`);
+
+  // const checker = (addr) => [].includes(addr.toLowerCase())
+  // for (const transfer of transfers) {
+  //   if(checker(transfer.from) || checker(transfer.to)) {
+  //     console.log(`Find Transfer ${transfer.event.transactionHash} : ${transfer.from} -> ${transfer.to} with ${transfer.value}`)
+  //   }
+  // }
+
   return {transfers, token, totalSupply};
 }
 
