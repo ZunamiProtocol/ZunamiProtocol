@@ -1,3 +1,4 @@
+const fs = require("fs").promises;
 const { ethers } = require('hardhat');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
@@ -31,13 +32,18 @@ function getAllHoldersBy(transfers) {
 }
 
 async function getTokenBalancesByHoldersOnBlock(block, holders, token) {
-  const balances = {};
-  for (let i = 0; i < holders.length; i++) {
-    const owner = holders[i];
+  const balanceHash = {};
+  const balancesAsync = holders.map((holder) => token.balanceOf(holder, {blockTag: block}));
 
-    balances[owner] = await token.balanceOf(owner, {blockTag: block});
+  const chunkSize = 10;
+  for (let i = 0; i < balancesAsync.length; i += chunkSize) {
+    const chunk = balancesAsync.slice(i, i + chunkSize);
+    const balances = await Promise.all(chunk);
+    for (let j = 0; j < balances.length; j++) {
+      balanceHash[holders[i + j]] = balances[j];
+    }
   }
-  return removeZeroBalances(balances);
+  return removeZeroBalances(balanceHash);
 }
 
 async function calcMinters(transfers, zaps, replacers) {
@@ -117,7 +123,20 @@ async function writeCsv(balances, total, pie) {
     }
   });
   await csvWriter.writeRecords(cvsRecords);
-  console.log(`Balances saved!`);
+  console.log(`Balances CSV saved!`);
+}
+
+async function writeJson(balances, total, pie) {
+  const records = Object.entries(balances).map(([key, balance]) => {
+    const percent = balance.mul(base).div(total);
+    const userValue = percent.mul(pie).div(base);
+    return [key, userValue.toString()];
+  });
+
+  await fs.writeFile("./scripts/results/zunami_zeth_balances.json", JSON.stringify(
+    Object.fromEntries(records)
+  ));
+  console.log(`Balances JSON saved!`);
 }
 
 function calcBalancesBy(transfers) {
@@ -218,11 +237,55 @@ async function main() {
     ["0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b", 17485100, 17908908, "zETH", 500000000000000, "token"],
     ["0x8fc72dcfbf39FE686c96f47C697663EE08C78380", 17879518, 17908908, "zETH aps", 500000000000000, "token"],
     ["0xfC89b519658967fCBE1f525f1b8f4bf62d9b9018", 17514692, 17908908, "zETH/FrxETH", 500000000000000, "pool"],
+    ["0x9dE83985047ab3582668320A784F6b9736c6EEa7", 17405638, 17908908, "omnipool", 500000000000000, "token"],
   ];
 
   const zethConfig =  configs[0];
   const zethApsConfig =  configs[1];
   const zethFrxEthConfig =  configs[2];
+  // const omnipoolConfig =  configs[3];
+  //
+  //
+  // console.log("Processing Omnipool ", omnipoolConfig[0]);
+  // const {transfers: omnipoolTransfers, token: omnipoolToken, totalSupply: omnipoolTotalSupply} = await getTransfersBy(omnipoolConfig);
+  //
+  // console.log("Omnipool total supply: ", toDecimalStringified(omnipoolTotalSupply));
+  // const omnipoolAllHolders = getAllHoldersBy(omnipoolTransfers);
+  //
+  // const omnipoolBalances = await getTokenBalancesByHoldersOnBlock(omnipoolConfig[2], omnipoolAllHolders, omnipoolToken);
+  // // printTokenBalances(omnipoolConfig[3], omnipoolBalances);
+  //
+  // const zethAddress = zethConfig[0];
+  // const omnipoolStrategies = [zethAddress];
+  // const zethOmnipoolBalance = omnipoolBalances[zethAddress];
+  //
+  //
+  // const omnipoolTotalCounted = countTotalByBalances(omnipoolBalances);
+  // console.log("Omnipool counted: ", toDecimalStringified(omnipoolTotalCounted));
+  // console.log("Omnipool zeth vault balance: ", toDecimalStringified(zethOmnipoolBalance))
+  //
+  // const omnipoolBalancesUsers = Object.fromEntries(Object.entries(omnipoolBalances).filter(
+  //   ([key]) => !omnipoolStrategies.includes(key))
+  // );
+  // const omnipoolUsersCounted = countTotalByBalances(omnipoolBalancesUsers)
+  // console.log("Omnipool users counted: ", toDecimalStringified(omnipoolUsersCounted));
+  // printTokenBalances(omnipoolConfig[3], omnipoolBalancesUsers);
+  //
+  // const {totalSupply: omnipoolTotalSupply2, lpPrice: omnipoolTokenPrice, poolValue: omnipoolValue} =
+  //   await calcZunamiPoolTvl(omnipoolConfig[0], omnipoolConfig[2]);
+  //
+  // let omnipoolHoldings = Object.fromEntries(Object.entries(omnipoolBalancesUsers).map(
+  //     ([key, value]) => [key, pricify(value, omnipoolTokenPrice)]
+  //   ),
+  // );
+  // omnipoolHoldings = removeZeroBalances(omnipoolHoldings)
+  //
+  // console.log("Omnipool total holdings: ", toDecimalStringified(pricify(omnipoolTotalSupply, omnipoolTokenPrice)));
+  // const omnipoolHoldingsCounted = countTotalByBalances(omnipoolHoldings);
+  // console.log("Omnipool users holdings: ", toDecimalStringified(omnipoolHoldingsCounted));
+  // printTokenBalances(omnipoolConfig[3], omnipoolHoldings);
+
+
 
   console.log("Processing ZETH ", zethConfig[0]);
   const {transfers:zethTransfers, token: zethToken, totalSupply: zethTotalSupply} = await getTransfersBy(zethConfig);
@@ -340,6 +403,8 @@ async function main() {
   console.log("ZETH omnipool holdings:", toDecimalStringified(uzdOmnipoolHoldings));
 
   await writeCsv(usersBalances, totalHoldings, uzdOmnipoolHoldings);
+
+  await writeJson(usersBalances, totalHoldings, uzdOmnipoolHoldings);
 
   console.log("");
 }

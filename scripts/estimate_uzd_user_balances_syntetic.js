@@ -1,3 +1,4 @@
+const fs = require("fs").promises;
 const { ethers } = require('hardhat');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
@@ -31,13 +32,18 @@ function getAllHoldersBy(transfers) {
 }
 
 async function getTokenBalancesByHoldersOnBlock(block, holders, token) {
-  const balances = {};
-  for (let i = 0; i < holders.length; i++) {
-    const owner = holders[i];
+  const balanceHash = {};
+  const balancesAsync = holders.map((holder) => token.balanceOf(holder, {blockTag: block}));
 
-    balances[owner] = await token.balanceOf(owner, {blockTag: block});
+  const chunkSize = 10;
+  for (let i = 0; i < balancesAsync.length; i += chunkSize) {
+    const chunk = balancesAsync.slice(i, i + chunkSize);
+    const balances = await Promise.all(chunk);
+    for (let j = 0; j < balances.length; j++) {
+      balanceHash[holders[i + j]] = balances[j];
+    }
   }
-  return removeZeroBalances(balances);
+  return removeZeroBalances(balanceHash);
 }
 
 async function calcMinters(transfers, zaps, replacers) {
@@ -117,7 +123,20 @@ async function writeCsv(balances, total, pie) {
     }
   });
   await csvWriter.writeRecords(cvsRecords);
-  console.log(`Balances saved!`);
+  console.log(`Balances CSV saved!`);
+}
+
+async function writeJson(balances, total, pie) {
+  const records = Object.entries(balances).map(([key, balance]) => {
+    const percent = balance.mul(base).div(total);
+    const userValue = percent.mul(pie).div(base);
+    return [key, userValue.toString()];
+  });
+
+  await fs.writeFile("./scripts/results/zunami_uzd_balances.json", JSON.stringify(
+    Object.fromEntries(records)
+  ));
+  console.log(`Balances JSON saved!`);
 }
 
 function calcBalancesBy(transfers) {
@@ -194,6 +213,15 @@ async function calcCurvePoolTvl(poolAddr, block) {
   return {totalSupply: totalSupply, lpPrice: virtualPrice, poolValue:  (totalSupply.mul(virtualPrice).div(base))};
 }
 
+async function calcZunamiPoolTvl(zunamiAddr, block) {
+  const pool = await ethers.getContractAt("Zunami", zunamiAddr);
+  const price = await pool.lpPrice({blockTag: block});
+  const poolLP = await ethers.getContractAt("ERC20", zunamiAddr);
+  const totalSupply = await poolLP.totalSupply({blockTag: block});
+  console.log(`Zunami ${zunamiAddr}: supply ${toDecimalStringified(totalSupply)}, price ${toDecimalStringified(price)}`);
+  return {totalSupply: totalSupply, lpPrice: price, poolValue:  (totalSupply.mul(price).div(base))};
+}
+
 async function calcZunamiPoolTvl(poolAddr, block) {
   const pool = await ethers.getContractAt("Zunami", poolAddr);
   const price = await pool.lpPrice({blockTag: block});
@@ -216,20 +244,20 @@ function pricify(number, price) {
   return number.mul(price).div(base)
 }
 
-async function acceptTransferredValue(crvUsdBalances, crvUsdTransfers, exceptions) {
-  const minters = Object.keys(crvUsdBalances);
+async function acceptTransferredValue(balances, transfers, exceptions) {
+  const minters = Object.keys(balances);
   for (const minter of minters) {
-    const transfers = crvUsdTransfers.filter((tr)=> tr.from === minter);
-    for (const transfer of transfers) {
+    const transfersByAddress = transfers.filter((tr)=> tr.from === minter);
+    for (const transfer of transfersByAddress) {
       if(!exceptions.includes(transfer.to)) {
-        if(!crvUsdBalances[transfer.to]) crvUsdBalances[transfer.to] = zero;
-        console.log(`Accept Transfer from ${minter} to ${transfer.to} value ${toDecimalStringified(crvUsdBalances[minter])}`);
-        crvUsdBalances[transfer.to] = crvUsdBalances[transfer.to].add(crvUsdBalances[minter]);
-        delete crvUsdBalances[minter];
+        if(!balances[transfer.to]) balances[transfer.to] = zero;
+        console.log(`Accept Transfer from ${minter} to ${transfer.to} value ${toDecimalStringified(balances[minter])}`);
+        balances[transfer.to] = balances[transfer.to].add(balances[minter]);
+        delete balances[minter];
       }
     }
   }
-  return crvUsdBalances;
+  return balances;
 }
 
 async function main() {
@@ -248,12 +276,55 @@ async function main() {
     ["0xCaB49182aAdCd843b037bBF885AD56A3162698Bd", 17206823, 17908949, "uzd aps", 1000000000000000000, "token"],
     ["0x68934F60758243eafAf4D2cFeD27BF8010bede3a", 16791061, 17908949, "UZD/FraxBP", 1000000000000000000, "pool"],
     ["0xfC636D819d1a98433402eC9dEC633d864014F28C", 17701058, 17908949, "UZD/CrvUSD", 1000000000000000000, "pool"],
+    ["0x2ffCC661011beC72e1A9524E12060983E74D14ce", 14403415, 17908949, "omnipool", 1000000000000000000, "token"],
   ];
 
   const uzdConfig =  configs[0];
   const uzdApsConfig =  configs[1];
   const uzdFraxBpConfig =  configs[2];
   const uzdCrvUsdBpConfig =  configs[3];
+  const omnipoolConfig =  configs[4];
+
+  console.log("Processing Omnipool ", omnipoolConfig[0]);
+  const {transfers: omnipoolTransfers, token: omnipoolToken, totalSupply: omnipoolTotalSupply} = await getTransfersBy(omnipoolConfig);
+
+  console.log("Omnipool total supply: ", toDecimalStringified(omnipoolTotalSupply));
+  const omnipoolAllHolders = getAllHoldersBy(omnipoolTransfers);
+
+  const omnipoolBalances = await getTokenBalancesByHoldersOnBlock(omnipoolConfig[2], omnipoolAllHolders, omnipoolToken);
+  // printTokenBalances(omnipoolConfig[3], omnipoolBalances);
+
+  const uzdAddress = uzdConfig[0];
+  const omnipoolStrategies = [uzdAddress];
+  const uzdOmnipoolBalance = omnipoolBalances[uzdAddress];
+
+
+  const omnipoolTotalCounted = countTotalByBalances(omnipoolBalances);
+  console.log("Omnipool counted: ", toDecimalStringified(omnipoolTotalCounted));
+  console.log("Omnipool uzd vault balance: ", toDecimalStringified(uzdOmnipoolBalance))
+
+  const omnipoolBalancesUsers = Object.fromEntries(Object.entries(omnipoolBalances).filter(
+    ([key]) => !omnipoolStrategies.includes(key))
+  );
+  const omnipoolUsersCounted = countTotalByBalances(omnipoolBalancesUsers)
+  console.log("Omnipool users counted: ", toDecimalStringified(omnipoolUsersCounted));
+  // printTokenBalances(omnipoolConfig[3], omnipoolBalancesUsers);
+
+  const {totalSupply: omnipoolTotalSupply2, lpPrice: omnipoolTokenPrice, poolValue: omnipoolValue} =
+    await calcZunamiPoolTvl(omnipoolConfig[0], omnipoolConfig[2]);
+
+  let omnipoolHoldings = Object.fromEntries(Object.entries(omnipoolBalancesUsers).map(
+      ([key, value]) => [key, pricify(value, omnipoolTokenPrice)]
+    ),
+  );
+  omnipoolHoldings = removeZeroBalances(omnipoolHoldings)
+
+  console.log("Omnipool total holdings: ", toDecimalStringified(pricify(omnipoolTotalSupply, omnipoolTokenPrice)));
+  const omnipoolHoldingsCounted = countTotalByBalances(omnipoolHoldings);
+  console.log("Omnipool users holdings: ", toDecimalStringified(omnipoolHoldingsCounted));
+  // printTokenBalances(omnipoolConfig[3], omnipoolHoldings);
+
+
 
   console.log("Processing UZD ", uzdConfig[0]);
   const {transfers: uzdTransfers, token: uzdToken, totalSupply: uzdTotalSupply} = await getTransfersBy(uzdConfig);
@@ -412,23 +483,28 @@ async function main() {
   console.log("UZD aps user holdings: ", toDecimalStringified(uzdApsHoldingsCounted));
   // printTokenBalances(uzdApsConfig[3], uzdApsHoldings);
 
-
-  const usersBalances = mergeBalances(
+  const usersBalances =
     mergeBalances(
       mergeBalances(
-        uzdBalancesUsers,
-        crvUsdHoldings
+        mergeBalances(
+          mergeBalances(
+            uzdBalancesUsers,
+            crvUsdHoldings
+          ),
+          fraxBpHoldings
+        ),
+        uzdApsHoldings
       ),
-      fraxBpHoldings
-    ),
-    uzdApsHoldings
-  );
+      omnipoolHoldings
+    );
   // printTokenBalances("United balances", usersBalances);
 
   const usersBalancesCounted = countTotalByBalances(usersBalances);
   console.log("United balances counted: ", toDecimalStringified(usersBalancesCounted));
 
-  const totalHoldings = uzdUsersCounted
+  const totalHoldings =
+    omnipoolUsersCounted
+    .add(uzdUsersCounted)
     .add(crvUSDPoolHoldingsCounted)
     .add(fraxBpPoolHoldingsCounted)
     .add(uzdApsHoldingsCounted);
@@ -442,6 +518,8 @@ async function main() {
   console.log("UZD omnipool holdings:", toDecimalStringified(uzdOmnipoolHoldings));
 
   await writeCsv(usersBalances, totalHoldings, uzdOmnipoolHoldings);
+
+  await writeJson(usersBalances, totalHoldings, uzdOmnipoolHoldings);
 
   console.log("");
 }
