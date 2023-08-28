@@ -516,10 +516,13 @@ async function main() {
 
   const uzdOmnipoolHoldings = (await uzdOmnipool.totalHoldings({blockTag: uzdApsConfig[2]}));
   console.log("UZD omnipool holdings:", toDecimalStringified(uzdOmnipoolHoldings));
+  const hackRewards = "18500000000000000000000"; // 18500 USD
+  const uzdOmnipoolTotalHoldings = uzdOmnipoolHoldings.add(hackRewards);
+  console.log("UZD omnipool total holdings:", toDecimalStringified(uzdOmnipoolTotalHoldings));
 
-  await writeCsv(usersBalances, totalHoldings, uzdOmnipoolHoldings);
+  await writeCsv(usersBalances, totalHoldings, uzdOmnipoolTotalHoldings);
 
-  await writeJson(usersBalances, totalHoldings, uzdOmnipoolHoldings);
+  await writeJson(usersBalances, totalHoldings, uzdOmnipoolTotalHoldings);
 
   console.log("");
 }

@@ -356,12 +356,12 @@ async function main() {
   console.log("Processing ZETH APS", zethApsConfig[0]);
   const {transfers: zethApsTransfers, token: zethApsToken, totalSupply: zethApsTotalSupply} = await getTransfersBy(zethApsConfig);
 
-  console.log("UZD aps total supply: ", toDecimalStringified(zethApsTotalSupply));
+  console.log("ZETH aps total supply: ", toDecimalStringified(zethApsTotalSupply));
   const zethApsAllHolders = getAllHoldersBy(zethApsTransfers);
   const zethApsBalances = await getTokenBalancesByHoldersOnBlock(zethApsConfig[2], zethApsAllHolders, zethApsToken);
 
   const zethApsTotalCounted = countTotalByBalances(zethApsBalances);
-  console.log("UZD aps counted: ", toDecimalStringified(zethApsTotalCounted));
+  console.log("ZETH aps counted: ", toDecimalStringified(zethApsTotalCounted));
 
   const {totalSupply: zethApsTotalSupply2, lpPrice: zethApsVirtualPrice, poolValue: zethApsValue} =
     await calcZunamiPoolTvl(zethApsConfig[0], zethApsConfig[2]);
@@ -371,10 +371,10 @@ async function main() {
     ),
   );
 
-  console.log("UZD aps total total holdings: ", toDecimalStringified(pricify(zethApsTotalSupply, zethApsVirtualPrice)));
+  console.log("ZETH aps total total holdings: ", toDecimalStringified(pricify(zethApsTotalSupply, zethApsVirtualPrice)));
 
   const zethApsHoldingsCounted = countTotalByBalances(zethApsHoldings);
-  console.log("UZD aps user holdings: ", toDecimalStringified(zethApsHoldingsCounted));
+  console.log("ZETH aps user holdings: ", toDecimalStringified(zethApsHoldingsCounted));
   printTokenBalances(zethApsConfig[3], zethApsHoldings);
 
 
@@ -399,12 +399,17 @@ async function main() {
   const zethOmnipoolAddress = "0x9dE83985047ab3582668320A784F6b9736c6EEa7";
   const zethOmnipool = await ethers.getContractAt('Zunami', zethOmnipoolAddress);
 
-  const uzdOmnipoolHoldings = (await zethOmnipool.totalHoldings({blockTag: zethApsConfig[2]}));
-  console.log("ZETH omnipool holdings:", toDecimalStringified(uzdOmnipoolHoldings));
+  const zethOmnipoolHoldings = (await zethOmnipool.totalHoldings({blockTag: zethApsConfig[2]}));
+  console.log("ZETH omnipool holdings:", toDecimalStringified(zethOmnipoolHoldings));
 
-  await writeCsv(usersBalances, totalHoldings, uzdOmnipoolHoldings);
+  const hackRewards = "10200000000000000000"; // 10.2 ETH
+  const zethOmnipoolTotalHoldings = zethOmnipoolHoldings.add(hackRewards);
+  console.log("ZETH omnipool total holdings:", toDecimalStringified(zethOmnipoolTotalHoldings));
 
-  await writeJson(usersBalances, totalHoldings, uzdOmnipoolHoldings);
+  await writeCsv(usersBalances, totalHoldings, zethOmnipoolTotalHoldings);
+
+  await writeJson(usersBalances, totalHoldings, zethOmnipoolTotalHoldings);
+
 
   console.log("");
 }
