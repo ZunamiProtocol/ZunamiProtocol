@@ -23,7 +23,7 @@ import './interfaces/IZunamiRebalancer.sol';
  *
  */
 
-contract Zunami is ERC20, Pausable, AccessControl {
+contract ZunamiV2 is ERC20, Pausable, AccessControl {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');

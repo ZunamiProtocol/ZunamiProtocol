@@ -7,14 +7,14 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../../../utils/Constants.sol';
-import '../../../../../interfaces/IZunami.sol';
-import '../../../../../interfaces/IRewardManagerNative.sol';
-import '../../../../interfaces/ICurvePool2Native.sol';
-import '../../../../../interfaces/IWETH.sol';
-import "../../../../stable/curve/convex/interfaces/IConvexMinter.sol";
-import "../../../../stable/curve/convex/interfaces/IConvexBooster.sol";
-import "../../../../stable/curve/convex/interfaces/IConvexRewards.sol";
+import "../../../../stableV2/curve/convex/interfaces/IConvexMinter.sol";
+import "../../../../stableV2/curve/convex/interfaces/IConvexBooster.sol";
+import "../../../../../interfaces/IZunami.sol";
+import "../../../../../interfaces/IRewardManagerNative.sol";
 import "../../../../../interfaces/INativeConverter.sol";
+import "../../../../../interfaces/IWETH.sol";
+import "../../../../stableV2/curve/convex/interfaces/IConvexRewards.sol";
+import "../../../../interfaces/ICurvePool2Native.sol";
 
 //import "hardhat/console.sol";
 
