@@ -10,7 +10,7 @@ import './interfaces/IStrategy.sol';
 
 /**
  *
- * @title Zunami Protocol
+ * @title Zunami V1 Protocol
  *
  * @notice Contract for Convex&Curve protocols optimize.
  * Users can use this contract for optimize yield and gas.
@@ -22,7 +22,7 @@ import './interfaces/IStrategy.sol';
  *
  */
 
-contract Zunami is ERC20, Pausable, AccessControl {
+contract ZunamiV1 is ERC20, Pausable, AccessControl {
     using SafeERC20 for IERC20Metadata;
 
     bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');

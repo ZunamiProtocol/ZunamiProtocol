@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '../../../../utils/Constants.sol';
+import '../../../../../utils/Constants.sol';
 import './StakingFraxCurveConvexStratBaseV2.sol';
 
 contract eUSDStakingFraxCurveConvex is StakingFraxCurveConvexStratBaseV2 {

@@ -7,7 +7,6 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import './CurveConvexNativeApsStratBase.sol';
-import "../../../curve/convex/interfaces/IConvexRewards.sol";
 
 abstract contract CurveConvexExtraNativeApsStratBase is Context, CurveConvexNativeApsStratBase {
     using SafeERC20 for IERC20Metadata;

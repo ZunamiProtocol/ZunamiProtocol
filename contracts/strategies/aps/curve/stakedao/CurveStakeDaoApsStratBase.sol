@@ -11,7 +11,7 @@ import '../../../../interfaces/IUniswapRouter.sol';
 import '../../../../interfaces/IZunami.sol';
 
 import '../../../interfaces/IRewardManager.sol';
-import "../../../curve/stakedao/interfaces/IStakeDaoVault.sol";
+import "../../../stable/curve/stakedao/interfaces/IStakeDaoVault.sol";
 
 //import "hardhat/console.sol";
 

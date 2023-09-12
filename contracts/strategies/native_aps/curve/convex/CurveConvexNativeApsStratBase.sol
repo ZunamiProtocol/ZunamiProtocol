@@ -7,11 +7,11 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../../utils/Constants.sol';
-import "../../../curve/convex/interfaces/IConvexMinter.sol";
-import "../../../curve/convex/interfaces/IConvexBooster.sol";
 import "../../../../interfaces/IZunami.sol";
-import "../../../curve/convex/interfaces/IConvexRewards.sol";
 import "../../../../interfaces/IRewardManagerFrxEth.sol";
+import "../../../stable/curve/convex/interfaces/IConvexMinter.sol";
+import "../../../stable/curve/convex/interfaces/IConvexBooster.sol";
+import "../../../stable/curve/convex/interfaces/IConvexRewards.sol";
 
 //import "hardhat/console.sol";
 

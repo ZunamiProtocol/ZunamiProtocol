@@ -9,12 +9,10 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../utils/Constants.sol';
+import '../../../utils/Constants.sol';
+import "../../../interfaces/IZunami.sol";
 
-import '../../interfaces/IZunami.sol';
-import '../../interfaces/IStrategy.sol';
-
-contract VaultStrat is Ownable {
+contract RebalancingStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
 
     enum WithdrawalType {
@@ -28,6 +26,7 @@ contract VaultStrat is Ownable {
     IERC20Metadata[3] public tokens;
 
     uint256 public managementFees = 0;
+    uint256 public minDepositAmount = 9975; // 99.75%
 
     uint256[4] public decimalsMultipliers;
 
@@ -141,6 +140,30 @@ contract VaultStrat is Ownable {
      */
     function setZunami(address zunamiAddr) external onlyOwner {
         zunami = IZunami(zunamiAddr);
+    }
+
+    function withdrawStuckToken(IERC20Metadata _token) external onlyOwner {
+        uint256 tokenBalance = _token.balanceOf(address(this));
+        if (tokenBalance > 0) {
+            _token.safeTransfer(_msgSender(), tokenBalance);
+        }
+    }
+
+    function withdrawStuckTokenTo(
+        address _token,
+        uint256 _amount,
+        address _to
+    ) public onlyOwner {
+        require(_token != address(0), 'TOKEN');
+        require(_amount > 0, 'AMOUNT');
+        require(_to != address(0), 'TO');
+
+        IERC20Metadata(_token).safeTransfer(_to, _amount);
+    }
+
+    function updateMinDepositAmount(uint256 _minDepositAmount) public onlyOwner {
+        require(_minDepositAmount > 0 && _minDepositAmount <= 10000, 'Wrong amount!');
+        minDepositAmount = _minDepositAmount;
     }
 
     function claimManagementFees() external returns (uint256) {
