@@ -10,9 +10,9 @@ contract alUSDStakingFraxCurveConvex is StakingFraxCurveConvexStratBase {
             config,
             Constants.FRAX_USDC_ADDRESS,
             Constants.FRAX_USDC_LP_ADDRESS,
-            Constants.CRV_FRAX_alUSD_ADDRESS,
-            Constants.CRV_FRAX_alUSD_LP_ADDRESS,
-            Constants.CVX_FRAX_alUSD_PID // 19
+            Constants.CRV_FRAX_ALUSD_ADDRESS,
+            Constants.CRV_FRAX_ALUSD_LP_ADDRESS,
+            Constants.CVX_FRAX_ALUSD_PID // 19
         )
     {}
 }

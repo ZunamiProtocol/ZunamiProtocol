@@ -10,9 +10,7 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../../../utils/Constants.sol';
-
-import '../../../interfaces/IZunami.sol';
-import '../../../interfaces/IStrategy.sol';
+import "../../../interfaces/IZunami.sol";
 
 contract RebalancingStrat is Ownable {
     using SafeERC20 for IERC20Metadata;
@@ -110,14 +108,12 @@ contract RebalancingStrat is Ownable {
         uint8 decimals = token.decimals();
         require(decimals <= 18, 'Zunami: wrong token decimals');
         if (decimals == 18) return 1;
-        unchecked {
+        unchecked{
             return 10**(18 - decimals);
         }
     }
 
-    function autoCompound() public onlyZunami returns (uint256) {
-        return 0;
-    }
+    function autoCompound() public onlyZunami {}
 
     /**
      * @dev Returns total USD holdings in strategy.

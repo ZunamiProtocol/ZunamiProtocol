@@ -1,0 +1,31 @@
+Start deploy
+ZunamiAPS deployed to: 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd
+Reward manager deployed to: 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
+
+0 VaultAPSStrat strategy deployed to: 0xdC1AEb773Bd7dEd31170C1Ffe54Dd3639459bE07
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in VaultAPSStrat strategy
+
+1- UzdFraxCurveStakeDao strategy deployed to: 0xf36bdf167722FD90d021c42c642eAA48EE37f62a
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveStakeDao strategy
+Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
+
+Reward manager deployed to: 0xA94999dB7dAb9cA4478b36142D026d5f2db3B356
+
+2- UzdFraxCurveConvex strategy deployed to: 0x294a5EE0d021b4FAe28A76382C9B11D1D886f604
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveConvex strategy
+Set reward manager 0xA94999dB7dAb9cA4478b36142D026d5f2db3B356
+
+3 UzdStakingFraxCurveConvex strategy deployed to: 0x5bC926B2A5FcF521B7d1cfD4d0BC265eF00AB2F1
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdStakingFraxCurveConvex strategy
+Set reward manager 0xA94999dB7dAb9cA4478b36142D026d5f2db3B356
+
+Stable converter is: 0xce5c753716607110ce702042f080580f5c29f892
+Reward manager deployed to: 0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770
+
+4 UzdFraxCurveStakeDao strategy deployed to: 0x63A771C4077B3eAe3d17b633d87e23Ab7Dbbe54b
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveStakeDao strategy
+Set reward manager 0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770
+
+UzdFraxCurveConcentrator strategy deployed to: 0xbF7a41f8E57a9940951Fdd266f30EfbAf9a3A138
+Set zunami address 0xCaB49182aAdCd843b037bBF885AD56A3162698Bd in UzdFraxCurveConcentrator strategy
+Set reward manager 0x6349f12EDA78bf9ad33c7F0C2620a98Cb3790770

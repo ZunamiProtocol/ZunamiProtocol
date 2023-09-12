@@ -1,4 +1,8 @@
 {
+  "zunami": "0x2ffCC661011beC72e1A9524E12060983E74D14ce",
+  "ethzunami": "0x9dE83985047ab3582668320A784F6b9736c6EEa7",
+  "uzd": "0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c",
+  "zeth": "0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b",
   "stablecoins": {
     "dai": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
     "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -6,12 +10,15 @@
     "frax": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
     "ethCurve": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
     "wEth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "frxEth": "0x5E8422345238F34275888049021821E8E08CAa1f"
+    "frxEth": "0x5E8422345238F34275888049021821E8E08CAa1f",
+    "uzd": "0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c"
   },
   "holders": {
-    "daiHolder": "0xF977814e90dA44bFA03b6295A0616a897441aceC",
+    "daiHolder": "0x60FaAe176336dAb62e284Fe19B885B095d29fB7F",
     "usdcHolder": "0xcffad3200574698b78f32232aa9d63eabd290703",
     "usdtHolder": "0xa7a93fd0a276fc1c0197a5b5623ed117786eed06",
-    "frxEthMinter": "0xbAFA44EFE7901E04E39Dad13167D089C559c1138"
+    "frxEthMinter": "0xbAFA44EFE7901E04E39Dad13167D089C559c1138",
+    "uzdHolder": "0xa7a93fd0a276fc1c0197a5b5623ed117786eed06",
+    "fraxHolder": "0x38d0dbecda3b81faa65cdce0cae4c4db30dec786"
   }
 }

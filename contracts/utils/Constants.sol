@@ -32,11 +32,16 @@ library Constants {
     uint256 internal constant CVX_DOLA_PID = 62;
     uint256 internal constant CVX_FRAX_LUSD_PID = 102;
     uint256 internal constant CVX_FRAX_ALUSD_PID = 106;
+    uint256 internal constant CVX_FRAX_clevUSD_PID = 41;
+    uint256 internal constant CVX_FRAX_eUSD_PID = 44;
+    uint256 internal constant CVX_FRAX_UZD_PID = 158;
+    uint256 internal constant CVX_FRAX_STAKED_UZD_PID = 47;
 
     uint256 internal constant CVX_ETH_frxETH_PID = 36;
 
     uint256 internal constant TRADE_DEADLINE = 2000;
 
+    address internal constant CRVUSD_ADDRESS = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
     address internal constant CVX_ADDRESS = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
     address internal constant CRV_ADDRESS = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address internal constant FXS_ADDRESS = 0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0;
@@ -64,6 +69,7 @@ library Constants {
     address internal constant USDD_ADDRESS = 0x0C10bF8FcB7Bf5412187A595ab97a3609160b5c6;
     address internal constant DOLA_ADDRESS = 0x865377367054516e17014CcdED1e7d814EDC9ce4;
     address internal constant WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address internal constant SDT_ADDRESS = 0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F;
     address internal constant SUSHI_ROUTER_ADDRESS = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
     address internal constant SUSHI_CRV_WETH_ADDRESS = 0x58Dc5a51fE44589BEb22E8CE67720B5BC5378009;
     address internal constant SUSHI_WETH_CVX_ADDRESS = 0x05767d9EF41dC40689678fFca0608878fb3dE906;
@@ -174,10 +180,6 @@ library Constants {
     address internal constant CRV_FRAX_XAI_LP_ADDRESS = 0x326290A1B0004eeE78fa6ED4F1d8f4b2523ab669;
     address internal constant CRV_TRICRYPTO2_ADDRESS = 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46;
 
-    address internal constant CRV_FRAX_alUSD_ADDRESS = 0xB30dA2376F63De30b42dC055C93fa474F31330A5;
-    address internal constant CRV_FRAX_alUSD_LP_ADDRESS =
-        0xB30dA2376F63De30b42dC055C93fa474F31330A5;
-
     address internal constant ETH_frxETH_ADDRESS = 0xa1F8A6807c402E4A15ef4EBa36528A3FED24E577;
     address internal constant ETH_frxETH_LP_ADDRESS = 0xf43211935C781D5ca1a41d2041F397B8A7366C7A;
 
@@ -195,4 +197,37 @@ library Constants {
     address internal constant CRV_FRAX_alETH_LP_ADDRESS = 0xB657B895B265C38c53FFF00166cF7F6A3C70587d;
     address internal constant CVX_FRAX_alETH_REWARDS_ADDRESS = 0xe0DbbCF08A5465db7c7401C86cce89030e11aB67;
     uint256 internal constant CVX_FRAX_alETH_PID = 166;
+
+    address internal constant CRV_FRAX_clevUSD_ADDRESS = 0x84C333e94AEA4a51a21F6cf0C7F528C50Dc7592C;
+    address internal constant CRV_FRAX_clevUSD_LP_ADDRESS = 0x84C333e94AEA4a51a21F6cf0C7F528C50Dc7592C;
+
+    address internal constant CRV_FRAX_eUSD_ADDRESS = 0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F;
+    address internal constant CRV_FRAX_eUSD_LP_ADDRESS = 0xAEda92e6A3B1028edc139A4ae56Ec881f3064D4F;
+
+    address internal constant SDT_UZD_VAULT_ADDRESS = 0xbc61f6973cE564eFFB16Cd79B5BC3916eaD592E2;
+    address internal constant UZD_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
+    address internal constant CRV_FRAX_UZD_ADDRESS = 0x68934F60758243eafAf4D2cFeD27BF8010bede3a;
+    address internal constant CRV_FRAX_UZD_LP_ADDRESS = 0x68934F60758243eafAf4D2cFeD27BF8010bede3a;
+
+    address internal constant ZUNAMI_POOL_ADDRESS = 0x2ffCC661011beC72e1A9524E12060983E74D14ce;
+    address internal constant ZUNAMI_STABLE_ADDRESS = 0xb40b6608B2743E691C9B54DdBDEe7bf03cd79f1c;
+
+    address internal constant ZUNAMI_ETH_POOL_ADDRESS = 0x9dE83985047ab3582668320A784F6b9736c6EEa7;
+    address internal constant ZUNAMI_ETH_STABLE_ADDRESS = 0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b;
+
+    address internal constant CVX_FRAX_UZD_REWARDS_ADDRESS = 0x820Fad75512c8C3E57Ad021d016846CEEB5F7105;
+
+    address internal constant SDT_CRVUSD_USDT_VAULT_ADDRESS = 0x37b24ac19504C0c6FC1ADc8deb5D24f5C4F6A2f2;
+    address internal constant CRV_CRVUSD_USDT_LP_ADDRESS = 0x390f3595bCa2Df7d23783dFd126427CCeb997BF4;
+    address internal constant CRV_CRVUSD_USDT_ADDRESS = 0x390f3595bCa2Df7d23783dFd126427CCeb997BF4;
+
+    address internal constant CRV_FRXETH_ZETH_ADDRESS = 0xfC89b519658967fCBE1f525f1b8f4bf62d9b9018;
+    address internal constant CRV_FRXETH_ZETH_LP_ADDRESS = 0xfC89b519658967fCBE1f525f1b8f4bf62d9b9018;
+    address internal constant CVX_FRXETH_ZETH_REWARDS_ADDRESS = 0x98B662443695f7328F6A7fDe9894CC0E88630269;
+    uint256 internal constant CVX_FRXETH_ZETH_PID = 210;
+    address internal constant zETH_ADDRESS = 0xe47f1CD2A37c6FE69e3501AE45ECA263c5A87b2b;
+
+    address internal constant CONCENTRATOR_UZD_VAULT_ADDRESS = 0x3Cf54F3A1969be9916DAD548f3C084331C4450b5;
+    uint256 internal constant CONCENTRATOR_UZD_VAULT_PID = 57;
 }
+

@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../CurveConvexExtraStratBase.sol';
-import '../../../../../interfaces/IStableConverter.sol';
-import '../../../../interfaces/ICurvePool2.sol';
+import "../../../../interfaces/ICurvePool2.sol";
+import "../../../../../interfaces/IStableConverter.sol";
 
 abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     using SafeERC20 for IERC20Metadata;
@@ -63,14 +63,14 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         emit SetStableConverter(stableConverterAddr);
     }
 
-    function checkDepositSuccessful(uint256[POOL_ASSETS] memory tokenAmounts)
+    function checkDepositSuccessful(uint256[3] memory tokenAmounts)
         internal
         view
         override
         returns (bool isValidDepositAmount)
     {
         uint256 amountsTotal;
-        for (uint256 i = 0; i < STRATEGY_ASSETS; i++) {
+        for (uint256 i = 0; i < tokenAmounts.length; i++) {
             amountsTotal += tokenAmounts[i] * decimalsMultipliers[i];
         }
 
@@ -85,7 +85,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         isValidDepositAmount = (depositedLp * lpPrice) / CURVE_PRICE_DENOMINATOR >= amountsMin;
     }
 
-    function depositPool(uint256[POOL_ASSETS] memory tokenAmounts)
+    function depositPool(uint256[3] memory tokenAmounts)
         internal
         override
         returns (uint256 cvxDepositLpAmount)
@@ -149,7 +149,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
             );
     }
 
-    function calcSharesAmount(uint256[POOL_ASSETS] memory tokenAmounts, bool isDeposit)
+    function calcSharesAmount(uint256[3] memory tokenAmounts, bool isDeposit)
         external
         view
         override
@@ -159,10 +159,11 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         return crvFraxTokenPool.calc_token_amount(amounts, isDeposit);
     }
 
-    function convertZunamiTokensToFraxUsdcs(
-        uint256[POOL_ASSETS] memory tokenAmounts,
-        bool isDeposit
-    ) internal view returns (uint256[2] memory amounts) {
+    function convertZunamiTokensToFraxUsdcs(uint256[3] memory tokenAmounts, bool isDeposit)
+        internal
+        view
+        returns (uint256[2] memory amounts)
+    {
         amounts[FRAX_USDC_POOL_USDC_ID] =
             tokenAmounts[0] /
             1e12 +
@@ -174,7 +175,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
     function calcCrvLps(
         WithdrawalType,
         uint256 userRatioOfCrvLps, // multiplied by 1e18
-        uint256[POOL_ASSETS] memory tokenAmounts,
+        uint256[3] memory tokenAmounts,
         uint128
     )
         internal
@@ -198,7 +199,7 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 removingCrvLps,
         uint256[] memory,
         WithdrawalType withdrawalType,
-        uint256[POOL_ASSETS] memory tokenAmounts,
+        uint256[3] memory tokenAmounts,
         uint128 tokenIndex
     ) internal override {
         removeCrvLpsInternal(removingCrvLps, tokenAmounts[ZUNAMI_USDC_TOKEN_ID]);
@@ -250,7 +251,10 @@ abstract contract FraxCurveConvexStratBase is CurveConvexExtraStratBase {
         uint256 balance = _config.tokens[ZUNAMI_USDC_TOKEN_ID].balanceOf(address(this));
         if (balance == 0) return;
 
-        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(address(stableConverter), balance);
+        _config.tokens[ZUNAMI_USDC_TOKEN_ID].safeTransfer(
+            address(stableConverter),
+            balance
+        );
         stableConverter.handle(
             address(_config.tokens[ZUNAMI_USDC_TOKEN_ID]),
             address(token),

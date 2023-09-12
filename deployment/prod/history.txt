@@ -98,3 +98,34 @@ Frax Zunami Extension deployed to: 0x3D8aBC464D5313a576e78706aC97F79fe1EB0b61
 
 SnapshotHelper deployed to: 0x0AD930970b60d24bd30F612D287f188A7626B147
 Pool gauge count: 4
+
+18 clevUSDStakingFraxCurveConvex strategy deployed to: 0x06A62C6e449BA3026E238E1350c7e25a3d409544
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in clevUSDStakingFraxCurveConvex strategy
+Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
+Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+
+19 eUSDStakingFraxCurveConvex strategy deployed to: 0xfF68b4C48Bf59694CaCCBA224F1b10ec566D330A
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in eUSDStakingFraxCurveConvex strategy
+Set reward manager 0x16d44a8b78BF1cF48D6Eb0C202CAcA53f5aD507b
+Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+
+Reward manager deployed to: 0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a
+
+20 CrvUSDUsdtCurveStakeDao strategy deployed to: 0x45DF43f61428e270dFaDCB8E9bd6e93d68831343
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in CrvUSDUsdtCurveStakeDao strategy
+Set reward manager 0xB8EBe51a1784Ce476eDD506ecCd712420Ea1A76a
+Set stable convertor 0x939d4051eD5447f3Dc542af93b7E343f19AEe469
+
+Stable converter deployed to: 0xce5c753716607110ce702042f080580f5c29f892
+
+20 CrvUSDUsdtCurveStakeDao
+Set stable convertor 0xce5c753716607110ce702042f080580f5c29f892
+
+21 VaultStrat strategy deployed to: 0x2D09FaC78BBbcEE4aF6dFAE5D3Dd425b2883C30b
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in VaultStrat strategy
+
+Reward manager deployed to: 0x4460654C22C92cB8e449093E63EBa3a3A50C065B
+
+
+ClaimingStrat strategy deployed to: 0xa655Aa809D1FE7a55e22425780bb676E8AE0A143
+Set zunami address 0x2ffCC661011beC72e1A9524E12060983E74D14ce in ClaimingStrat strategy

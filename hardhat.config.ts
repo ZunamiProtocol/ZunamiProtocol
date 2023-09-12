@@ -36,6 +36,9 @@ const config: HardhatUserConfig = {
                 // blockNumber: 15183276, // Strategies
                 // blockNumber: 17483568, // Staking ETH strategy
                 blockNumber: 17835058,
+                // blockNumber: 15183276, // Strategies 16693134
+                // blockNumber: 15183276, // Strategies
+                // blockNumber: 17392600 //17313000, // 17254000, // APS
             },
             accounts: [
                 // 5 accounts with 10^14 ETH each
@@ -82,7 +85,7 @@ const config: HardhatUserConfig = {
             chainId: 1,
             gas: 'auto',
             gasMultiplier: 1.2,
-            gasPrice: 22000000000,
+            gasPrice: 15000000000,
             accounts: [`${process.env.PRIVATE_KEY}`],
             loggingEnabled: true,
         },
